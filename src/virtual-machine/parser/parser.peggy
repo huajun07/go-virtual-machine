@@ -5,7 +5,7 @@
     // Golang integers can be underscore delimited.
     const value = parseInt(integer.replace("_", ""), base)
     return {
-      type: 'integer_literal',
+      type: 'literal',
       value: value,
     }
   }
@@ -14,16 +14,28 @@
   function makeFloat(float) {
     const value = parseFloat(float)
     return {
-      type: 'float_literal',
+      type: 'literal',
       value: value,
     }
   }
 
-  // Returns a function that can be applied on operands, to construct a token.
-  function makeOperator(operator_name) {
+  // Returns a binary function that can be applied on operands, to construct a token.
+  function makeBinaryOperator(operator_name) {
     return (...args) => {
       return {
-        type: operator_name,
+        type: 'binary_operator',
+        name: operator_name,
+        children: args,
+      }
+    }
+  }
+
+  // Returns a unary function that can be applied on operands, to construct a token.
+  function makeUnaryOperator(operator_name) {
+    return (...args) => {
+      return {
+        type: 'unary_operator',
+        name: operator_name,
         children: args,
       }
     }
@@ -36,7 +48,8 @@ some (or none) children, and possibly a value.
 
 For example, a binary multiplication operation looks like this:
 {
-    type: 'binary_multiplication',
+    type: 'binary_operator',
+    name: 'binary_multiplication',
     children: [...]
 }
 
@@ -96,34 +109,34 @@ UnaryExpr  = PrimaryExpr /
              op:unary_op _ expr:UnaryExpr { return op(expr) }
 
 // Operators are parsed into a function, that can be applied on operands to construct a token.
-binary_op  = "||" { return makeOperator("conditional_or") } /
-             "&&" { return makeOperator("conditional_and") } /
+binary_op  = "||" { return makeBinaryOperator("conditional_or") } /
+             "&&" { return makeBinaryOperator("conditional_and") } /
              rel_op / add_op / mul_op
-rel_op     = "==" { return makeOperator("equal") } /
-             "!=" { return makeOperator("not_equal") } /
-             "<" { return makeOperator("less") } /
-             "<=" { return makeOperator("less_or_equal") } /
-             ">" { return makeOperator("greater") } /
-             ">=" { return makeOperator("greater_or_equal") }
-add_op     = "+" { return makeOperator("sum") } /
-             "-" { return makeOperator("difference") } /
-             "|" { return makeOperator("bitwise_or") } /
-             "^" { return makeOperator("bitwise_xor") }
-mul_op     = "*" { return makeOperator("product") } /
-             "/" { return makeOperator("quotient") } /
-             "%" { return makeOperator("remainder") } /
-             "<<" { return makeOperator("left_shift") } /
-             ">>" { return makeOperator("right_shift") } /
-             "&" { return makeOperator("bitwise_and") } /
-             "&^" { return makeOperator("bit_clear") }
+rel_op     = "==" { return makeBinaryOperator("equal") } /
+             "!=" { return makeBinaryOperator("not_equal") } /
+             "<" { return makeBinaryOperator("less") } /
+             "<=" { return makeBinaryOperator("less_or_equal") } /
+             ">" { return makeBinaryOperator("greater") } /
+             ">=" { return makeBinaryOperator("greater_or_equal") }
+add_op     = "+" { return makeBinaryOperator("sum") } /
+             "-" { return makeBinaryOperator("difference") } /
+             "|" { return makeBinaryOperator("bitwise_or") } /
+             "^" { return makeBinaryOperator("bitwise_xor") }
+mul_op     = "*" { return makeBinaryOperator("product") } /
+             "/" { return makeBinaryOperator("quotient") } /
+             "%" { return makeBinaryOperator("remainder") } /
+             "<<" { return makeBinaryOperator("left_shift") } /
+             ">>" { return makeBinaryOperator("right_shift") } /
+             "&" { return makeBinaryOperator("bitwise_and") } /
+             "&^" { return makeBinaryOperator("bit_clear") }
 
-unary_op   = "+" { return makeOperator("plus") } / // Note: This operator is unnamed in Golang specs.
-             "-" { return makeOperator("negation") } /
-             "!" { return makeOperator("not") } /
-             "^" { return makeOperator("bitwise_complement") } /
-             "*" { return makeOperator("indirection") } /
-             "&" { return makeOperator("address") } /
-             "<-" { return makeOperator("receive") }
+unary_op   = "+" { return makeUnaryOperator("plus") } / // Note: This operator is unnamed in Golang specs.
+             "-" { return makeUnaryOperator("negation") } /
+             "!" { return makeUnaryOperator("not") } /
+             "^" { return makeUnaryOperator("bitwise_complement") } /
+             "*" { return makeUnaryOperator("indirection") } /
+             "&" { return makeUnaryOperator("address") } /
+             "<-" { return makeUnaryOperator("receive") }
 
 
 // =============== Primary Expressions (Partial) ===============
