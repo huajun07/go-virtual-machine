@@ -1,0 +1,25 @@
+.visual-component {
+  position: absolute;
+  z-index: 100;
+  cursor: all-scroll;
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.visual-component-graph {
+  min-width: 400px;
+  min-height: 300px;
+}
+
+.visual-component-array {
+  min-width: 400px;
+  min-height: 200px;
+}
+
+.visual-component > * {
+  cursor: auto;
+}
+
+.visual-component-selected > * {
+  cursor: all-scroll !important;
+}
