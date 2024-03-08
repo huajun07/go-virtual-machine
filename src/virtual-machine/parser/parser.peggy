@@ -126,6 +126,13 @@ unary_op   = "+" { return makeOperator("plus") } / // Note: This operator is unn
              "<-" { return makeOperator("receive") }
 
 
-// Primary Expressions (Partial)
+// =============== Primary Expressions (Partial) ===============
 //! TODO: Add support for all primary expressions instead of numerical.
-PrimaryExpr = float_lit / int_lit 
+PrimaryExpr = Operand
+
+
+// =============== Operands (Partial) ===============
+//! TODO: Add support for all operands instead of just (expression).
+Operand = Literal / "(" _ @Expression _ ")"
+Literal = BasicLit
+BasicLit = float_lit / int_lit
