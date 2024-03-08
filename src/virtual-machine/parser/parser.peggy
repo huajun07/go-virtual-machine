@@ -48,7 +48,13 @@ An integer literal looks like this:
 */
 
 // =============== Root ===============
-start = Expression
+start = _ @Expression _
+
+
+// =============== Whitespace ===============
+// By convention, _ is used to eat up whitespace.
+_ = [ \t\r\n]*
+
 
 // =============== Characters ===============
 decimal_digit = [0-9]
@@ -84,10 +90,10 @@ decimal_exponent  = [eE] ("+" / "-")? decimal_digits
 
 
 // =============== Operators ===============
-Expression = left:UnaryExpr op:binary_op right:Expression { return op(left, right) } /
+Expression = left:UnaryExpr _ op:binary_op _ right:Expression { return op(left, right) } /
              UnaryExpr
 UnaryExpr  = PrimaryExpr /
-             op:unary_op expr:UnaryExpr { return op(expr) }
+             op:unary_op _ expr:UnaryExpr { return op(expr) }
 
 // Operators are parsed into a function, that can be applied on operands to construct a token.
 binary_op  = "||" { return makeOperator("conditional_or") } /
