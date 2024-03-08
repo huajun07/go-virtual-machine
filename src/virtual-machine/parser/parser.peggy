@@ -88,34 +88,34 @@ UnaryExpr  = PrimaryExpr /
              op:unary_op expr:UnaryExpr { return op(expr) }
 
 // Operators are parsed into a function, that can be applied on operands to construct a token.
-binary_op  = "||" { return makeOperator("logical_or") } /
-             "&&" { return makeOperator("logical_and") } /
+binary_op  = "||" { return makeOperator("conditional_or") } /
+             "&&" { return makeOperator("conditional_and") } /
              rel_op / add_op / mul_op
 rel_op     = "==" { return makeOperator("equal") } /
              "!=" { return makeOperator("not_equal") } /
-             "<" { return makeOperator("less_than") } /
-             "<=" { return makeOperator("less_than_or_equal") } /
-             ">" { return makeOperator("greater_than") } /
-             ">=" { return makeOperator("greater_than_or_equal") }
-add_op     = "+" { return makeOperator("add") } /
-             "-" { return makeOperator("subtract") } /
+             "<" { return makeOperator("less") } /
+             "<=" { return makeOperator("less_or_equal") } /
+             ">" { return makeOperator("greater") } /
+             ">=" { return makeOperator("greater_or_equal") }
+add_op     = "+" { return makeOperator("sum") } /
+             "-" { return makeOperator("difference") } /
              "|" { return makeOperator("bitwise_or") } /
              "^" { return makeOperator("bitwise_xor") }
-mul_op     = "*" { return makeOperator("multiply") } /
-             "/" { return makeOperator("divide") } /
-             "%" { return makeOperator("modulo") } /
-             "<<" { return makeOperator("bitwise_left_shift") } /
-             ">>" { return makeOperator("bitwise_right_shift") } /
+mul_op     = "*" { return makeOperator("product") } /
+             "/" { return makeOperator("quotient") } /
+             "%" { return makeOperator("remainder") } /
+             "<<" { return makeOperator("left_shift") } /
+             ">>" { return makeOperator("right_shift") } /
              "&" { return makeOperator("bitwise_and") } /
-             "&^" { return makeOperator("???") } //! TODO: Find out what this is
+             "&^" { return makeOperator("bit_clear") }
 
-unary_op   = "+" { return makeOperator("plus") } /
-             "-" { return makeOperator("minus") } /
+unary_op   = "+" { return makeOperator("plus") } / // Note: This operator is unnamed in Golang specs.
+             "-" { return makeOperator("negation") } /
              "!" { return makeOperator("not") } /
-             "^" { return makeOperator("bitwise_not") } /
-             "*" { return makeOperator("???") } / //! TODO: Add this operator.
-             "&" { return makeOperator("???") } / //! TODO: Add this operator.
-             "<-" { return makeOperator("???") }  //! TODO: Add this operator.
+             "^" { return makeOperator("bitwise_complement") } /
+             "*" { return makeOperator("indirection") } /
+             "&" { return makeOperator("address") } /
+             "<-" { return makeOperator("receive") }
 
 
 // Primary Expressions (Partial)
