@@ -1,14 +1,23 @@
 // Utility functions to help in parsing.
 {{
-  // Converts a Golang string representing an integer (in the given base) to the integer.
-  function parseInteger(integer, base) {
+  // Converts a Golang string representing an integer (in the given base) to a JS integer.
+  function makeInteger(integer, base) {
     // Golang integers can be underscore delimited.
     const value = parseInt(integer.replace("_", ""), base)
     return {
       type: 'integer_literal',
-      value: value
+      value: value,
     }
- }
+  }
+
+  // Converts a Golang string representing a float to a JS float.
+  function makeFloat(float) {
+    const value = parseFloat(float)
+    return {
+      type: 'float_literal',
+      value: value,
+    }
+  }
 
   // Returns a function that can be applied on operands, to construct a token.
   function makeOperator(operator_name) {
@@ -49,10 +58,10 @@ hex_digit     = [0-9a-fA-F]
 
 
 // =============== Integer Literals ===============
-int_lit = number:binary_lit  { return parseInteger(number, 2) } /
-          number:octal_lit   { return parseInteger(number, 8) } /
-          number:decimal_lit { return parseInteger(number, 10) } /
-          number:hex_lit     { return parseInteger(number, 16) } 
+int_lit = number:binary_lit  { return makeInteger(number, 2) } /
+          number:octal_lit   { return makeInteger(number, 8) } /
+          number:decimal_lit { return makeInteger(number, 10) } /
+          number:hex_lit     { return makeInteger(number, 16) } 
 binary_lit  = "0" "b" "_"? $binary_digits
 octal_lit   = "0" [oO]? "_"? $octal_digits
 decimal_lit = $([1-9] "_"? decimal_digits?) /
@@ -66,19 +75,12 @@ hex_digits     = hex_digit     ("_"? hex_digit)*
 
 
 // =============== Floating-point Literals ===============
-//! TODO: This thing is not parsed into JS floats at all.
-float_lit = decimal_float_lit / hex_float_lit
+float_lit = number:$decimal_float_lit { return makeFloat(number); }
 
-decimal_float_lit = decimal_digits "." decimal_digits? decimal_exponent /
+decimal_float_lit = decimal_digits "." decimal_digits? decimal_exponent? /
                     decimal_digits decimal_exponent /
                     "." decimal_digits decimal_exponent?
 decimal_exponent  = [eE] ("+" / "-")? decimal_digits
-
-hex_float_lit     = "0" [xX] hex_mantissa hex_exponent
-hex_mantissa      = "_"? hex_digits "." hex_digits? /
-                    "_"? hex_digits /
-                    "." hex_digits
-hex_exponent      = [pP] ("+" / "-")? decimal_digits
 
 
 // =============== Operators ===============
@@ -120,4 +122,4 @@ unary_op   = "+" { return makeOperator("plus") } / // Note: This operator is unn
 
 // Primary Expressions (Partial)
 //! TODO: Add support for all primary expressions instead of numerical.
-PrimaryExpr = int_lit / float_lit
+PrimaryExpr = float_lit / int_lit 
