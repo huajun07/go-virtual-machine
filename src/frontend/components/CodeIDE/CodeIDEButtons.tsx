@@ -1,5 +1,4 @@
 import { AiFillCaretRight } from 'react-icons/ai'
-import { MdEdit } from 'react-icons/md'
 import {
   Button,
   Flex,
@@ -10,7 +9,6 @@ import {
 } from '@chakra-ui/react'
 
 interface CodeIDEButtonProps {
-  editing: boolean
   isDisabled: boolean
   toggleMode: () => void
 }
@@ -26,23 +24,17 @@ export const CodeIDEButtons = (props: CodeIDEButtonProps) => {
         h="60px"
       >
         <Spacer />
-        <Tooltip
-          label={
-            props.editing
-              ? 'Paste the code below and run it!'
-              : 'Stop the simulation and edit your code'
-          }
-        >
+        <Tooltip label={'Paste the code below and run it!'}>
           <Button
             marginRight="10px"
             size="sm"
-            rightIcon={<Icon as={props.editing ? AiFillCaretRight : MdEdit} />}
+            rightIcon={<Icon as={AiFillCaretRight} />}
             colorScheme="blue"
             variant="solid"
             onClick={props.toggleMode}
             isDisabled={props.isDisabled}
           >
-            {props.editing ? 'Run' : 'Edit'}
+            {'Run'}
           </Button>
         </Tooltip>
       </Flex>
