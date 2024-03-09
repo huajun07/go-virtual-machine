@@ -1,20 +1,20 @@
-class Context{
-    PC = 0
-    OS: unknown[] = []
+class Context {
+  PC = 0
+  OS: unknown[] = []
 
-    pushOS(x : unknown){
-        this.OS.push(x)
-    }
+  pushOS(x: unknown) {
+    this.OS.push(x)
+  }
 
-    popOS(){
-        return this.OS.pop()
-    }
+  popOS() {
+    return this.OS.pop()
+  }
 
-    printOS(){
-        for(const item of this.OS){
-            console.log(item)
-        }
+  printOS() {
+    for (const item of this.OS) {
+      console.log(item)
     }
+  }
 }
 
-export {Context}
+export { Context }

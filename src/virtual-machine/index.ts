@@ -21,7 +21,11 @@ const runCode = (source_code: string): ProgramData => {
     // console.log(instructions)
     const result = executor_instructions(instructions)
     // console.log(result)
-    return { returnVal: 'test', instructions: [], output: JSON.stringify(result) }
+    return {
+      returnVal: 'test',
+      instructions: [],
+      output: JSON.stringify(result),
+    }
   } catch (err) {
     console.warn(err)
   }

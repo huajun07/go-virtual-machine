@@ -1,6 +1,6 @@
 import { InstructionData } from 'virtual-machine'
 import { shallow } from 'zustand/shallow'
-import {createWithEqualityFn} from 'zustand/traditional'
+import { createWithEqualityFn } from 'zustand/traditional'
 
 export interface ExecutionState {
   currentStep: number
@@ -21,28 +21,31 @@ const defaultValues = {
  * @returns
  */
 export const createExecutionStore = (initialState: Partial<ExecutionState>) => {
-  return createWithEqualityFn<ExecutionState>((set) => ({
-    ...defaultValues,
-    /**
-     * Change the current execution step to given value.
-     * Note this operation updates all related variables like table data
-     * @param step
-     */
-    setStep: (step: number) => {
-      set({ currentStep: step })
-    },
-    /**
-     * Resets the execution from the start with new instructions.
-     * @param instructions New instructions
-     */
-    setInstructions: (instructions: InstructionData[]) => {
-      set({
-        currentStep: 0,
-        instructions,
-      })
-    },
-    ...initialState
-}), shallow)
+  return createWithEqualityFn<ExecutionState>(
+    (set) => ({
+      ...defaultValues,
+      /**
+       * Change the current execution step to given value.
+       * Note this operation updates all related variables like table data
+       * @param step
+       */
+      setStep: (step: number) => {
+        set({ currentStep: step })
+      },
+      /**
+       * Resets the execution from the start with new instructions.
+       * @param instructions New instructions
+       */
+      setInstructions: (instructions: InstructionData[]) => {
+        set({
+          currentStep: 0,
+          instructions,
+        })
+      },
+      ...initialState,
+    }),
+    shallow,
+  )
 }
 
 export const useExecutionStore = createExecutionStore({})
