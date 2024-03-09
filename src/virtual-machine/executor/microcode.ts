@@ -15,8 +15,8 @@ const execute_microcode = (context: Context, instr: Instruction) => {
   switch (instr.tag) {
     case 'BINOP':
       {
-        const arg1 = context.popOS()
         const arg2 = context.popOS()
+        const arg1 = context.popOS()
         context.pushOS(apply_binop(instr, arg1, arg2))
       }
       break

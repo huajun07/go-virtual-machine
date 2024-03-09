@@ -40,6 +40,13 @@
       }
     }
   }
+
+  // Returns a AST with left to right precedence
+  function leftPrecTree(rest, right) {
+    if (!rest.length) return right
+    var last = rest.pop()
+    return last[2](leftPrecTree(rest, last[0]), right)
+  }
 }}
 
 /*
@@ -103,15 +110,20 @@ decimal_exponent  = [eE] ("+" / "-")? decimal_digits
 
 
 // =============== Operators ===============
-Expression = left:UnaryExpr _ op:binary_op _ right:Expression { return op(left, right) } /
-             UnaryExpr
+Expression = rest:(ConjExpr _ disjuct_op _)* right:ConjExpr  { return leftPrecTree(rest, right) } /
+              ConjExpr
+ConjExpr   = rest:(RelExpr _ conjuct_op _)* right:RelExpr  { return leftPrecTree(rest, right) }  /
+              RelExpr
+RelExpr    = rest:(AddExpr _ rel_op _)* right:AddExpr  { return leftPrecTree(rest, right) }  /
+              AddExpr
+AddExpr    = rest:(MulExpr _ add_op _)* right:MulExpr  { return leftPrecTree(rest, right) }  /
+              MulExpr
+MulExpr    = rest:(UnaryExpr _ mul_op _)* right:UnaryExpr  { return leftPrecTree(rest, right) }  /
+              UnaryExpr
 UnaryExpr  = PrimaryExpr /
              op:unary_op _ expr:UnaryExpr { return op(expr) }
 
 // Operators are parsed into a function, that can be applied on operands to construct a token.
-binary_op  = "||" { return makeBinaryOperator("conditional_or") } /
-             "&&" { return makeBinaryOperator("conditional_and") } /
-             rel_op / add_op / mul_op
 rel_op     = "==" { return makeBinaryOperator("equal") } /
              "!=" { return makeBinaryOperator("not_equal") } /
              "<" { return makeBinaryOperator("less") } /
@@ -129,6 +141,8 @@ mul_op     = "*" { return makeBinaryOperator("product") } /
              ">>" { return makeBinaryOperator("right_shift") } /
              "&" { return makeBinaryOperator("bitwise_and") } /
              "&^" { return makeBinaryOperator("bit_clear") }
+disjuct_op = "||" { return makeBinaryOperator("conditional_or") }
+conjuct_op = "&&" { return makeBinaryOperator("conditional_and") }
 
 unary_op   = "+" { return makeUnaryOperator("plus") } / // Note: This operator is unnamed in Golang specs.
              "-" { return makeUnaryOperator("negation") } /
