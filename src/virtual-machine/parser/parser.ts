@@ -1,8 +1,7 @@
-import peggy from 'peggy'
+import { parse } from './golang_parser.js'
 
-// eslint-disable-next-line import/no-webpack-loader-syntax
-import grammar from '!!raw-loader!./parser.peggy'
-
-const parser = peggy.generate(grammar)
+const parser = {
+  parse,
+}
 
 export default parser
