@@ -1,3 +1,10 @@
+import {
+  BinaryOperator,
+  LiteralToken,
+  Token,
+  UnaryOperator,
+} from '../parser/tokens'
+
 type OpInstruction = {
   tag: 'BINOP' | 'UNOP'
   op: string
@@ -17,19 +24,15 @@ type Instruction = OpInstruction | LoadConstantInstruction | DoneInstruction
 class Compiler {
   instructions: Instruction[] = []
   compile(token: Token) {
-    switch (token.type) {
-      case 'binary_operator':
-        this.compile(token.children[0])
-        this.compile(token.children[1])
-        this.instructions.push({ tag: 'BINOP', op: token.name })
-        break
-      case 'unary_operator':
-        this.compile(token.children[0])
-        this.instructions.push({ tag: 'UNOP', op: token.name })
-        break
-      case 'literal':
-        this.instructions.push({ tag: 'LDC', val: token.value })
-        break
+    if (BinaryOperator.is(token)) {
+      this.compile(token.children[0])
+      this.compile(token.children[1])
+      this.instructions.push({ tag: 'BINOP', op: token.name })
+    } else if (UnaryOperator.is(token)) {
+      this.compile(token.children[0])
+      this.instructions.push({ tag: 'UNOP', op: token.name })
+    } else if (LiteralToken.is<unknown>(token)) {
+      this.instructions.push({ tag: 'LDC', val: token.value })
     }
   }
 

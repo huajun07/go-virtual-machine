@@ -1,4 +1,5 @@
 import parser from './parser/parser'
+import { Token } from './parser/tokens'
 import { compile_tokens } from './compiler'
 import { execute_instructions } from './executor'
 

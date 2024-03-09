@@ -1,5 +1,13 @@
 // Utility functions to help in parsing.
 {{
+  import {
+    IntegerLiteralToken,
+    FloatLiteralToken,
+    StringLiteralToken,
+    BinaryOperator,
+    UnaryOperator,
+  } from './tokens'
+
   // Checks whether an identifier is valid (not a reserved keyword).
   function checkIdentifier(identifier) {
     const reserved_keywords = [
@@ -9,65 +17,6 @@
       'select', 'struct', 'switch', 'type', 'var'
     ]
     return !reserved_keywords.includes(identifier)
-  }
-
-  // Converts a Golang string representing an integer (in the given base) to a JS integer.
-  function makeInteger(integer, base) {
-    // Golang integers can be underscore delimited.
-    const value = parseInt(integer.replace("_", ""), base)
-    return {
-      type: 'literal',
-      value: value,
-    }
-  }
-
-  // Converts a Golang string representing a float to a JS float.
-  function makeFloat(float) {
-    const value = parseFloat(float)
-    return {
-      type: 'literal',
-      value: value,
-    }
-  }
-
-  // Converts a raw string in source code to a JS string.
-  function makeRawString(str) {
-    // Carriage returns are discarded from raw strings.
-    const value = str.replaceAll('\r', '')
-    return {
-      type: 'literal',
-      value: value,
-    }
-  }
-
-  // Converts an interpreted string in source code to a JS string.
-  function makeInterpretedString(str) {
-    return {
-      type: 'literal',
-      value: str,
-    }
-  }
-
-  // Returns a binary function that can be applied on operands, to construct a token.
-  function makeBinaryOperator(operator_name) {
-    return (...args) => {
-      return {
-        type: 'binary_operator',
-        name: operator_name,
-        children: args,
-      }
-    }
-  }
-
-  // Returns a unary function that can be applied on operands, to construct a token.
-  function makeUnaryOperator(operator_name) {
-    return (...args) => {
-      return {
-        type: 'unary_operator',
-        name: operator_name,
-        children: args,
-      }
-    }
   }
 
   // Returns a AST with left to right precedence
@@ -133,10 +82,10 @@ hex_digit     = [0-9a-fA-F]
 identifier = @iden:$(letter (letter / unicode_digit)*) &{ return checkIdentifier(iden) }
 
 //* Integer Literals
-int_lit = number:binary_lit  { return makeInteger(number, 2) } /
-          number:octal_lit   { return makeInteger(number, 8) } /
-          number:decimal_lit { return makeInteger(number, 10) } /
-          number:hex_lit     { return makeInteger(number, 16) } 
+int_lit = number:binary_lit  { return IntegerLiteralToken.fromSource(number, 2) } /
+          number:octal_lit   { return IntegerLiteralToken.fromSource(number, 8) } /
+          number:decimal_lit { return IntegerLiteralToken.fromSource(number, 10) } /
+          number:hex_lit     { return IntegerLiteralToken.fromSource(number, 16) } 
 binary_lit  = "0" "b" "_"? $binary_digits
 octal_lit   = "0" [oO]? "_"? $octal_digits
 decimal_lit = $([1-9] "_"? decimal_digits?) /
@@ -150,7 +99,7 @@ hex_digits     = hex_digit     ("_"? hex_digit)*
 
 //* Floating-point Literals
 //! TODO (P5): Support hexadecimal floating points.
-float_lit = number:$decimal_float_lit { return makeFloat(number); }
+float_lit = number:$decimal_float_lit { return FloatLiteralToken.fromSource(number); }
 
 decimal_float_lit = decimal_digits "." decimal_digits? decimal_exponent? /
                     decimal_digits decimal_exponent /
@@ -162,8 +111,8 @@ decimal_exponent  = [eE] ("+" / "-")? decimal_digits
 
 //* String Literals
 string_lit             = raw_string_lit / interpreted_string_lit
-raw_string_lit         = "`" str:$[^`]* "`" { return makeRawString(str) }
-interpreted_string_lit = '"' str:$[^\n"]* '"' { return makeInterpretedString(str) }
+raw_string_lit         = "`" str:$[^`]* "`" { return StringLiteralToken.fromSourceRaw(str) }
+interpreted_string_lit = '"' str:$[^\n"]* '"' { return StringLiteralToken.fromSourceInterpreted(str) }
 //! TODO (P3): Interpreted string literals should interpret rune literals.
 
 
@@ -450,7 +399,7 @@ DeferStmt = "defer" _ Expression
 
 //* =============== Packages ===============
 //* Source File
-SourceFile = PackageClause _ ";" _ (_ ImportDecl _ ";" _)* (_ TopLevelDecl _ ";")*
+SourceFile = pkg:PackageClause _ ";" _ (_ imports:ImportDecl _ ";" _)* (_ declarations:TopLevelDecl _ ";")*
 
 //* Package Clause
 PackageClause = "package" _ PackageName
