@@ -6,6 +6,10 @@
     StringLiteralToken,
     BinaryOperator,
     UnaryOperator,
+    SourceFileToken,
+    ImportToken,
+    FunctionDeclarationToken,
+    VariableDeclarationToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -120,7 +124,8 @@ interpreted_string_lit = '"' str:$[^\n"]* '"' { return StringLiteralToken.fromSo
 
 
 //* =============== Types ===============
-Type     = TypeName TypeArgs? / TypeLit / "(" _ Type _ ")"
+//! TODO (P5): If we ever add type checking, then type should return more than just an empty token.
+Type     = TypeName TypeArgs? / TypeLit / "(" _ Type _ ")" { return TypeToken() }
 //! TODO (P1): Support qualified identifiers for TypeName.
 TypeName = identifier 
 TypeArgs = "[" _ TypeList _ ","? "]"
@@ -174,8 +179,8 @@ ChannelType = ("chan" / "chan" _ "<-" / "<-" _ "chan") _ ElementType
 
 
 //* =============== Blocks ===============
-Block = "{" _ StatementList _ "}"
-StatementList = (_ Statement _ ";")*
+Block = "{" _ @StatementList _ "}"
+StatementList = (_ @Statement _ ";")*
 
 
 
@@ -188,8 +193,8 @@ TopLevelDecl = Declaration / FunctionDecl / MethodDecl
 //* Constant Declarations
 ConstDecl      = "const" (ConstSpec / "(" (ConstSpec ";")* ")")
 ConstSpec      = IdentifierList (Type? _ "=" _ ExpressionList)?
-IdentifierList = identifier (_ "," _ identifier _)*
-ExpressionList = Expression (_ "," _ Expression _)*
+IdentifierList = head:identifier tail:(_ "," _ @identifier _)* { return [head, ...tail] }
+ExpressionList = head:Expression tail:(_ "," _ @Expression _)* { return [head, ...tail] }
 
 //* Type Declarations
 TypeDecl  = "type" _ (TypeSpec / "(" _ (_ TypeSpec _ ";")* _ ")")
@@ -202,14 +207,24 @@ TypeParamDecl  = IdentifierList _ TypeConstraint
 TypeConstraint = TypeElem
 
 //* Variable Declarations
-VarDecl = "var" _ (VarSpec / "(" _ (_ VarSpec _ ";")* _ ")")
-VarSpec = IdentifierList _ (Type (_ "=" _ ExpressionList)? / _ "=" _ ExpressionList)
+//! TODO (P5): Multiple declarations (semicolon-separated) is not supported.
+VarDecl = "var" _ @VarSpec
+VarSpec = identifiers:IdentifierList _ rest:(
+            varType:Type expressions:(_ "=" _ expressions:ExpressionList)? 
+            { return {varType, expressions} }
+            /
+            _ "=" _ expressions:ExpressionList
+            { return {varType: undefined, expressions} }
+          )
+          { return new VariableDeclarationToken(identifiers, rest.varType, rest.expressions) }
 
 //* Short Variable Declarations
 ShortVarDecl = IdentifierList _ ":=" _ ExpressionList
 
 //* Function Declarations
-FunctionDecl = "func" _ FunctionName _ TypeParameters? _ Signature _ FunctionBody?
+// Note: TypeParameters? is omitted from FunctionDecl as we do not support generics.
+FunctionDecl = "func" _ name:FunctionName _ signature:Signature _ body:Block?
+               { return new FunctionDeclarationToken(name, signature, body) }
 FunctionName = identifier
 FunctionBody = Block
 
@@ -399,13 +414,15 @@ DeferStmt = "defer" _ Expression
 
 //* =============== Packages ===============
 //* Source File
-SourceFile = pkg:PackageClause _ ";" _ (_ imports:ImportDecl _ ";" _)* (_ declarations:TopLevelDecl _ ";")*
+SourceFile = pkg:PackageClause _ ";" _ imports:(_ @ImportDecl _ ";" _)* declarations:(_ @TopLevelDecl _ ";")*
+             { return new SourceFileToken(pkg, imports, declarations) }
 
 //* Package Clause
-PackageClause = "package" _ PackageName
+PackageClause = "package" _ @PackageName
 PackageName = identifier
 
 //* Import Declarations
-ImportDecl = "import" _ (ImportSpec / "(" _ (_ ImportSpec _ ";")* _ ")")
-ImportSpec = ("." / PackageName)? _ ImportPath
+ImportDecl = "import" _ @(ImportSpec / "(" _ (_ ImportSpec _ ";")* _ ")")
+ImportSpec = name:("." / PackageName)? _ path:ImportPath
+             { return new ImportToken(path, name) }
 ImportPath = string_lit

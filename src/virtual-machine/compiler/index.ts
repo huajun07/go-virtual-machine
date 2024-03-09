@@ -31,7 +31,7 @@ class Compiler {
     } else if (UnaryOperator.is(token)) {
       this.compile(token.children[0])
       this.instructions.push({ tag: 'UNOP', op: token.name })
-    } else if (LiteralToken.is<unknown>(token)) {
+    } else if (LiteralToken.is(token)) {
       this.instructions.push({ tag: 'LDC', val: token.value })
     }
   }

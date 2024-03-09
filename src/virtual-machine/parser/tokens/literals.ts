@@ -1,19 +1,19 @@
 import { Token } from './base'
 
-export abstract class LiteralToken<Type> extends Token {
-  value: Type
+export abstract class LiteralToken extends Token {
+  value: number | string
 
-  constructor(value: Type) {
+  constructor(value: number | string) {
     super('literal')
     this.value = value
   }
 
-  static is<Type>(token: Token): token is LiteralToken<Type> {
+  static is(token: Token): token is LiteralToken {
     return token.type === 'literal'
   }
 }
 
-export class IntegerLiteralToken extends LiteralToken<number> {
+export class IntegerLiteralToken extends LiteralToken {
   /** Tokenize an integer literal in the given base. */
   static fromSource(str: string, base: number) {
     // Golang numbers can be underscore delimited.
@@ -22,7 +22,7 @@ export class IntegerLiteralToken extends LiteralToken<number> {
   }
 }
 
-export class FloatLiteralToken extends LiteralToken<number> {
+export class FloatLiteralToken extends LiteralToken {
   /** Tokenize a float literal. */
   static fromSource(str: string) {
     const value = parseFloat(str)
@@ -30,7 +30,7 @@ export class FloatLiteralToken extends LiteralToken<number> {
   }
 }
 
-export class StringLiteralToken extends LiteralToken<string> {
+export class StringLiteralToken extends LiteralToken {
   /** Tokenize a raw string literal. */
   static fromSourceRaw(str: string) {
     // Carriage returns are discarded from raw strings.
