@@ -7,16 +7,16 @@ import {
   useInterval,
   useToast,
 } from '@chakra-ui/react'
+import Cookies from 'js-cookie'
+
+import { runCode } from '../../virtual-machine'
 import {
   CodeIDE,
   CodeIDEButtons,
   ControlBar,
   IO,
   VisualArea,
-} from 'frontend/components'
-import Cookies from 'js-cookie'
-
-import { runCode } from '../../virtual-machine'
+} from '../components'
 import { useExecutionStore } from '../stores'
 
 export const LoaderContext = createContext<
@@ -33,7 +33,6 @@ export const Main = () => {
       currentStep: state.currentStep,
       setStep: state.setStep,
     }))
-  const [editing, setEditing] = useState(true)
   const [isPlaying, setPlaying] = useState(false)
   const [wasPlaying, setWasPlaying] = useState(false)
   const [speed, setSpeed] = useState<number>(1)
@@ -99,37 +98,31 @@ export const Main = () => {
     }
   }
 
-  const toggleEditing = async () => {
-    if (editing) {
-      // Start playing
-      setLoading(true)
-      if (code === '') {
-        setLoading(false)
-        makeToast('Code cannot be empty!')
-        return
-      }
-      // Retrieve instructions from endpoint
-      const {
-        instructions: newInstructions,
-        errorMessage,
-        output: newOutput,
-      } = await runCode(code)
-      if (!newInstructions || errorMessage) {
-        setLoading(false)
-        makeToast(errorMessage)
-        return
-      }
-
-      // Set instructions and update components to start playing mode
-      setInstructions(newInstructions)
-      setOutput(newOutput || '')
-      setPlaying(true)
-      setWasPlaying(false)
-    } else {
-      // Stop playing
-      setPlaying(false)
+  const startRunning = async () => {
+    // Start playing
+    setLoading(true)
+    if (code === '') {
+      setLoading(false)
+      makeToast('Code cannot be empty!')
+      return
     }
-    setEditing(!editing)
+    // Retrieve instructions from endpoint
+    const {
+      instructions: newInstructions,
+      errorMessage,
+      output: newOutput,
+    } = await runCode(code)
+    if (!newInstructions || errorMessage) {
+      setLoading(false)
+      makeToast(errorMessage)
+      return
+    }
+
+    // Set instructions and update components to start playing mode
+    setInstructions(newInstructions)
+    setOutput(newOutput || '')
+    setPlaying(true)
+    setWasPlaying(false)
   }
 
   return (
@@ -155,17 +148,8 @@ export const Main = () => {
       ) : null}
       <Flex>
         <Box w="50%" borderRightWidth="1px">
-          <CodeIDEButtons
-            editing={editing}
-            toggleMode={toggleEditing}
-            isDisabled={loading}
-          />
-          <CodeIDE
-            code={code}
-            setCode={modifyCode}
-            editable={editing}
-            lineHighlight={0}
-          />
+          <CodeIDEButtons toggleMode={startRunning} isDisabled={loading} />
+          <CodeIDE code={code} setCode={modifyCode} lineHighlight={0} />
         </Box>
         <Flex position="relative" flex={1}>
           <Flex borderRightWidth="1px" flexDirection="column" w="100%">
@@ -184,7 +168,7 @@ export const Main = () => {
                     if (isPlaying || currentStep < instructions.length)
                       setPlaying(!isPlaying)
                   }}
-                  disabled={editing}
+                  disabled={instructions.length === 0}
                   wasPlaying={wasPlaying}
                   setWasPlaying={setWasPlaying}
                   moveStep={moveStep}

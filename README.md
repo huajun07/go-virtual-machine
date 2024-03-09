@@ -42,6 +42,12 @@ $ npm install
 $ npm run dev
 ```
 
+## Testing
+
+```sh
+$ npm run test
+```
+
 ## Code Tools
 
 ```sh
