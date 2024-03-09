@@ -1,5 +1,16 @@
 // Utility functions to help in parsing.
 {{
+  // Checks whether an identifier is valid (not a reserved keyword).
+  function checkIdentifier(identifier) {
+    const reserved_keywords = [
+      'break', 'case', 'chan', 'const', 'continue', 'default',
+      'defer', 'else', 'fallthrough', 'for', 'func', 'go', 'goto',
+      'if', 'import', 'interface', 'map', 'package', 'range', 'return',
+      'select', 'struct', 'switch', 'type', 'var'
+    ]
+    return !reserved_keywords.includes(reserved_keywords)
+  }
+
   // Converts a Golang string representing an integer (in the given base) to a JS integer.
   function makeInteger(integer, base) {
     // Golang integers can be underscore delimited.
@@ -16,6 +27,24 @@
     return {
       type: 'literal',
       value: value,
+    }
+  }
+
+  // Converts a raw string in source code to a JS string.
+  function makeRawString(str) {
+    // Carriage returns are discarded from raw strings.
+    const value = str.replaceAll('\r', '')
+    return {
+      type: 'literal',
+      value: value,
+    }
+  }
+
+  // Converts an interpreted string in source code to a JS string.
+  function makeInterpretedString(str) {
+    return {
+      type: 'literal',
+      value: str,
     }
   }
 
@@ -76,14 +105,34 @@ start = _ @Expression _
 _ = [ \t\r\n]*
 
 
-// =============== Characters ===============
+
+
+
+//* =============== Source Code Representation ===============
+//* Characters
+newline = "\n"
+unicode_char   = char:. &{ return char != "\n" }
+unicode_letter = char:. &{ return char.match(/^\p{L}$/u) }
+unicode_digit  = char:. &{ return char.match(/^\p{N}$/u) }
+
+//* Letters and Digits
+letter        = unicode_letter / "_"
 decimal_digit = [0-9]
 binary_digit  = [0-1]
 octal_digit   = [0-7]
 hex_digit     = [0-9a-fA-F]
 
 
-// =============== Integer Literals ===============
+
+
+
+//* =============== Lexical Elements ===============
+//! TODO (P4): Support comments.
+
+//* Identifiers
+identifier = iden:letter (letter / unicode_digit)* &{ checkIdentifier(iden) }
+
+//* Integer Literals
 int_lit = number:binary_lit  { return makeInteger(number, 2) } /
           number:octal_lit   { return makeInteger(number, 8) } /
           number:decimal_lit { return makeInteger(number, 10) } /
@@ -99,14 +148,23 @@ octal_digits   = octal_digit   ("_"? octal_digit)*
 decimal_digits = decimal_digit ("_"? decimal_digit)*
 hex_digits     = hex_digit     ("_"? hex_digit)*
 
-
-// =============== Floating-point Literals ===============
+//* Floating-point Literals
+//! TODO (P5): Support hexadecimal floating points.
 float_lit = number:$decimal_float_lit { return makeFloat(number); }
 
 decimal_float_lit = decimal_digits "." decimal_digits? decimal_exponent? /
                     decimal_digits decimal_exponent /
                     "." decimal_digits decimal_exponent?
 decimal_exponent  = [eE] ("+" / "-")? decimal_digits
+
+//! TODO (P5): Support imaginary literals.
+//! TODO (P3): Support rune literals.
+
+//* String Literals
+string_lit             = raw_string_lit / interpreted_string_lit
+raw_string_lit         = "`" str:$[^`]* "`" { return makeRawString(str) }
+interpreted_string_lit = '"' str:$[^\n"]* '"' { return makeInterpretedString(str) }
+//! TODO (P3): Interpreted string literals should interpret rune literals.
 
 
 // =============== Operators ===============
@@ -162,4 +220,4 @@ PrimaryExpr = Operand
 //! TODO: Add support for all operands instead of just (expression).
 Operand = Literal / "(" _ @Expression _ ")"
 Literal = BasicLit
-BasicLit = float_lit / int_lit
+BasicLit = float_lit / int_lit / string_lit
