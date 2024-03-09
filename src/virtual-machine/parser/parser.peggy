@@ -44,7 +44,7 @@
   // Returns a AST with left to right precedence
   function leftPrecTree(rest, right) {
     if (!rest.length) return right
-    var last = rest.pop()
+    let last = rest.pop()
     return last[2](leftPrecTree(rest, last[0]), right)
   }
 }}
@@ -110,9 +110,9 @@ decimal_exponent  = [eE] ("+" / "-")? decimal_digits
 
 
 // =============== Operators ===============
-Expression = rest:(ConjExpr _ disjuct_op _)* right:ConjExpr  { return leftPrecTree(rest, right) } /
+Expression = rest:(ConjExpr _ disjunct_op _)* right:ConjExpr  { return leftPrecTree(rest, right) } /
               ConjExpr
-ConjExpr   = rest:(RelExpr _ conjuct_op _)* right:RelExpr  { return leftPrecTree(rest, right) }  /
+ConjExpr   = rest:(RelExpr _ conjunct_op _)* right:RelExpr  { return leftPrecTree(rest, right) }  /
               RelExpr
 RelExpr    = rest:(AddExpr _ rel_op _)* right:AddExpr  { return leftPrecTree(rest, right) }  /
               AddExpr
@@ -124,25 +124,25 @@ UnaryExpr  = PrimaryExpr /
              op:unary_op _ expr:UnaryExpr { return op(expr) }
 
 // Operators are parsed into a function, that can be applied on operands to construct a token.
-rel_op     = "==" { return makeBinaryOperator("equal") } /
-             "!=" { return makeBinaryOperator("not_equal") } /
-             "<" { return makeBinaryOperator("less") } /
-             "<=" { return makeBinaryOperator("less_or_equal") } /
-             ">" { return makeBinaryOperator("greater") } /
-             ">=" { return makeBinaryOperator("greater_or_equal") }
-add_op     = "+" { return makeBinaryOperator("sum") } /
-             "-" { return makeBinaryOperator("difference") } /
-             "|" { return makeBinaryOperator("bitwise_or") } /
-             "^" { return makeBinaryOperator("bitwise_xor") }
-mul_op     = "*" { return makeBinaryOperator("product") } /
-             "/" { return makeBinaryOperator("quotient") } /
-             "%" { return makeBinaryOperator("remainder") } /
-             "<<" { return makeBinaryOperator("left_shift") } /
-             ">>" { return makeBinaryOperator("right_shift") } /
-             "&" { return makeBinaryOperator("bitwise_and") } /
-             "&^" { return makeBinaryOperator("bit_clear") }
-disjuct_op = "||" { return makeBinaryOperator("conditional_or") }
-conjuct_op = "&&" { return makeBinaryOperator("conditional_and") }
+rel_op      = "==" { return makeBinaryOperator("equal") } /
+              "!=" { return makeBinaryOperator("not_equal") } /
+              "<" { return makeBinaryOperator("less") } /
+              "<=" { return makeBinaryOperator("less_or_equal") } /
+              ">" { return makeBinaryOperator("greater") } /
+              ">=" { return makeBinaryOperator("greater_or_equal") }
+add_op      = "+" { return makeBinaryOperator("sum") } /
+              "-" { return makeBinaryOperator("difference") } /
+              "|" { return makeBinaryOperator("bitwise_or") } /
+              "^" { return makeBinaryOperator("bitwise_xor") }
+mul_op      = "*" { return makeBinaryOperator("product") } /
+              "/" { return makeBinaryOperator("quotient") } /
+              "%" { return makeBinaryOperator("remainder") } /
+              "<<" { return makeBinaryOperator("left_shift") } /
+              ">>" { return makeBinaryOperator("right_shift") } /
+              "&" { return makeBinaryOperator("bitwise_and") } /
+              "&^" { return makeBinaryOperator("bit_clear") }
+disjunct_op = "||" { return makeBinaryOperator("conditional_or") }
+conjunct_op = "&&" { return makeBinaryOperator("conditional_and") }
 
 unary_op   = "+" { return makeUnaryOperator("plus") } / // Note: This operator is unnamed in Golang specs.
              "-" { return makeUnaryOperator("negation") } /

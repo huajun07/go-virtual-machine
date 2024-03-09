@@ -1,4 +1,4 @@
-import { Instruction, OpInstruction } from 'virtual-machine/compiler'
+import { Instruction, OpInstruction } from '../compiler'
 
 import { Context } from './context'
 import { binary_op, unary_op } from './ops'

@@ -17,8 +17,9 @@ import {
   Text,
   useColorModeValue,
 } from '@chakra-ui/react'
-import { useExecutionStore } from 'frontend/stores'
 import { shallow } from 'zustand/shallow'
+
+import { useExecutionStore } from '../stores'
 
 interface ControlBarProps {
   playing: boolean

@@ -7,16 +7,16 @@ import {
   useInterval,
   useToast,
 } from '@chakra-ui/react'
+import Cookies from 'js-cookie'
+
+import { runCode } from '../../virtual-machine'
 import {
   CodeIDE,
   CodeIDEButtons,
   ControlBar,
   IO,
   VisualArea,
-} from 'frontend/components'
-import Cookies from 'js-cookie'
-
-import { runCode } from '../../virtual-machine'
+} from '../components'
 import { useExecutionStore } from '../stores'
 
 export const LoaderContext = createContext<

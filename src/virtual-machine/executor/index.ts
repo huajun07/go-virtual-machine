@@ -1,9 +1,9 @@
-import { Instruction } from 'virtual-machine/compiler'
+import { Instruction } from '../compiler'
 
 import { Context } from './context'
 import { execute_microcode } from './microcode'
 
-const executor_instructions = (instrs: Instruction[]) => {
+const execute_instructions = (instrs: Instruction[]) => {
   const context = new Context()
   while (instrs[context.PC].tag !== 'DONE') {
     const instr = instrs[context.PC++]
@@ -14,4 +14,4 @@ const executor_instructions = (instrs: Instruction[]) => {
   return context.popOS()
 }
 
-export { executor_instructions }
+export { execute_instructions }

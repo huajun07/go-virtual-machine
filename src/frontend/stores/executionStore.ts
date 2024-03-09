@@ -1,6 +1,7 @@
-import { InstructionData } from 'virtual-machine'
 import { shallow } from 'zustand/shallow'
 import { createWithEqualityFn } from 'zustand/traditional'
+
+import { InstructionData } from '../../virtual-machine'
 
 export interface ExecutionState {
   currentStep: number

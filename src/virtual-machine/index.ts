@@ -1,6 +1,6 @@
 import parser from './parser/parser'
 import { compile_tokens } from './compiler'
-import { executor_instructions } from './executor'
+import { execute_instructions } from './executor'
 
 interface InstructionData {
   val: string
@@ -19,7 +19,7 @@ const runCode = (source_code: string): ProgramData => {
     // console.log(tokens)
     const instructions = compile_tokens(tokens)
     // console.log(instructions)
-    const result = executor_instructions(instructions)
+    const result = execute_instructions(instructions)
     // console.log(result)
     return {
       returnVal: 'test',
