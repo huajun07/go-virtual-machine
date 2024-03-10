@@ -14,6 +14,7 @@
     PrimaryExpressionToken,
     AssignmentStatementToken,
     IdentifierToken,
+    ShortVariableDeclarationToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -232,7 +233,8 @@ VarSpec = identifiers:IdentifierList _ rest:(
           { return new VariableDeclarationToken(identifiers, rest.varType, rest.expressions) }
 
 //* Short Variable Declarations
-ShortVarDecl = IdentifierList _ ":=" _ ExpressionList
+ShortVarDecl = identifiers:IdentifierList _ ":=" _ expressions:ExpressionList
+               { return new ShortVariableDeclarationToken(identifiers, expressions) }
 
 //* Function Declarations
 // Note: TypeParameters? is omitted from FunctionDecl as we do not support generics.

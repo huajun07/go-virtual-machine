@@ -31,6 +31,17 @@ export class SignatureToken extends Token {
 
 export abstract class DeclarationToken extends Token {}
 
+export class ShortVariableDeclarationToken extends DeclarationToken {
+  identifiers: string[]
+  expressions: ExpressionToken[]
+
+  constructor(identifiers: string[], expressions: ExpressionToken[]) {
+    super('short_variable_declaration')
+    this.identifiers = identifiers
+    this.expressions = expressions
+  }
+}
+
 export class VariableDeclarationToken extends DeclarationToken {
   identifiers: string[]
   // Note: A variable declaration must have at least one of varType / expressions.
