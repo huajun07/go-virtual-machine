@@ -7,7 +7,6 @@ export class Heap {
   size: number
   allocator: Allocator
   constructor(size: number) {
-    
     this.size = size
     this.memory = new Memory(size, 8)
     this.allocator = new Allocator(size, this.memory)
