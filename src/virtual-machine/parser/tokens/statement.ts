@@ -114,3 +114,12 @@ export class ForStatementToken extends Token {
     this.body = body
   }
 }
+
+export class DeferStatementToken extends Token {
+  expression: ExpressionToken
+
+  constructor(expression: ExpressionToken) {
+    super('defer')
+    this.expression = expression
+  }
+}

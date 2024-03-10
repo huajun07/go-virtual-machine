@@ -23,6 +23,7 @@
     IfStatementToken,
     BlockToken,
     ForStatementToken,
+    DeferStatementToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -358,7 +359,6 @@ Conversion = Type _ "(" _ Expression _ ")" _ ","? _ ")"
 //!            Note that labels do not work for now.
 //! TODO (P4): SwitchStmt should be tokenized.
 //! TODO (P3): GoStmt, SelectStmt should be tokenized when we add concurrency.
-//! TODO (P1): This is painfully incomplete.
 Statement  = Declaration / LabeledStmt / SimpleStmt /
 	           GoStmt / ReturnStmt / BreakStmt / ContinueStmt / GotoStmt /
              FallthroughStmt / Block / IfStmt / SwitchStmt / SelectStmt / ForStmt /
@@ -450,7 +450,7 @@ GotoStmt = "goto" _ Label
 FallthroughStmt = "fallthrough" { return new FallthroughStatementToken() }
 
 //* Defer Statements
-DeferStmt = "defer" _ Expression
+DeferStmt = "defer" _ expression:Expression { return new DeferStatementToken(expression) }
 
 
 
