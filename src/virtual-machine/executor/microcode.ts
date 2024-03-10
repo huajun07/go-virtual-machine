@@ -1,4 +1,10 @@
-import { Instruction, OpInstruction } from '../compiler'
+import {
+  BinaryInstruction,
+  Instruction,
+  LoadConstantInstruction,
+  OpInstruction,
+  UnaryInstruction,
+} from '../compiler/instructions'
 import { Heap } from '../heap'
 
 import { Context } from './context'
@@ -22,24 +28,18 @@ const execute_microcode = (
   instr: Instruction,
   heap: Heap,
 ) => {
-  switch (instr.tag) {
-    case 'BINOP':
-      {
-        const arg2 = context.popOS()
-        const arg1 = context.popOS()
-        context.pushOS(apply_binop(instr, arg1, arg2, heap))
-      }
-      break
-    case 'UNOP':
-      {
-        const arg1 = context.popOS()
-        context.pushOS(apply_unary(instr, arg1, heap))
-      }
-      break
-    case 'LDC':
-      // Check what type from the token
-      context.pushOS(heap.allocate_number(instr.val as number))
-      break
+  if (BinaryInstruction.is(instr)) {
+    const arg2 = context.popOS()
+    const arg1 = context.popOS()
+    context.pushOS(apply_binop(instr, arg1, arg2, heap))
+  } else if (UnaryInstruction.is(instr)) {
+    const arg1 = context.popOS()
+    context.pushOS(apply_unary(instr, arg1, heap))
+  } else if (LoadConstantInstruction.is(instr)) {
+    // Check what type from the token
+    context.pushOS(heap.allocate_number(instr.val as number))
+  } else {
+    throw Error('Invalid Instruction')
   }
 }
 

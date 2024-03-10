@@ -5,21 +5,13 @@ import {
   UnaryOperator,
 } from '../parser/tokens'
 
-type OpInstruction = {
-  tag: 'BINOP' | 'UNOP'
-  op: string
-}
-
-type LoadConstantInstruction = {
-  tag: 'LDC'
-  val: unknown
-}
-
-type DoneInstruction = {
-  tag: 'DONE'
-}
-
-type Instruction = OpInstruction | LoadConstantInstruction | DoneInstruction
+import {
+  BinaryInstruction,
+  DoneInstruction,
+  Instruction,
+  LoadConstantInstruction,
+  UnaryInstruction,
+} from './instructions'
 
 class Compiler {
   instructions: Instruction[] = []
@@ -27,18 +19,18 @@ class Compiler {
     if (BinaryOperator.is(token)) {
       this.compile(token.children[0])
       this.compile(token.children[1])
-      this.instructions.push({ tag: 'BINOP', op: token.name })
+      this.instructions.push(new BinaryInstruction(token.name))
     } else if (UnaryOperator.is(token)) {
       this.compile(token.children[0])
-      this.instructions.push({ tag: 'UNOP', op: token.name })
+      this.instructions.push(new UnaryInstruction(token.name))
     } else if (LiteralToken.is(token)) {
-      this.instructions.push({ tag: 'LDC', val: token.value })
+      this.instructions.push(new LoadConstantInstruction(token.value))
     }
   }
 
   compile_program(token: Token) {
     this.compile(token)
-    this.instructions.push({ tag: 'DONE' })
+    this.instructions.push(new DoneInstruction())
   }
 }
 
@@ -48,9 +40,4 @@ const compile_tokens = (token: Token) => {
   return compiler.instructions
 }
 
-export {
-  compile_tokens,
-  type Instruction,
-  type LoadConstantInstruction,
-  type OpInstruction,
-}
+export { compile_tokens }
