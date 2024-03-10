@@ -12,7 +12,8 @@
     VariableDeclarationToken,
     ConstantDeclarationToken,
     PrimaryExpressionToken,
-    AssignmentStatementToken
+    AssignmentStatementToken,
+    IdentifierToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -86,7 +87,8 @@ hex_digit     = [0-9a-fA-F]
 //! TODO (P4): Support comments.
 
 //* Identifiers
-identifier = @iden:$(letter (letter / unicode_digit)*) &{ return checkIdentifier(iden) }
+identifier = iden:$(letter (letter / unicode_digit)*) &{ return checkIdentifier(iden) }
+             { return new IdentifierToken(iden) }
 
 //* Integer Literals
 int_lit = number:binary_lit  { return IntegerLiteralToken.fromSource(number, 2) } /
