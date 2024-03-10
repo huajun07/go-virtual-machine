@@ -87,3 +87,30 @@ export class IfStatementToken extends Token {
     this.alternative = alternative
   }
 }
+
+export class ForStatementToken extends Token {
+  // There are 4 types of for loops:
+  // 1. For statement that iterates the body repeatedly.
+  // 2. For statements with a single condition.
+  // 3. For statements with a for clause (init, condition, post).
+  // 4. For statements with a range clause.
+  //! Note that range clauses are not supported for now. They will likely be a seperate class.
+
+  initialization?: SimpleStatementToken
+  condition?: ExpressionToken
+  post?: SimpleStatementToken
+  body: BlockToken
+
+  constructor(
+    initialization: SimpleStatementToken | undefined,
+    condition: ExpressionToken | undefined,
+    post: ExpressionToken | undefined,
+    body: BlockToken,
+  ) {
+    super('for')
+    this.initialization = initialization
+    this.condition = condition
+    this.post = post
+    this.body = body
+  }
+}

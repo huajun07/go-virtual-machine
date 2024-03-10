@@ -22,6 +22,7 @@
     FallthroughStatementToken,
     IfStatementToken,
     BlockToken,
+    ForStatementToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -355,6 +356,7 @@ Conversion = Type _ "(" _ Expression _ ")" _ ","? _ ")"
 //* Statements
 //! TODO (P5): LabeledStmt, GotoStmt are not tokenized as they're probably not so important.
 //!            Note that labels do not work for now.
+//! TODO (P4): SwitchStmt should be tokenized.
 //! TODO (P3): GoStmt, SelectStmt should be tokenized when we add concurrency.
 //! TODO (P1): This is painfully incomplete.
 Statement  = Declaration / LabeledStmt / SimpleStmt /
@@ -403,10 +405,17 @@ TypeCaseClause  = TypeSwitchCase _ ":" _ StatementList
 TypeSwitchCase  = "case" _ TypeList / "default"
 
 //* For Statements
-ForStmt   = "for" _ (Condition / ForClause / RangeClause)? Block
+//! TODO (P4): Support RangeClause in ForStmt.
+ForStmt   = "for" _
+            clause:(ForClause /
+                    cond:Condition { return {init: undefined, cond, post: undefined }}
+                    )?
+            _ body:Block
+            { return new ForStatementToken(clause?.init, clause?.cond, clause?.post, body)}
 Condition = Expression
 
-ForClause = InitStmt? _ ";" _ Condition? _ ";" _ PostStmt?
+ForClause = init:InitStmt? _ ";" _ cond:Condition? _ ";" _ post:PostStmt?
+            { return { init: init ?? undefined, cond: cond ?? undefined, post: post ?? undefined } }
 InitStmt  = SimpleStmt
 PostStmt  = SimpleStmt
 
