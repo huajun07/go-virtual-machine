@@ -104,7 +104,7 @@ export class Memory {
    * @param num_of_bytes Number of bytes to retrieve
    */
   get_bytes(addr: number, num_of_bytes = 1) {
-    this.get_bits(addr, bits_in_byte * num_of_bytes)
+    return this.get_bits(addr, bits_in_byte * num_of_bytes)
   }
 
   /**
@@ -119,7 +119,7 @@ export class Memory {
    * @param addr Starting byte
    */
   get_word(addr: number) {
-    this.get_bits(addr, bits_in_byte * this.word_size)
+    return this.get_bits(addr, bits_in_byte * this.word_size)
   }
 
   /**

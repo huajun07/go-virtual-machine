@@ -1,8 +1,8 @@
 class Context {
   PC = 0
-  OS: unknown[] = []
+  OS: number[] = []
 
-  pushOS(x: unknown) {
+  pushOS(x: number) {
     this.OS.push(x)
   }
 
@@ -14,6 +14,10 @@ class Context {
     for (const item of this.OS) {
       console.log(item)
     }
+  }
+
+  getRoots() {
+    return [...this.OS]
   }
 }
 
