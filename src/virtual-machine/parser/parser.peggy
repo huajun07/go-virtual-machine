@@ -16,6 +16,7 @@
     IdentifierToken,
     ShortVariableDeclarationToken,
     IncDecStatementToken,
+    ReturnStatementToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -412,7 +413,8 @@ RecvStmt   = (ExpressionList _ "=" / IdentifierList _ ":=")? RecvExpr
 RecvExpr   = Expression
 
 //* Return Statements
-ReturnStmt = "return" _ ExpressionList?
+ReturnStmt = "return" _ returns:ExpressionList?
+             { return new ReturnStatementToken(returns) }
 
 //* Break Statements
 BreakStmt = "break" _ Label?

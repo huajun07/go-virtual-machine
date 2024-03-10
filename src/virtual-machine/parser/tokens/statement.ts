@@ -31,3 +31,12 @@ export class IncDecStatementToken extends Token {
     this.operation = operation
   }
 }
+
+export class ReturnStatementToken extends Token {
+  returns?: ExpressionToken[]
+
+  constructor(returns?: ExpressionToken[]) {
+    super('return')
+    this.returns = returns
+  }
+}
