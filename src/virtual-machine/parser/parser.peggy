@@ -12,6 +12,7 @@
     VariableDeclarationToken,
     ConstantDeclarationToken,
     PrimaryExpressionToken,
+    AssignmentStatementToken
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -249,7 +250,7 @@ Receiver   = Parameters
 //* =============== Expressions ===============
 //* Operands (Partial)
 // OperandName [ TypeArgs ] is excluded as generics are not supported
-Operand     = Literal / "(" _ @Expression _ ")"
+Operand     = Literal / OperandName / "(" _ @Expression _ ")"
 Literal     = BasicLit / CompositeLit / FunctionLit
 //! TODO (P3): Add support for imaginary_lit.
 //! TODO (P5): Add support for rune_lit.
@@ -348,7 +349,7 @@ Statement  = Declaration / LabeledStmt / SimpleStmt /
              DeferStmt
 // Note that EmptyStmt is removed from SimpleStmt to simplify parsing.
 // Instead, users of Statement should allow it to be empty.
-SimpleStmt = ExpressionStmt / SendStmt / IncDecStmt / Assignment / ShortVarDecl
+SimpleStmt = SendStmt / IncDecStmt / Assignment / ShortVarDecl / ExpressionStmt
 
 //* Labeled Statements
 LabeledStmt = Label _ ":" _ Statement
@@ -365,8 +366,9 @@ Channel  = Expression
 IncDecStmt = Expression _ ("++" / "--")
 
 //* Assignment Statements
-Assignment = ExpressionList _ assign_op _ ExpressionList
-assign_op = (add_op / mul_op)? "="
+Assignment = left:ExpressionList _ op:$assign_op _ right:ExpressionList
+             { return new AssignmentStatementToken(left, op, right) }
+assign_op  = [\*\+]? "="
 
 //* If Statements
 IfStmt = "if" _ (SimpleStmt _ ";")? _ Expression _ Block _ ("else" _ (IfStmt / Block))?
