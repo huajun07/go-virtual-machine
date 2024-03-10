@@ -20,6 +20,8 @@
     BreakStatementToken,
     ContinueStatementToken,
     FallthroughStatementToken,
+    IfStatementToken,
+    BlockToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -190,7 +192,7 @@ ChannelType = ("chan" / "chan" _ "<-" / "<-" _ "chan") _ ElementType
 
 
 //* =============== Blocks ===============
-Block = "{" _ @StatementList _ "}"
+Block = "{" _ statements:StatementList _ "}" { return new BlockToken(statements) }
 StatementList = (_ @Statement _ ";")*
 
 
@@ -384,7 +386,9 @@ Assignment = left:ExpressionList _ op:$assign_op _ right:ExpressionList
 assign_op  = [\*\+]? "="
 
 //* If Statements
-IfStmt = "if" _ (SimpleStmt _ ";")? _ Expression _ Block _ ("else" _ (IfStmt / Block))?
+IfStmt = "if" _ init:(@SimpleStmt _ ";")? _ pred:Expression _ cons:Block _
+         alt:("else" _ @(IfStmt / Block))?
+         { return new IfStatementToken(init, pred, cons, alt) }
 
 //* Switch Statements
 SwitchStmt      = ExprSwitchStmt / TypeSwitchStmt
