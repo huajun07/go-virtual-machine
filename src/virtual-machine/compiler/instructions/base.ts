@@ -7,11 +7,11 @@ export abstract class Instruction {
 }
 
 export class DoneInstruction extends Instruction {
-    constructor() {
-        super("DONE")
-    }
+  constructor() {
+    super('DONE')
+  }
 
-    static is(instr: Instruction): instr is DoneInstruction {
-        return instr.tag === 'DONE'
-    }
+  static is(instr: Instruction): instr is DoneInstruction {
+    return instr.tag === 'DONE'
+  }
 }
