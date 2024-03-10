@@ -8,7 +8,7 @@ class Context {
 
   popOS() {
     const last = this.OS.pop()
-    if(last === undefined) throw Error("OS Empty!")
+    if (last === undefined) throw Error('OS Empty!')
     return last
   }
 

@@ -23,7 +23,7 @@ export class Heap {
     this.allocate_literals()
   }
 
-  allocate_literals(){
+  allocate_literals() {
     this.TRUE_ADDR = this.allocator.allocate(1)
     this.set_tag(this.TRUE_ADDR, TAG.TRUE)
     this.set_num_children(this.TRUE_ADDR, 0)
@@ -36,13 +36,13 @@ export class Heap {
   }
 
   get_value(addr: number) {
-    if(this.is_number(addr)){
-        return this.get_number(addr)
-    }else if(this.is_boolean(addr)){
-        return this.get_boolean(addr)
+    if (this.is_number(addr)) {
+      return this.get_number(addr)
+    } else if (this.is_boolean(addr)) {
+      return this.get_boolean(addr)
     }
-    throw Error("Unknown Type")
-    }
+    throw Error('Unknown Type')
+  }
 
   /**
    *                [ Word Format ]
@@ -95,7 +95,7 @@ export class Heap {
 
   // -------------- [ Boolean ] -------------------
   allocate_boolean(val: boolean) {
-    if(val) return this.TRUE_ADDR
+    if (val) return this.TRUE_ADDR
     else return this.FALSE_ADDR
   }
 

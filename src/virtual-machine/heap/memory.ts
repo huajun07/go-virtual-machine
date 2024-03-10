@@ -18,6 +18,26 @@ export class Memory {
     for (let i = 0; i < arr_size; i++) this.array.push(0)
   }
 
+  check_valid(num_bits: number, bit_offset: number) {
+    const bits_in_word = this.word_size * bits_in_byte
+    if (num_bits > bits_in_word || num_bits < 0)
+      throw Error('Invalid number of bits')
+    if (bit_offset + num_bits > bits_in_word) throw Error('Exceed word length')
+  }
+
+  /**
+   * Figure out which 32 bit block to start in and what is the offset
+   */
+  get_block_and_offset(addr: number, bit_offset: number) {
+    addr *= this.word_size
+    const block_offset =
+      (bit_offset + addr * bits_in_byte) % (bits_in_byte * bytes_in_int)
+    const block_idx = Math.floor(
+      (addr + Math.floor(bit_offset / bits_in_byte)) / bytes_in_int,
+    )
+    return [block_idx, block_offset]
+  }
+
   /**
    * @param addr Starting Byte of the Memory
    * @param num_bits Number of bits to retrieve
@@ -25,18 +45,14 @@ export class Memory {
    * @returns Number which is the value at the requested position
    */
   get_bits(addr: number, num_bits: number, bit_offset = 0) {
-    const bits_in_word = this.word_size * bits_in_byte
-    if (num_bits > bits_in_word || num_bits < 0)
-      throw Error('Invalid number of bits')
-    if (bit_offset + num_bits > bits_in_word) throw Error('Exceed word length')
-
-    addr *= this.word_size
-    let block_offset = (bit_offset + addr * bits_in_byte) % (bits_in_byte * bytes_in_int)
-    let block_idx = Math.floor((addr + Math.floor(bit_offset / bits_in_byte)) / bytes_in_int)
+    this.check_valid(num_bits, bit_offset)
+    let [block_idx, block_offset] = this.get_block_and_offset(addr, bit_offset)
+    /**
+     * Iterate through the 32 bit blocks and sum the values to get the answer
+     */
     let bits_covered = 0
     let carry = 1
     let val = 0
-    
     while (bits_covered < num_bits) {
       const valid_bits_in_block = Math.min(
         num_bits - bits_covered,
@@ -64,22 +80,19 @@ export class Memory {
    * @returns Number which is the value at the requested position
    */
   set_bits(val: number, addr: number, num_bits: number, bit_offset = 0) {
-    const bits_in_word = this.word_size * bits_in_byte
-    if (num_bits > bits_in_word || num_bits < 0)
-      throw Error('Invalid number of bits')
-    if (bit_offset >= bits_in_word) throw Error('Exceed word length')
+    this.check_valid(num_bits, bit_offset)
+    let [block_idx, block_offset] = this.get_block_and_offset(addr, bit_offset)
 
-    addr *= this.word_size
-    let block_offset = (bit_offset + addr * bits_in_byte) % (bits_in_byte * bytes_in_int)
-    let block_idx = Math.floor((addr + Math.floor(bit_offset / bits_in_byte)) / bytes_in_int)
+    /**
+     * Iterate through the 32 bit blocks and set the value in that block
+     */
     let bits_covered = 0
-
     while (bits_covered < num_bits) {
       const valid_bits_in_block = Math.min(
         num_bits - bits_covered,
         bytes_in_int * bits_in_byte - block_offset,
       )
-      
+
       const mask = ~((2 ** valid_bits_in_block - 1) * 2 ** block_offset)
       const val_mask =
         ((2 ** valid_bits_in_block - 1) & val) * 2 ** block_offset

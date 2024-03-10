@@ -29,6 +29,8 @@ export class Allocator {
     this.constants = constants
   }
 
+  // [********** Linked List Helper Funcs ****************]
+
   /**
    * Doubly Linked List Implementation for LogN Freelists
    * A Node is the first node if prev_node = cur_addr
@@ -58,6 +60,8 @@ export class Allocator {
       this.set_prev(next_addr, prev_addr === addr ? next_addr : prev_addr)
     }
   }
+
+  // [********** Buddy Block Allocation + Free-ing ****************]
 
   allocate(size: number) {
     const try_allocate = () => {
@@ -101,6 +105,8 @@ export class Allocator {
     this.add_list(addr, lvl)
     return addr + (1 << lvl)
   }
+
+  // [********** Garbage Collection: Mark and Sweep ****************]
 
   is_marked(addr: number) {
     return this.memory.get_bits(addr, 1, 6) === 1

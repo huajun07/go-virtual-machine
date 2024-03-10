@@ -1,12 +1,13 @@
-import { Heap } from "../heap"
+import { Heap } from '../heap'
 
 // Currently temporarily cast to expected type
 type BinaryOpFunc = (x: number, y: number, heap: Heap) => number
 type BinaryOpType = Record<string, BinaryOpFunc>
 
-const binary_num_to_bool_func = (func: (x : number, y: number) => boolean ) => {
+const binary_num_to_bool_func = (func: (x: number, y: number) => boolean) => {
   return (x: number, y: number, heap: Heap) => {
-    if (!heap.is_number(x) || !heap.is_number(y)) throw Error("Error Expected Number")
+    if (!heap.is_number(x) || !heap.is_number(y))
+      throw Error('Error Expected Number')
     const arg1 = heap.get_number(x)
     const arg2 = heap.get_number(y)
     const res = heap.allocate_boolean(func(arg1, arg2))
@@ -23,10 +24,10 @@ const rel_op: BinaryOpType = {
   greater_or_equal: binary_num_to_bool_func((x: number, y: number) => x >= y),
 }
 
-
-const binary_num_to_num_func = (func: (x : number, y: number) => number ) => {
+const binary_num_to_num_func = (func: (x: number, y: number) => number) => {
   return (x: number, y: number, heap: Heap) => {
-    if (!heap.is_number(x) || !heap.is_number(y)) throw Error("Error Expected Number")
+    if (!heap.is_number(x) || !heap.is_number(y))
+      throw Error('Error Expected Number')
     const arg1 = heap.get_number(x)
     const arg2 = heap.get_number(y)
     const res = heap.allocate_number(func(arg1, arg2))
@@ -51,10 +52,12 @@ const mul_op: BinaryOpType = {
   bit_clear: binary_num_to_num_func((x: number, y: number) => x & ~y),
 }
 
-
-const binary_bool_to_bool_func = (func: (x : boolean, y: boolean) => boolean ) => {
+const binary_bool_to_bool_func = (
+  func: (x: boolean, y: boolean) => boolean,
+) => {
   return (x: number, y: number, heap: Heap) => {
-    if (!heap.is_boolean(x) || !heap.is_boolean(y)) throw Error("Error Expected Number")
+    if (!heap.is_boolean(x) || !heap.is_boolean(y))
+      throw Error('Error Expected Number')
     const arg1 = heap.get_boolean(x)
     const arg2 = heap.get_boolean(y)
     const res = heap.allocate_boolean(func(arg1, arg2))
@@ -70,24 +73,23 @@ const binary_op: BinaryOpType = {
   ...mul_op,
 }
 
-const unary_bool_to_bool_func = (func: (x : boolean) => boolean ) => {
+const unary_bool_to_bool_func = (func: (x: boolean) => boolean) => {
   return (x: number, heap: Heap) => {
-    if (!heap.is_boolean(x)) throw Error("Error Expected Number")
+    if (!heap.is_boolean(x)) throw Error('Error Expected Number')
     const arg1 = heap.get_boolean(x)
     const res = heap.allocate_boolean(func(arg1))
     return res
   }
 }
 
-const unary_num_to_num_func = (func: (x : number) => number ) => {
+const unary_num_to_num_func = (func: (x: number) => number) => {
   return (x: number, heap: Heap) => {
-    if (!heap.is_number(x)) throw Error("Error Expected Number")
+    if (!heap.is_number(x)) throw Error('Error Expected Number')
     const arg1 = heap.get_number(x)
     const res = heap.allocate_number(func(arg1))
     return res
   }
 }
-
 
 type UnaryOpFunc = (x: number, heap: Heap) => number
 type UnaryOpType = Record<string, UnaryOpFunc>
