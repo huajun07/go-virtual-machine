@@ -17,6 +17,9 @@
     ShortVariableDeclarationToken,
     IncDecStatementToken,
     ReturnStatementToken,
+    BreakStatementToken,
+    ContinueStatementToken,
+    FallthroughStatementToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -348,6 +351,9 @@ Conversion = Type _ "(" _ Expression _ ")" _ ","? _ ")"
 
 //* =============== Statements ===============
 //* Statements
+//! TODO (P5): LabeledStmt, GotoStmt are not tokenized as they're probably not so important.
+//!            Note that labels do not work for now.
+//! TODO (P3): GoStmt, SelectStmt should be tokenized when we add concurrency.
 //! TODO (P1): This is painfully incomplete.
 Statement  = Declaration / LabeledStmt / SimpleStmt /
 	           GoStmt / ReturnStmt / BreakStmt / ContinueStmt / GotoStmt /
@@ -417,16 +423,18 @@ ReturnStmt = "return" _ returns:ExpressionList?
              { return new ReturnStatementToken(returns) }
 
 //* Break Statements
-BreakStmt = "break" _ Label?
+//! TODO (P5): Labels are not tokenized.
+BreakStmt = "break" _ Label? { return new BreakStatementToken() }
 
 //* Continue Statements
-ContinueStmt = "continue" _ Label?
+//! TODO (P5): Labels are not tokenized.
+ContinueStmt = "continue" _ Label? { return new ContinueStatementToken() }
 
 //* Goto Statements
 GotoStmt = "goto" _ Label
 
 //* Fallthrough Statements
-FallthroughStmt = "fallthrough"
+FallthroughStmt = "fallthrough" { return new FallthroughStatementToken() }
 
 //* Defer Statements
 DeferStmt = "defer" _ Expression

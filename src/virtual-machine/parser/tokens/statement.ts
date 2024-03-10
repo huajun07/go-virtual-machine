@@ -40,3 +40,21 @@ export class ReturnStatementToken extends Token {
     this.returns = returns
   }
 }
+
+export class BreakStatementToken extends Token {
+  constructor() {
+    super('break')
+  }
+}
+
+export class ContinueStatementToken extends Token {
+  constructor() {
+    super('continue')
+  }
+}
+
+export class FallthroughStatementToken extends Token {
+  constructor() {
+    super('fallthrough')
+  }
+}
