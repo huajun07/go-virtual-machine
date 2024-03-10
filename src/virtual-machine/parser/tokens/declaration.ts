@@ -1,13 +1,15 @@
 import { Token } from './base'
 import { BlockToken } from './block'
-import { ExpressionToken } from './statement'
+import { ExpressionToken } from './expressions'
 import { TypeToken } from './type'
 
-export abstract class TopLevelDeclarationToken extends Token {}
+export type TopLevelDeclarationToken =
+  | DeclarationToken
+  | FunctionDeclarationToken
 
 //! TODO (P1): Add the other types of Top Level Declarations.
 
-export class FunctionDeclarationToken extends TopLevelDeclarationToken {
+export class FunctionDeclarationToken extends Token {
   name: string
   signature: SignatureToken
   body?: BlockToken
@@ -29,10 +31,9 @@ export class SignatureToken extends Token {
 
 export abstract class DeclarationToken extends Token {}
 
-//! TODO (P1): Add the other types of Declarations.
-
 export class VariableDeclarationToken extends DeclarationToken {
   identifiers: string[]
+  // Note: A variable declaration must have at least one of varType / expressions.
   varType?: TypeToken
   expressions?: ExpressionToken[]
 
@@ -42,6 +43,24 @@ export class VariableDeclarationToken extends DeclarationToken {
     expressions?: ExpressionToken[],
   ) {
     super('variable_declaration')
+    this.identifiers = identifiers
+    this.varType = varType
+    this.expressions = expressions
+  }
+}
+
+export class ConstantDeclarationToken extends DeclarationToken {
+  identifiers: string[]
+  varType?: TypeToken
+  expressions?: ExpressionToken[]
+
+  constructor(
+    identifiers: string[],
+    varType?: TypeToken,
+    expressions?: ExpressionToken[],
+  ) {
+    super('const_declaration')
+    console.log(identifiers, varType, expressions)
     this.identifiers = identifiers
     this.varType = varType
     this.expressions = expressions

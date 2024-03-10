@@ -10,6 +10,8 @@
     ImportToken,
     FunctionDeclarationToken,
     VariableDeclarationToken,
+    ConstantDeclarationToken,
+    PrimaryExpressionToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -187,12 +189,20 @@ StatementList = (_ @Statement _ ";")*
 
 
 //* =============== Declarations and Scope ===============
+//! TODO (P5): Tokenize TypeDecl.
 Declaration  = ConstDecl / TypeDecl / VarDecl
+//! TODO (P4): Tokenize MethodDecl.
 TopLevelDecl = Declaration / FunctionDecl / MethodDecl
 
 //* Constant Declarations
-ConstDecl      = "const" (ConstSpec / "(" (ConstSpec ";")* ")")
-ConstSpec      = IdentifierList (Type? _ "=" _ ExpressionList)?
+//! TODO (P5): Multiple declarations (optionally semicolon-separated) is not supported.
+ConstDecl      = "const" _ @ConstSpec
+ConstSpec      = identifiers:IdentifierList rest:(
+                    varType:Type? _ "=" _ expressions:ExpressionList
+                    { return { varType, expressions } }
+                 )?
+                 { return new ConstantDeclarationToken(identifiers, rest.varType, rest.expressions) }
+
 IdentifierList = head:identifier tail:(_ "," _ @identifier _)* { return [head, ...tail] }
 ExpressionList = head:Expression tail:(_ "," _ @Expression _)* { return [head, ...tail] }
 
@@ -207,7 +217,7 @@ TypeParamDecl  = IdentifierList _ TypeConstraint
 TypeConstraint = TypeElem
 
 //* Variable Declarations
-//! TODO (P5): Multiple declarations (semicolon-separated) is not supported.
+//! TODO (P5): Multiple declarations (optionally semicolon-separated) is not supported.
 VarDecl = "var" _ @VarSpec
 VarSpec = identifiers:IdentifierList _ rest:(
             varType:Type expressions:(_ "=" _ expressions:ExpressionList)? 
@@ -238,7 +248,8 @@ Receiver   = Parameters
 
 //* =============== Expressions ===============
 //* Operands (Partial)
-Operand     = Literal / OperandName _ TypeArgs? / "(" _ @Expression _ ")"
+// OperandName [ TypeArgs ] is excluded as generics are not supported
+Operand     = Literal / "(" _ @Expression _ ")"
 Literal     = BasicLit / CompositeLit / FunctionLit
 //! TODO (P3): Add support for imaginary_lit.
 //! TODO (P5): Add support for rune_lit.
@@ -262,7 +273,9 @@ Element      = Expression / LiteralValue
 FunctionLit = "func" _ Signature _ FunctionBody
 
 //* Primary Expressions
-PrimaryExpr   = MethodExpr _ PrimaryExprRest? / Operand _ PrimaryExprRest? / Conversion _ PrimaryExprRest?
+//! TODO (P5): MethodExpr and Conversion are not supported.
+PrimaryExpr     = operand:Operand _ rest:PrimaryExprRest? { return new PrimaryExpressionToken(operand, rest) }
+//! TODO (P2): Tokenize PrimaryExprTerm.
 PrimaryExprRest = PrimaryExprTerm _ PrimaryExprRest?
 // This PrimaryExprTerm is added to fix left recursion.
 PrimaryExprTerm = Selector / Index / Slice / TypeAssertion / Arguments
