@@ -8,11 +8,12 @@ export class Allocator {
   freelist: number[]
   max_level: number
   context: Context
-  constructor(size: number, memory: Memory) {
-    size = Math.floor(size / 8)
+  constants: number[] = []
+  constructor(size: number, memory: Memory, context: Context) {
+    this.context = context
     this.size = size
     this.memory = memory
-    this.max_level = this.calc_level(size / 8)
+    this.max_level = this.calc_level(size)
     this.freelist = []
     for (let i = 0; i < this.max_level; i++) this.freelist.push(-1)
     let cur_addr = 0
@@ -23,6 +24,16 @@ export class Allocator {
       cur_addr += 2 ** lvl
     }
   }
+
+  set_constants(constants: number[]) {
+    this.constants = constants
+  }
+
+  /**
+   * Doubly Linked List Implementation for LogN Freelists
+   * A Node is the first node if prev_node = cur_addr
+   * Similarly a node is the last node if next_node = cur_addr
+   */
 
   add_list(addr: number, lvl: number) {
     this.set_level(addr, lvl)
@@ -92,18 +103,18 @@ export class Allocator {
   }
 
   is_marked(addr: number) {
-    return this.memory.get_bits(addr * 8, 1, 6) === 1
+    return this.memory.get_bits(addr, 1, 6) === 1
   }
   set_mark(addr: number, mark: boolean) {
-    this.memory.set_bits(mark ? 1 : 0, addr * 8, 1, 6)
+    this.memory.set_bits(mark ? 1 : 0, addr, 1, 6)
   }
 
   get_num_children(addr: number) {
-    return this.memory.get_bytes(addr * 8 + 2, 2)
+    return this.memory.get_bytes(addr + 2, 2)
   }
 
   get_child(addr: number, index: number) {
-    return this.memory.get_word((addr + index + 1) * 8)
+    return this.memory.get_word(addr + index + 1)
   }
 
   mark(addr: number) {
@@ -116,7 +127,7 @@ export class Allocator {
   }
 
   mark_and_sweep() {
-    const roots = this.context.getRoots()
+    const roots = [...this.context.getRoots(), ...this.constants]
     for (const root of roots) {
       this.mark(root)
     }
@@ -129,35 +140,35 @@ export class Allocator {
   }
 
   get_prev(addr: number) {
-    return this.memory.get_bits(addr * 8, 29, 6)
+    return this.memory.get_bits(addr, 29, 6)
   }
 
   set_prev(addr: number, val: number) {
-    this.memory.set_bits(val, addr * 8, 29, 6)
+    this.memory.set_bits(val, addr, 29, 6)
   }
 
   get_next(addr: number) {
-    return this.memory.get_bits(addr * 8, 29, 35)
+    return this.memory.get_bits(addr, 29, 35)
   }
 
   set_next(addr: number, val: number) {
-    this.memory.set_bits(val, addr * 8, 29, 35)
+    this.memory.set_bits(val, addr, 29, 35)
   }
 
   set_level(addr: number, lvl: number) {
-    return this.memory.set_bits(lvl, addr * 8, 5, 1)
+    this.memory.set_bits(lvl, addr, 5, 1)
   }
 
   get_level(addr: number) {
-    return this.memory.get_bits(addr * 8, 5, 1)
+    return this.memory.get_bits(addr, 5, 1)
   }
 
   is_free(addr: number) {
-    return this.memory.get_bits(addr * 8, 1) === 1
+    return this.memory.get_bits(addr, 1) === 1
   }
 
   set_free(addr: number, free: boolean) {
-    this.memory.get_bits(free ? 1 : 0, addr * 8, 1)
+    this.memory.set_bits(free ? 1 : 0, addr, 1)
   }
 
   calc_level(x: number) {

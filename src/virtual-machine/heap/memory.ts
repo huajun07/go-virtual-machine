@@ -13,7 +13,7 @@ export class Memory {
     if ((Math.log(word_size) / Math.log(2)) % 1 !== 0)
       throw Error('Word Size must be power of 2')
     this.word_size = word_size
-    const arr_size = Math.ceil(size / bytes_in_int)
+    const arr_size = Math.ceil((size * word_size) / bytes_in_int)
     this.array = []
     for (let i = 0; i < arr_size; i++) this.array.push(0)
   }
@@ -28,13 +28,15 @@ export class Memory {
     const bits_in_word = this.word_size * bits_in_byte
     if (num_bits > bits_in_word || num_bits < 0)
       throw Error('Invalid number of bits')
-    const offset = (addr % this.word_size) * bits_in_byte + bit_offset
-    if (offset + num_bits > bits_in_word) throw Error('Exceed word length')
-    let block_offset = bit_offset + (addr % bytes_in_int) * bits_in_byte
-    let block_idx = Math.floor(addr / bytes_in_int)
+    if (bit_offset + num_bits > bits_in_word) throw Error('Exceed word length')
+
+    addr *= this.word_size
+    let block_offset = (bit_offset + addr * bits_in_byte) % (bits_in_byte * bytes_in_int)
+    let block_idx = Math.floor((addr + Math.floor(bit_offset / bits_in_byte)) / bytes_in_int)
     let bits_covered = 0
     let carry = 1
     let val = 0
+    
     while (bits_covered < num_bits) {
       const valid_bits_in_block = Math.min(
         num_bits - bits_covered,
@@ -56,7 +58,7 @@ export class Memory {
 
   /**
    * @param val Value to update
-   * @param addr Starting Byte of the Memory
+   * @param addr Starting Word of the Memory
    * @param num_bits Number of bits to retrieve
    * @param bit_offset Bit offset within the byte ([0 - 7]: Defaults to 0)
    * @returns Number which is the value at the requested position
@@ -65,21 +67,25 @@ export class Memory {
     const bits_in_word = this.word_size * bits_in_byte
     if (num_bits > bits_in_word || num_bits < 0)
       throw Error('Invalid number of bits')
-    const offset = (addr % this.word_size) * bits_in_byte + bit_offset
-    if (offset + num_bits > bits_in_word) throw Error('Exceed word length')
-    let block_offset = bit_offset + (addr % bytes_in_int) * bits_in_byte
-    let block_idx = Math.floor(addr / bytes_in_int)
+    if (bit_offset >= bits_in_word) throw Error('Exceed word length')
+
+    addr *= this.word_size
+    let block_offset = (bit_offset + addr * bits_in_byte) % (bits_in_byte * bytes_in_int)
+    let block_idx = Math.floor((addr + Math.floor(bit_offset / bits_in_byte)) / bytes_in_int)
     let bits_covered = 0
+
     while (bits_covered < num_bits) {
       const valid_bits_in_block = Math.min(
         num_bits - bits_covered,
         bytes_in_int * bits_in_byte - block_offset,
       )
+      
+      const mask = ~((2 ** valid_bits_in_block - 1) * 2 ** block_offset)
       const val_mask =
         ((2 ** valid_bits_in_block - 1) & val) * 2 ** block_offset
 
+      this.array[block_idx] &= mask
       this.array[block_idx] |= val_mask
-      this.array[block_idx] &= val_mask
 
       val -= (2 ** valid_bits_in_block - 1) & val
       val = Math.floor(val / 2 ** valid_bits_in_block)
@@ -92,34 +98,43 @@ export class Memory {
 
   /**
    * @param val Value to update
-   * @param addr Starting byte
+   * @param addr Starting Word
    * @param num_of_bytes Number of bytes to modify
    */
-  set_bytes(val: number, addr: number, num_of_bytes = 1) {
-    this.set_bits(val, addr, bits_in_byte * num_of_bytes)
+  set_bytes(val: number, addr: number, num_of_bytes: number, bytes_offset = 0) {
+    this.set_bits(
+      val,
+      addr,
+      bits_in_byte * num_of_bytes,
+      bytes_offset * bits_in_byte,
+    )
   }
 
   /**
-   * @param addr Starting byte
+   * @param addr Starting Word
    * @param num_of_bytes Number of bytes to retrieve
    */
-  get_bytes(addr: number, num_of_bytes = 1) {
-    return this.get_bits(addr, bits_in_byte * num_of_bytes)
+  get_bytes(addr: number, num_of_bytes: number, bytes_offset = 0) {
+    return this.get_bits(
+      addr,
+      bits_in_byte * num_of_bytes,
+      bytes_offset * bits_in_byte,
+    )
   }
 
   /**
    * @param val Value to update
-   * @param addr Starting byte
+   * @param addr Starting word index
    */
   set_word(val: number, addr: number) {
-    this.set_bits(val, addr, bits_in_byte * this.word_size)
+    this.set_bits(val, addr * this.word_size, bits_in_byte * this.word_size)
   }
 
   /**
-   * @param addr Starting byte
+   * @param addr Starting word index
    */
   get_word(addr: number) {
-    return this.get_bits(addr, bits_in_byte * this.word_size)
+    return this.get_bits(addr * this.word_size, bits_in_byte * this.word_size)
   }
 
   /**
