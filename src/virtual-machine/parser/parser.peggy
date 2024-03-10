@@ -15,6 +15,7 @@
     AssignmentStatementToken,
     IdentifierToken,
     ShortVariableDeclarationToken,
+    IncDecStatementToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -309,33 +310,33 @@ UnaryExpr  = PrimaryExpr /
              op:unary_op _ expr:UnaryExpr { return op(expr) }
 
 // Operators are parsed into a function, that can be applied on operands to construct a token.
-rel_op      = "==" { return makeBinaryOperator("equal") } /
-              "!=" { return makeBinaryOperator("not_equal") } /
-              "<" { return makeBinaryOperator("less") } /
-              "<=" { return makeBinaryOperator("less_or_equal") } /
-              ">" { return makeBinaryOperator("greater") } /
-              ">=" { return makeBinaryOperator("greater_or_equal") }
-add_op      = "+" { return makeBinaryOperator("sum") } /
-              "-" { return makeBinaryOperator("difference") } /
-              "|" { return makeBinaryOperator("bitwise_or") } /
-              "^" { return makeBinaryOperator("bitwise_xor") }
-mul_op      = "*" { return makeBinaryOperator("product") } /
-              "/" { return makeBinaryOperator("quotient") } /
-              "%" { return makeBinaryOperator("remainder") } /
-              "<<" { return makeBinaryOperator("left_shift") } /
-              ">>" { return makeBinaryOperator("right_shift") } /
-              "&" { return makeBinaryOperator("bitwise_and") } /
-              "&^" { return makeBinaryOperator("bit_clear") }
-disjunct_op = "||" { return makeBinaryOperator("conditional_or") }
-conjunct_op = "&&" { return makeBinaryOperator("conditional_and") }
+rel_op      = "==" { return BinaryOperator.fromSource("equal") } /
+              "!=" { return BinaryOperator.fromSource("not_equal") } /
+              "<" { return BinaryOperator.fromSource("less") } /
+              "<=" { return BinaryOperator.fromSource("less_or_equal") } /
+              ">" { return BinaryOperator.fromSource("greater") } /
+              ">=" { return BinaryOperator.fromSource("greater_or_equal") }
+add_op      = "+" { return BinaryOperator.fromSource("sum") } /
+              "-" { return BinaryOperator.fromSource("difference") } /
+              "|" { return BinaryOperator.fromSource("bitwise_or") } /
+              "^" { return BinaryOperator.fromSource("bitwise_xor") }
+mul_op      = "*" { return BinaryOperator.fromSource("product") } /
+              "/" { return BinaryOperator.fromSource("quotient") } /
+              "%" { return BinaryOperator.fromSource("remainder") } /
+              "<<" { return BinaryOperator.fromSource("left_shift") } /
+              ">>" { return BinaryOperator.fromSource("right_shift") } /
+              "&" { return BinaryOperator.fromSource("bitwise_and") } /
+              "&^" { return BinaryOperator.fromSource("bit_clear") }
+disjunct_op = "||" { return BinaryOperator.fromSource("conditional_or") }
+conjunct_op = "&&" { return BinaryOperator.fromSource("conditional_and") }
 
-unary_op   = "+" { return makeUnaryOperator("plus") } / // Note: This operator is unnamed in Golang specs.
-             "-" { return makeUnaryOperator("negation") } /
-             "!" { return makeUnaryOperator("not") } /
-             "^" { return makeUnaryOperator("bitwise_complement") } /
-             "*" { return makeUnaryOperator("indirection") } /
-             "&" { return makeUnaryOperator("address") } /
-             "<-" { return makeUnaryOperator("receive") }
+unary_op   = "+" { return UnaryOperator.fromSource("plus") } / // Note: This operator is unnamed in Golang specs.
+             "-" { return UnaryOperator.fromSource("negation") } /
+             "!" { return UnaryOperator.fromSource("not") } /
+             "^" { return UnaryOperator.fromSource("bitwise_complement") } /
+             "*" { return UnaryOperator.fromSource("indirection") } /
+             "&" { return UnaryOperator.fromSource("address") } /
+             "<-" { return UnaryOperator.fromSource("receive") }
 
 //* Conversions
 Conversion = Type _ "(" _ Expression _ ")" _ ","? _ ")"
@@ -367,7 +368,8 @@ SendStmt = Channel _ "<-" _ Expression
 Channel  = Expression
 
 //* IncDec Statements
-IncDecStmt = Expression _ ("++" / "--")
+IncDecStmt = expression:Expression _ op:("++" / "--")
+             { return new IncDecStatementToken(expression, op) }
 
 //* Assignment Statements
 Assignment = left:ExpressionList _ op:$assign_op _ right:ExpressionList

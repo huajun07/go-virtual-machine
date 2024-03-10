@@ -6,18 +6,28 @@ export type StatementToken = ExpressionToken
 
 export class AssignmentStatementToken extends Token {
   left: ExpressionToken[]
-  /** One of "=", "+=" and "*=" */
-  operation: string
+  operation: '=' | '+=' | '*='
   right: ExpressionToken[]
 
   constructor(
     left: ExpressionToken[],
-    operation: string,
+    operation: '=' | '+=' | '*=',
     right: ExpressionToken[],
   ) {
     super('assignment')
     this.left = left
     this.operation = operation
     this.right = right
+  }
+}
+
+export class IncDecStatementToken extends Token {
+  expression: ExpressionToken
+  operation: '++' | '--'
+
+  constructor(expression: ExpressionToken, operation: '++' | '--') {
+    super('inc_dec')
+    this.expression = expression
+    this.operation = operation
   }
 }
