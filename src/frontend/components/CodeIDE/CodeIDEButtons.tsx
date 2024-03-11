@@ -33,7 +33,7 @@ export const CodeIDEButtons = (props: CodeIDEButtonProps) => {
       >
         <Box p="10px">Heap Size:</Box>
         <NumberInput
-          backgroundColor="white"
+          backgroundColor={useColorModeValue('white', 'gray.800')}
           w="20%"
           step={5}
           value={props.heapsize}
