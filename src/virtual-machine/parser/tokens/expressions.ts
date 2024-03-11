@@ -9,16 +9,18 @@ export type ExpressionToken =
   | BinaryOperator
   | PrimaryExpressionToken
 
-export type OperandToken = LiteralToken | IdentifierToken | ExpressionToken
+export type OperandToken = IdentifierToken | ExpressionToken
 
 export class PrimaryExpressionToken extends Token {
   operand: OperandToken
-  /** The remaining PrimaryExpression that is applied to the current operand. E.g. selector / index etc. */
-  rest?: PrimaryExpressionToken
+  /** The remaining modifier that is applied to the current operand. E.g. selector / index etc. */
+  rest?: PrimaryExpressionModifierToken
 
-  constructor(operand: OperandToken, rest?: PrimaryExpressionToken) {
+  constructor(operand: OperandToken, rest?: PrimaryExpressionModifierToken) {
     super('primary_expression')
     this.operand = operand
     this.rest = rest
   }
 }
+
+export class PrimaryExpressionModifierToken {}

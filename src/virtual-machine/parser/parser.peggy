@@ -288,11 +288,10 @@ FunctionLit = "func" _ Signature _ FunctionBody
 
 //* Primary Expressions
 //! TODO (P5): MethodExpr and Conversion are not supported.
-PrimaryExpr     = operand:Operand _ rest:PrimaryExprRest? { return new PrimaryExpressionToken(operand, rest) }
-//! TODO (P2): Tokenize PrimaryExprTerm.
-PrimaryExprRest = PrimaryExprTerm _ PrimaryExprRest?
+PrimaryExpr     = operand:Operand _ rest:PrimaryExprModifier* { return new PrimaryExpressionToken(operand, rest) }
+//! TODO (P2): Tokenize PrimaryExprModifier.
 // This PrimaryExprTerm is added to fix left recursion.
-PrimaryExprTerm = Selector / Index / Slice / TypeAssertion / Arguments
+PrimaryExprModifier = Selector / Index / Slice / TypeAssertion / Arguments
 Selector      = "." identifier
 Index         = "[" _ Expression (_ ",")? _ "]"
 Slice         = "[" _ Expression? _ ":" _ Expression _ ":" _ Expression _ "]"
