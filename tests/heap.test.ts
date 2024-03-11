@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { runCode } from '../src/virtual-machine'
 import { Context } from '../src/virtual-machine/executor/context'
 import { Heap } from '../src/virtual-machine/heap'
@@ -28,7 +30,17 @@ describe('Heap Tests', () => {
     expect(heap.memory.get_bits(3, 5, 1)).toEqual(2)
   })
   test('Mark And Sweep', () => {
-    expect(runCode('(2+1 < 3) || (7 == 9%5 + 15/5)', 10).output).toEqual('true')
-    expect(runCode('(2+1 < 3) || (7 == 9%5 + 15/5)', 16).output).toEqual('true')
+    expect(
+      runCode(
+        'package main;import "fmt"; func main() { (2+1 < 3) || (7 == 9%5 + 15/5);};',
+        10,
+      ).output,
+    ).toEqual('true')
+    expect(
+      runCode(
+        'package main;import "fmt"; func main() { (2+1 < 3) || (7 == 9%5 + 15/5);};',
+        16,
+      ).output,
+    ).toEqual('true')
   })
 })

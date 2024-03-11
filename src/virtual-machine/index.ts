@@ -1,5 +1,5 @@
 import parser from './parser/parser'
-import { Token } from './parser/tokens'
+import { SourceFileToken } from './parser/tokens'
 import { compile_tokens } from './compiler'
 import { execute_instructions } from './executor'
 
@@ -17,7 +17,7 @@ interface ProgramData {
 const runCode = (source_code: string, heapsize: number): ProgramData => {
   let errorMessage = ''
   try {
-    const tokens = parser.parse(source_code) as Token
+    const tokens = parser.parse(source_code) as SourceFileToken
     // console.log(tokens)
     const instructions = compile_tokens(tokens)
     // console.log(instructions)
