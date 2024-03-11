@@ -1,4 +1,5 @@
 import { Token } from './base'
+import { IdentifierToken } from './identifier'
 import { LiteralToken } from './literals'
 import { BinaryOperator, UnaryOperator } from './operator'
 
@@ -8,7 +9,7 @@ export type ExpressionToken =
   | BinaryOperator
   | PrimaryExpressionToken
 
-export type OperandToken = LiteralToken | ExpressionToken
+export type OperandToken = LiteralToken | IdentifierToken | ExpressionToken
 
 export class PrimaryExpressionToken extends Token {
   operand: OperandToken
