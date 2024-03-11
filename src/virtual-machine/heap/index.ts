@@ -50,7 +50,7 @@ export class Heap {
    *     Free Node: [1 bit free bit] [5 bits Level data] [29 bits Prev Node] [29 bits Next Node]
    * Not-Free Node: [1 bit free bit] [5 bits Level data] [1 bit Mark & Sweep] [1 bit Children Bit]
    *                [1 Byte Type Tag] [6 Bytes Payload - Depends on type]
-   * 
+   *
    * Assumptions:
    *    - Address space is 2^32 bytes or 2^29 words max (Browser Memory Limit is 64 GB)
    *    - Nodes that store data in there adjacent nodes have no children
@@ -64,41 +64,41 @@ export class Heap {
     return this.memory.get_bytes(addr, 1, 1)
   }
 
-  get_children_bit(addr: number){
+  get_children_bit(addr: number) {
     return this.memory.get_bits(addr, 1, 7)
   }
 
-  set_children_bit(addr: number, val: number){
+  set_children_bit(addr: number, val: number) {
     this.memory.set_bits(val, addr, 1, 7)
   }
 
   set_children(addr: number, children: number[]) {
     const max_size = 2 ** this.allocator.get_level(addr) + addr
-    if(children.length + addr >= max_size) throw Error ("Too many children!")
-    if(children.length === 0){
-        this.set_children_bit(addr, 0)
-        return
+    if (children.length + addr >= max_size) throw Error('Too many children!')
+    if (children.length === 0) {
+      this.set_children_bit(addr, 0)
+      return
     }
     this.set_children_bit(addr, 1)
-    for(let i = 0; i < children.length; i++) {
-        this.memory.set_word(children[i], addr + i + 1)
+    for (let i = 0; i < children.length; i++) {
+      this.memory.set_word(children[i], addr + i + 1)
     }
-    if(children.length + addr + 1 < max_size){
-        this.memory.set_word(-1, children.length + addr + 1)
+    if (children.length + addr + 1 < max_size) {
+      this.memory.set_word(-1, children.length + addr + 1)
     }
   }
 
   get_children(addr: number) {
     const max_size = 2 ** this.allocator.get_level(addr) + addr
-    if(this.get_children_bit(addr) === 0){
-        return []
+    if (this.get_children_bit(addr) === 0) {
+      return []
     }
-    const children:number[] = []
+    const children: number[] = []
     let idx = addr + 1
-    while(idx < max_size){
-        if(this.memory.get_bits(idx, 1) === 1)break
-        children.push(this.memory.get_word(idx))
-        idx++
+    while (idx < max_size) {
+      if (this.memory.get_bits(idx, 1) === 1) break
+      children.push(this.memory.get_word(idx))
+      idx++
     }
     return children
   }

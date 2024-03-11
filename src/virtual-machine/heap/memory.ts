@@ -2,7 +2,8 @@ const bytes_in_int = 4 // Number of bytes in int
 const bits_in_byte = 8 // Number of bits in byte
 
 export class Memory {
-  array: number[]
+  array: ArrayBuffer
+  view: DataView
   word_size: number
   /**
    * Constructor for memory
@@ -13,9 +14,8 @@ export class Memory {
     if ((Math.log(word_size) / Math.log(2)) % 1 !== 0)
       throw Error('Word Size must be power of 2')
     this.word_size = word_size
-    const arr_size = Math.ceil((size * word_size) / bytes_in_int)
-    this.array = []
-    for (let i = 0; i < arr_size; i++) this.array.push(0)
+    this.array = new ArrayBuffer(size * word_size)
+    this.view = new DataView(this.array)
   }
 
   check_valid(num_bits: number, bit_offset: number) {
@@ -61,8 +61,10 @@ export class Memory {
       const mask = (2 ** valid_bits_in_block - 1) * 2 ** block_offset
 
       val +=
-        Math.floor(((mask & this.array[block_idx]) >>> 0) / 2 ** block_offset) *
-        carry
+        Math.floor(
+          ((mask & this.view.getUint32(block_idx * 4)) >>> 0) /
+            2 ** block_offset,
+        ) * carry
 
       bits_covered += valid_bits_in_block
       block_offset = 0
@@ -92,13 +94,12 @@ export class Memory {
         num_bits - bits_covered,
         bytes_in_int * bits_in_byte - block_offset,
       )
-
       const mask = ~((2 ** valid_bits_in_block - 1) * 2 ** block_offset)
       const val_mask =
         ((2 ** valid_bits_in_block - 1) & val) * 2 ** block_offset
+      const temp_val = (this.view.getUint32(block_idx * 4) & mask) | val_mask
 
-      this.array[block_idx] &= mask
-      this.array[block_idx] |= val_mask
+      this.view.setUint32(block_idx * 4, temp_val)
 
       val -= (2 ** valid_bits_in_block - 1) & val
       val = Math.floor(val / 2 ** valid_bits_in_block)
@@ -155,13 +156,13 @@ export class Memory {
    */
   print() {
     let heap_str = ''
-    const idx_max_len = this.array.length.toString().length
-    for (let i = 0; i < this.array.length; i++) {
-      let str = (this.array[i] >>> 0).toString(2)
+    const idx_max_len = this.view.byteLength / 4
+    for (let i = 0; i < this.view.byteLength; i += 4) {
+      let str = (this.view.getUint32(i) >>> 0).toString(2)
       if (str.length < bits_in_byte * bytes_in_int) {
         str = '0'.repeat(bits_in_byte * bytes_in_int - str.length) + str
       }
-      let idx_str = i.toString()
+      let idx_str = (i / 4).toString()
       if (idx_str.length < idx_max_len) {
         idx_str = ' '.repeat(idx_max_len - idx_str.length) + idx_str
       }

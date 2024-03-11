@@ -29,10 +29,14 @@ const runCode = (source_code: string, heapsize: number): ProgramData => {
     }
   } catch (err) {
     console.warn(err)
-    if(err instanceof Error)
-      errorMessage = err.message
+    if (err instanceof Error) errorMessage = err.message
   }
-  return { returnVal: 'test', instructions: [], output: 'An Error Occurred!' , errorMessage: errorMessage}
+  return {
+    returnVal: 'test',
+    instructions: [],
+    output: 'An Error Occurred!',
+    errorMessage: errorMessage,
+  }
 }
 
 export { type InstructionData, type ProgramData, runCode }
