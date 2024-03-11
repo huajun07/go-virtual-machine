@@ -107,11 +107,12 @@ export const Main = () => {
       return
     }
     // Retrieve instructions from endpoint
+    setOutput('Running your code...')
     const {
       instructions: newInstructions,
       errorMessage,
       output: newOutput,
-    } = await runCode(code, heapsize)
+    } = runCode(code, heapsize)
     if (!newInstructions || errorMessage) {
       setLoading(false)
       makeToast(errorMessage)

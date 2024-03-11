@@ -11,7 +11,7 @@ export class Memory {
    * @param word_size How many bytes in a word
    */
   constructor(size: number, word_size = 8) {
-    if ((Math.log(word_size) / Math.log(2)) % 1 !== 0)
+    if (!Number.isInteger(Math.log(word_size) / Math.log(2)))
       throw Error('Word Size must be power of 2')
     this.word_size = word_size
     this.array = new ArrayBuffer(size * word_size)
