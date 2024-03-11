@@ -10,8 +10,8 @@ const execute_instructions = (instrs: Instruction[], heapsize: number) => {
   while (instrs[context.PC].tag !== 'DONE') {
     const instr = instrs[context.PC++]
     execute_microcode(context, instr, heap)
-    console.log(instr)
-    context.printOS()
+    // console.log(instr)
+    // context.printOS()
   }
   return heap.get_value(context.popOS())
 }

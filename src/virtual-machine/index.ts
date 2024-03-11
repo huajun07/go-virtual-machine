@@ -29,7 +29,7 @@ const runCode = (source_code: string, heapsize: number): ProgramData => {
   } catch (err) {
     console.warn(err)
   }
-  return { returnVal: 'test', instructions: [], output: 'test3' }
+  return { returnVal: 'test', instructions: [], output: 'An Error Occurred!' }
 }
 
 export { type InstructionData, type ProgramData, runCode }
