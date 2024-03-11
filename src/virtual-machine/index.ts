@@ -13,13 +13,13 @@ interface ProgramData {
   returnVal: string
 }
 
-const runCode = (source_code: string): ProgramData => {
+const runCode = (source_code: string, heapsize: number): ProgramData => {
   try {
     const tokens = parser.parse(source_code) as Token
     // console.log(tokens)
     const instructions = compile_tokens(tokens)
     // console.log(instructions)
-    const result = execute_instructions(instructions)
+    const result = execute_instructions(instructions, heapsize)
     // console.log(result)
     return {
       returnVal: 'test',

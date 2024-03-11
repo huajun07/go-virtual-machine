@@ -4,9 +4,9 @@ import { Heap } from '../heap'
 import { Context } from './context'
 import { execute_microcode } from './microcode'
 
-const execute_instructions = (instrs: Instruction[]) => {
+const execute_instructions = (instrs: Instruction[], heapsize: number) => {
   const context = new Context()
-  const heap = new Heap(2048, context)
+  const heap = new Heap(heapsize, context)
   while (instrs[context.PC].tag !== 'DONE') {
     const instr = instrs[context.PC++]
     execute_microcode(context, instr, heap)

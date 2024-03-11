@@ -39,6 +39,7 @@ export const Main = () => {
   const [loading, setLoading] = useState(false)
   const [output, setOutput] = useState<string | null>(null)
   const [code, setCode] = useState('')
+  const [heapsize, setHeapsize] = useState(2048)
 
   useEffect(() => {
     // Get the value from the cookie
@@ -111,7 +112,7 @@ export const Main = () => {
       instructions: newInstructions,
       errorMessage,
       output: newOutput,
-    } = await runCode(code)
+    } = await runCode(code, heapsize)
     if (!newInstructions || errorMessage) {
       setLoading(false)
       makeToast(errorMessage)
@@ -148,7 +149,12 @@ export const Main = () => {
       ) : null}
       <Flex>
         <Box w="50%" borderRightWidth="1px">
-          <CodeIDEButtons toggleMode={startRunning} isDisabled={loading} />
+          <CodeIDEButtons
+            toggleMode={startRunning}
+            isDisabled={loading}
+            heapsize={heapsize}
+            setHeapsize={setHeapsize}
+          />
           <CodeIDE code={code} setCode={modifyCode} lineHighlight={0} />
         </Box>
         <Flex position="relative" flex={1}>
