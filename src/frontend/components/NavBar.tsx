@@ -24,10 +24,9 @@ export const NavBar = () => {
             Go Virtual Machine
           </Heading>
 
-          <Flex alignItems={'center'}>
+          <Flex alignItems={'center'} padding={6}>
             <Stack direction={'row'} spacing={7}>
               <Button
-                display="none"
                 onClick={toggleColorMode}
                 bg={useColorModeValue('blue.100', 'blue.900')}
                 _hover={{ bg: useColorModeValue('blue.200', 'blue.800') }}

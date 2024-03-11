@@ -39,6 +39,7 @@ export const Main = () => {
   const [loading, setLoading] = useState(false)
   const [output, setOutput] = useState<string | null>(null)
   const [code, setCode] = useState('')
+  const [heapsize, setHeapsize] = useState(2048)
 
   useEffect(() => {
     // Get the value from the cookie
@@ -82,7 +83,6 @@ export const Main = () => {
         // End of execution
         setPlaying(false)
       }
-      setLoading(false)
     },
     isPlaying ? Math.ceil(1000 / speed) : null,
   )
@@ -107,11 +107,12 @@ export const Main = () => {
       return
     }
     // Retrieve instructions from endpoint
+    setOutput('Running your code...')
     const {
       instructions: newInstructions,
       errorMessage,
       output: newOutput,
-    } = await runCode(code)
+    } = runCode(code, heapsize)
     if (!newInstructions || errorMessage) {
       setLoading(false)
       makeToast(errorMessage)
@@ -123,6 +124,9 @@ export const Main = () => {
     setOutput(newOutput || '')
     setPlaying(true)
     setWasPlaying(false)
+    setTimeout(function () {
+      setLoading(false)
+    }, 500)
   }
 
   return (
@@ -148,7 +152,12 @@ export const Main = () => {
       ) : null}
       <Flex>
         <Box w="50%" borderRightWidth="1px">
-          <CodeIDEButtons toggleMode={startRunning} isDisabled={loading} />
+          <CodeIDEButtons
+            toggleMode={startRunning}
+            isDisabled={loading}
+            heapsize={heapsize}
+            setHeapsize={setHeapsize}
+          />
           <CodeIDE code={code} setCode={modifyCode} lineHighlight={0} />
         </Box>
         <Flex position="relative" flex={1}>

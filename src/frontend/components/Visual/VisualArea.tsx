@@ -3,7 +3,7 @@ import './Moveable.css'
 import { useRef, useState } from 'react'
 import Moveable from 'react-moveable'
 import Selecto from 'react-selecto'
-import { Box, Flex } from '@chakra-ui/react'
+import { Box, Flex, useColorModeValue } from '@chakra-ui/react'
 
 import styles from './VisualArea.module.css'
 
@@ -54,6 +54,8 @@ export const VisualArea = () => {
     return `translate(${x}px, ${y}px)`
   }
 
+  const visualBgColor = useColorModeValue('white', 'gray.800')
+
   return (
     <>
       <Flex direction="column" w="full">
@@ -63,7 +65,7 @@ export const VisualArea = () => {
           position="relative"
           overflow="hidden"
           id="visual-area-container"
-          bgColor="gray.50"
+          bgColor={visualBgColor}
         >
           {visualizations.map(({ key, type }) => {
             const isSelected = selectedTargets.some(
@@ -79,7 +81,7 @@ export const VisualArea = () => {
                 }
                 height={300}
                 width={400}
-                bgColor="white"
+                bgColor={visualBgColor}
                 border="2px solid"
                 padding={1}
                 borderColor="black.100"

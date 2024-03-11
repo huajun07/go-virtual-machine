@@ -13,13 +13,14 @@ interface ProgramData {
   returnVal: string
 }
 
-const runCode = (source_code: string): ProgramData => {
+const runCode = (source_code: string, heapsize: number): ProgramData => {
+  let errorMessage = ''
   try {
     const tokens = parser.parse(source_code) as Token
     // console.log(tokens)
     const instructions = compile_tokens(tokens)
     // console.log(instructions)
-    const result = execute_instructions(instructions)
+    const result = execute_instructions(instructions, heapsize)
     // console.log(result)
     return {
       returnVal: 'test',
@@ -28,8 +29,14 @@ const runCode = (source_code: string): ProgramData => {
     }
   } catch (err) {
     console.warn(err)
+    if (err instanceof Error) errorMessage = err.message
   }
-  return { returnVal: 'test', instructions: [], output: 'test3' }
+  return {
+    returnVal: 'test',
+    instructions: [],
+    output: 'An Error Occurred!',
+    errorMessage: errorMessage,
+  }
 }
 
 export { type InstructionData, type ProgramData, runCode }
