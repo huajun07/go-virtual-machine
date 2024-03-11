@@ -14,6 +14,7 @@ interface ProgramData {
 }
 
 const runCode = (source_code: string, heapsize: number): ProgramData => {
+  let errorMessage = ''
   try {
     const tokens = parser.parse(source_code) as Token
     // console.log(tokens)
@@ -28,8 +29,10 @@ const runCode = (source_code: string, heapsize: number): ProgramData => {
     }
   } catch (err) {
     console.warn(err)
+    if(err instanceof Error)
+      errorMessage = err.message
   }
-  return { returnVal: 'test', instructions: [], output: 'An Error Occurred!' }
+  return { returnVal: 'test', instructions: [], output: 'An Error Occurred!' , errorMessage: errorMessage}
 }
 
 export { type InstructionData, type ProgramData, runCode }
