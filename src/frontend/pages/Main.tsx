@@ -121,9 +121,11 @@ export const Main = () => {
     // Set instructions and update components to start playing mode
     setInstructions(newInstructions)
     setOutput(newOutput || '')
-    setLoading(false)
     setPlaying(true)
     setWasPlaying(false)
+    setTimeout(function () {
+      setLoading(false)
+    }, 500)
   }
 
   return (

@@ -26,11 +26,11 @@ export class Heap {
   allocate_literals() {
     this.TRUE_ADDR = this.allocator.allocate(1)
     this.set_tag(this.TRUE_ADDR, TAG.TRUE)
-    this.set_num_children(this.TRUE_ADDR, 0)
+    this.set_children(this.TRUE_ADDR, [])
 
     this.FALSE_ADDR = this.allocator.allocate(1)
     this.set_tag(this.FALSE_ADDR, TAG.TRUE)
-    this.set_num_children(this.FALSE_ADDR, 0)
+    this.set_children(this.FALSE_ADDR, [])
 
     this.allocator.set_constants([this.TRUE_ADDR, this.FALSE_ADDR])
   }
@@ -48,8 +48,12 @@ export class Heap {
    *                [ Word Format ]
    *
    *     Free Node: [1 bit free bit] [5 bits Level data] [29 bits Prev Node] [29 bits Next Node]
-   * Not-Free Node: [1 bit free bit] [5 bits Level data] [1 bit Mark & Sweep] [1 bit Unused]
-   *                [1 Byte Type Tag] [2 Bytes # of Children] [4 Bytes Payload - Depends on typ]
+   * Not-Free Node: [1 bit free bit] [5 bits Level data] [1 bit Mark & Sweep] [1 bit Children Bit]
+   *                [1 Byte Type Tag] [6 Bytes Payload - Depends on type]
+   * 
+   * Assumptions:
+   *    - Address space is 2^32 bytes or 2^29 words max (Browser Memory Limit is 64 GB)
+   *    - Nodes that store data in there adjacent nodes have no children
    */
 
   set_tag(addr: number, tag: number) {
@@ -60,27 +64,50 @@ export class Heap {
     return this.memory.get_bytes(addr, 1, 1)
   }
 
-  set_num_children(addr: number, num: number) {
-    this.memory.set_bytes(num, addr, 2, 2)
+  get_children_bit(addr: number){
+    return this.memory.get_bits(addr, 1, 7)
   }
 
-  get_num_children(addr: number) {
-    return this.memory.get_bytes(addr, 2, 2)
+  set_children_bit(addr: number, val: number){
+    this.memory.set_bits(val, addr, 1, 7)
   }
 
-  set_child(addr: number, index: number, val: number) {
-    this.memory.set_word(val, addr + (index + 1))
+  set_children(addr: number, children: number[]) {
+    const max_size = 2 ** this.allocator.get_level(addr) + addr
+    if(children.length + addr >= max_size) throw Error ("Too many children!")
+    if(children.length === 0){
+        this.set_children_bit(addr, 0)
+        return
+    }
+    this.set_children_bit(addr, 1)
+    for(let i = 0; i < children.length; i++) {
+        this.memory.set_word(children[i], addr + i + 1)
+    }
+    if(children.length + addr + 1 < max_size){
+        this.memory.set_word(-1, children.length + addr + 1)
+    }
   }
 
-  get_child(addr: number, index: number) {
-    return this.memory.get_word(addr + (index + 1))
+  get_children(addr: number) {
+    const max_size = 2 ** this.allocator.get_level(addr) + addr
+    if(this.get_children_bit(addr) === 0){
+        return []
+    }
+    const children:number[] = []
+    let idx = addr + 1
+    while(idx < max_size){
+        if(this.memory.get_bits(idx, 1) === 1)break
+        children.push(this.memory.get_word(idx))
+        idx++
+    }
+    return children
   }
 
   // -------------- [ Numbers ] -------------------
   allocate_number(num: number) {
     const addr = this.allocator.allocate(2)
     this.set_tag(addr, TAG.NUMBER)
-    this.set_num_children(addr, 0)
+    this.set_children(addr, [])
     this.memory.set_word(num, addr + 1)
     return addr
   }
