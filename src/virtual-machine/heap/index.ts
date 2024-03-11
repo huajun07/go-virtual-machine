@@ -53,7 +53,9 @@ export class Heap {
    *
    * Assumptions:
    *    - Address space is 2^32 bytes or 2^29 words max (Browser Memory Limit is 64 GB)
-   *    - Nodes that store data in there adjacent nodes have no children
+   *    - Nodes that store data in their adjacent nodes have no children
+   * Notes:
+   *    - We can actually store the children in ceiling(children/2) words instead
    */
 
   set_tag(addr: number, tag: number) {
