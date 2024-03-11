@@ -233,7 +233,7 @@ TypeConstraint = TypeElem
 //! TODO (P5): Multiple declarations (optionally semicolon-separated) is not supported.
 VarDecl = "var" _ @VarSpec
 VarSpec = identifiers:IdentifierList _ rest:(
-            varType:Type expressions:(_ "=" _ expressions:ExpressionList)? 
+            varType:Type expressions:(_ "=" _ @ExpressionList)? 
             { return {varType, expressions} }
             /
             _ "=" _ expressions:ExpressionList
