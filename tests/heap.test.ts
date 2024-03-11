@@ -1,3 +1,4 @@
+import { runCode } from '../src/virtual-machine'
 import { Context } from '../src/virtual-machine/executor/context'
 import { Heap } from '../src/virtual-machine/heap'
 
@@ -25,5 +26,8 @@ describe('Heap Tests', () => {
     heap.memory.set_bits(2, 3, 5, 1)
     heap.memory.set_bits(3, 3, 29, 6)
     expect(heap.memory.get_bits(3, 5, 1)).toEqual(2)
+  })
+  test('Mark And Sweep', () => {
+    expect(runCode('(2+1 < 3) || (7 == 9%5 + 15/5)', 16).output).toEqual('true')
   })
 })

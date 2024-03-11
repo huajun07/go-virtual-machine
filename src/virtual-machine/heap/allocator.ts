@@ -59,6 +59,7 @@ export class Allocator {
     if (next_addr !== addr) {
       this.set_prev(next_addr, prev_addr === addr ? next_addr : prev_addr)
     }
+    this.memory.set_word(0, addr)
   }
 
   // [********** Buddy Block Allocation + Free-ing ****************]
@@ -83,6 +84,7 @@ export class Allocator {
       }
       return -1
     }
+
     let addr = try_allocate()
     if (addr === -1) {
       this.mark_and_sweep()
@@ -116,7 +118,7 @@ export class Allocator {
   }
 
   get_num_children(addr: number) {
-    return this.memory.get_bytes(addr + 2, 2)
+    return this.memory.get_bytes(addr, 2, 2)
   }
 
   get_child(addr: number, index: number) {
@@ -138,9 +140,12 @@ export class Allocator {
       this.mark(root)
     }
     for (let cur_addr = 0; cur_addr < this.size; ) {
-      if (!this.is_free(cur_addr) && this.is_marked(cur_addr)) {
+      if (!this.is_free(cur_addr) && !this.is_marked(cur_addr)) {
         cur_addr = this.free(cur_addr)
-      } else cur_addr += 2 ** this.get_level(cur_addr)
+      } else {
+        if (this.is_marked(cur_addr)) this.set_mark(cur_addr, false)
+        cur_addr += 2 ** this.get_level(cur_addr)
+      }
     }
     return
   }

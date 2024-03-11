@@ -140,14 +140,14 @@ export class Memory {
    * @param addr Starting word index
    */
   set_word(val: number, addr: number) {
-    this.set_bits(val, addr * this.word_size, bits_in_byte * this.word_size)
+    this.set_bits(val, addr, bits_in_byte * this.word_size)
   }
 
   /**
    * @param addr Starting word index
    */
   get_word(addr: number) {
-    return this.get_bits(addr * this.word_size, bits_in_byte * this.word_size)
+    return this.get_bits(addr, bits_in_byte * this.word_size)
   }
 
   /**
