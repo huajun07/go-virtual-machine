@@ -83,7 +83,6 @@ export const Main = () => {
         // End of execution
         setPlaying(false)
       }
-      setLoading(false)
     },
     isPlaying ? Math.ceil(1000 / speed) : null,
   )
@@ -122,6 +121,7 @@ export const Main = () => {
     // Set instructions and update components to start playing mode
     setInstructions(newInstructions)
     setOutput(newOutput || '')
+    setLoading(false)
     setPlaying(true)
     setWasPlaying(false)
   }
