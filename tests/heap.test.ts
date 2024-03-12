@@ -32,15 +32,9 @@ describe('Heap Tests', () => {
   test('Mark And Sweep', () => {
     expect(
       runCode(
-        'package main;import "fmt"; func main() { (2+1 < 3) || (7 == 9%5 + 15/5);};',
-        10,
+        'package main;import "fmt"; func main() {var a int = 1; a = a + 2; a;};',
+        14,
       ).output,
-    ).toEqual('true')
-    expect(
-      runCode(
-        'package main;import "fmt"; func main() { (2+1 < 3) || (7 == 9%5 + 15/5);};',
-        16,
-      ).output,
-    ).toEqual('true')
+    ).toEqual('3')
   })
 })

@@ -4,7 +4,7 @@ export class CompileEnvironment {
     if (!parent) {
       this.frames = [[]]
     } else {
-      this.frames = parent.frames
+      this.frames = parent.frames.slice()
       this.frames.push([])
     }
   }
