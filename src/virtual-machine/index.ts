@@ -18,15 +18,15 @@ const runCode = (source_code: string, heapsize: number): ProgramData => {
   let errorMessage = ''
   try {
     const tokens = parser.parse(source_code) as SourceFileToken
-    // console.log(tokens)
+    console.log(tokens)
     const instructions = compile_tokens(tokens)
-    // console.log(instructions)
+    console.log(instructions)
     const result = execute_instructions(instructions, heapsize)
     // console.log(result)
     return {
       returnVal: 'test',
       instructions: [],
-      output: JSON.stringify(result),
+      output: result === undefined ? 'undefined' : JSON.stringify(result),
     }
   } catch (err) {
     console.warn(err)

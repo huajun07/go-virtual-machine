@@ -37,10 +37,10 @@ export class SignatureToken extends Token {
 export abstract class DeclarationToken extends Token {}
 
 export class ShortVariableDeclarationToken extends DeclarationToken {
-  identifiers: string[]
+  identifiers: IdentifierToken[]
   expressions: ExpressionToken[]
 
-  constructor(identifiers: string[], expressions: ExpressionToken[]) {
+  constructor(identifiers: IdentifierToken[], expressions: ExpressionToken[]) {
     super('short_variable_declaration')
     this.identifiers = identifiers
     this.expressions = expressions
@@ -48,13 +48,13 @@ export class ShortVariableDeclarationToken extends DeclarationToken {
 }
 
 export class VariableDeclarationToken extends DeclarationToken {
-  identifiers: string[]
+  identifiers: IdentifierToken[]
   // Note: A variable declaration must have at least one of varType / expressions.
   varType?: TypeToken
   expressions?: ExpressionToken[]
 
   constructor(
-    identifiers: string[],
+    identifiers: IdentifierToken[],
     varType?: TypeToken,
     expressions?: ExpressionToken[],
   ) {
@@ -66,17 +66,16 @@ export class VariableDeclarationToken extends DeclarationToken {
 }
 
 export class ConstantDeclarationToken extends DeclarationToken {
-  identifiers: string[]
+  identifiers: IdentifierToken[]
   varType?: TypeToken
   expressions?: ExpressionToken[]
 
   constructor(
-    identifiers: string[],
+    identifiers: IdentifierToken[],
     varType?: TypeToken,
     expressions?: ExpressionToken[],
   ) {
     super('const_declaration')
-    console.log(identifiers, varType, expressions)
     this.identifiers = identifiers
     this.varType = varType
     this.expressions = expressions

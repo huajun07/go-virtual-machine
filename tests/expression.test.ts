@@ -13,8 +13,10 @@ describe('Basic Expression Tests', () => {
   })
   test('Basic Arithmetic 2', () => {
     expect(
-      runCode('package main;import "fmt"; func main() { (4+3)*5%(5+3)+2;};', 256)
-        .output,
+      runCode(
+        'package main;import "fmt"; func main() { (4+3)*5%(5+3)+2;};',
+        256,
+      ).output,
     ).toEqual('5')
   })
   test('Boolean Expression', () => {
