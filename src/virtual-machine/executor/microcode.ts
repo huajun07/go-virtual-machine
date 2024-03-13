@@ -45,13 +45,11 @@ const execute_microcode = (
     if (instr.data_type === DataType.Boolean) {
       context.pushOS(heap.allocate_boolean(instr.val as boolean))
     } else if (instr.data_type === DataType.Float) {
-      // TOOD: Add float data type in heap
-      // context.pushOS(heap.allocate_number(instr.val as number))
+      context.pushOS(heap.allocate_float(instr.val as number))
     } else if (instr.data_type === DataType.Number) {
       context.pushOS(heap.allocate_number(instr.val as number))
     } else if (instr.data_type === DataType.String) {
-      // TOOD: Add string data type in heap
-      // context.pushOS(heap.allocate_string(instr.val as string))
+      context.pushOS(heap.allocate_string(instr.val as string))
     }
     // Check what type from the token
   } else if (instr instanceof LoadVariableInstruction) {

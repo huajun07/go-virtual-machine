@@ -18,4 +18,18 @@ describe('Variable Declaration Tests', () => {
       ).output,
     ).toEqual('13')
   })
+  test('String Variables', () => {
+    expect(
+      runCode(
+        'package main;\
+            import "fmt";\
+            func main() {\
+                a := "hi";\
+                b := "hi2";\
+                a + b;\
+            };',
+        2048,
+      ).output,
+    ).toEqual('"hihi2"')
+  })
 })

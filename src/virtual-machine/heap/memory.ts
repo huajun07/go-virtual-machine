@@ -171,4 +171,20 @@ export class Memory {
     }
     console.log(heap_str)
   }
+
+  get_number(addr: number) {
+    return this.view.getBigInt64(addr * this.word_size)
+  }
+
+  set_number(val: bigint, addr: number) {
+    return this.view.setBigInt64(addr * this.word_size, val)
+  }
+
+  get_float(addr: number) {
+    return this.view.getFloat64(addr * this.word_size)
+  }
+
+  set_float(val: number, addr: number) {
+    return this.view.setFloat64(addr * this.word_size, val)
+  }
 }

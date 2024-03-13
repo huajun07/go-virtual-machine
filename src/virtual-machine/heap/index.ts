@@ -10,6 +10,8 @@ export enum TAG {
   FRAME_PTR = 3,
   FRAME = 4,
   ENVIRONMENT = 5,
+  FLOAT = 6,
+  STRING = 7,
 }
 
 export class Heap {
@@ -38,6 +40,10 @@ export class Heap {
       return this.get_number(addr)
     } else if (this.is_boolean(addr)) {
       return this.get_boolean(addr)
+    } else if (this.is_float(addr)) {
+      return this.get_float(addr)
+    } else if (this.is_string(addr)) {
+      return this.get_string(addr)
     }
     throw Error('Unknown Type')
   }
@@ -116,7 +122,7 @@ export class Heap {
     const addr = this.allocator.allocate(2)
     this.set_tag(addr, TAG.NUMBER)
     this.allocator.set_children(addr, [])
-    this.memory.set_word(num, addr + 1)
+    this.memory.set_number(BigInt(num), addr + 1)
     // console.log("Number: ", num, addr)
     return addr
   }
@@ -128,7 +134,64 @@ export class Heap {
 
   get_number(addr: number) {
     addr = this.frame_ptr(addr)
-    return this.memory.get_word(addr + 1) >> 0
+    return Number(this.memory.get_number(addr + 1))
+  }
+
+  // -------------- [ Floats ] -------------------
+  allocate_float(num: number) {
+    const addr = this.allocator.allocate(2)
+    this.set_tag(addr, TAG.FLOAT)
+    this.allocator.set_children(addr, [])
+    this.memory.set_float(num, addr + 1)
+    // console.log("Float: ", num, addr)
+    return addr
+  }
+
+  is_float(addr: number) {
+    addr = this.frame_ptr(addr)
+    return this.get_tag(addr) === TAG.FLOAT
+  }
+
+  get_float(addr: number) {
+    addr = this.frame_ptr(addr)
+    return this.memory.get_float(addr + 1)
+  }
+
+  // -------------- [ String ] -------------------
+  // [6 Bytes Payload]: String Length
+  allocate_string(str: string) {
+    const sz = Math.ceil(str.length / 8)
+    const addr = this.allocator.allocate(sz + 1)
+    this.set_tag(addr, TAG.STRING)
+    this.allocator.set_children(addr, [])
+    this.memory.set_bytes(str.length, addr, 6, 2)
+    for (let i = 0; i < str.length; i++) {
+      this.memory.set_bytes(
+        str.charCodeAt(i),
+        Math.floor(i / 8) + addr + 1,
+        1,
+        i % 8,
+      )
+    }
+    // console.log("String: ", str, addr)
+    return addr
+  }
+
+  is_string(addr: number) {
+    addr = this.frame_ptr(addr)
+    return this.get_tag(addr) === TAG.STRING
+  }
+
+  get_string(addr: number) {
+    addr = this.frame_ptr(addr)
+    const len = this.memory.get_bytes(addr, 6, 2)
+    let res = ''
+    for (let i = 0; i < len; i++) {
+      res += String.fromCharCode(
+        this.memory.get_bytes(Math.floor(i / 8) + addr + 1, 1, i % 8),
+      )
+    }
+    return res
   }
 
   // -------------- [ Boolean ] -------------------

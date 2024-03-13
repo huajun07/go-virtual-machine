@@ -10,8 +10,8 @@ const execute_instructions = (instrs: Instruction[], heapsize: number) => {
   context.E = heap.allocate_env([heap.allocate_frame(0)])
   while (!DoneInstruction.is(instrs[context.PC])) {
     const instr = instrs[context.PC++]
-    // console.log(instr)
     // context.printOS()
+    // console.log(instr)
     execute_microcode(context, instr, heap)
   }
   const returnVal = context.peekOS()
