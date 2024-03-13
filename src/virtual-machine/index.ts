@@ -18,7 +18,7 @@ const runCode = (source_code: string, heapsize: number): ProgramData => {
   let errorMessage = ''
   try {
     const tokens = parser.parse(source_code) as SourceFileToken
-    // console.log(tokens)
+    console.log(tokens)
     const instructions = compile_tokens(tokens)
     // console.log(instructions)
     const result = execute_instructions(instructions, heapsize)

@@ -210,11 +210,11 @@ TopLevelDecl = Declaration / FunctionDecl / MethodDecl
 //* Constant Declarations
 //! TODO (P5): Multiple declarations (optionally semicolon-separated) is not supported.
 ConstDecl      = "const" _ @ConstSpec
-ConstSpec      = identifiers:IdentifierList rest:(
+ConstSpec      = identifiers:IdentifierList _ rest:(
                     varType:Type? _ "=" _ expressions:ExpressionList
                     { return { varType, expressions } }
-                 )?
-                 { return new ConstantDeclarationToken(identifiers, rest.varType, rest.expressions) }
+                 )
+                 { return new ConstantDeclarationToken(identifiers, rest.expressions, rest.varType) }
 
 IdentifierList = head:identifier tail:(_ "," _ @identifier _)* { return [head, ...tail] }
 ExpressionList = head:Expression tail:(_ "," _ @Expression _)* { return [head, ...tail] }

@@ -68,12 +68,12 @@ export class VariableDeclarationToken extends DeclarationToken {
 export class ConstantDeclarationToken extends DeclarationToken {
   identifiers: IdentifierToken[]
   varType?: TypeToken
-  expressions?: ExpressionToken[]
+  expressions: ExpressionToken[]
 
   constructor(
     identifiers: IdentifierToken[],
+    expressions: ExpressionToken[],
     varType?: TypeToken,
-    expressions?: ExpressionToken[],
   ) {
     super('const_declaration')
     this.identifiers = identifiers

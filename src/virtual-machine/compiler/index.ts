@@ -71,6 +71,7 @@ class Compiler {
         this.instructions.push(new StoreInstruction())
       }
     } else if (token instanceof VariableDeclarationToken) {
+      // TODO: Add type to variable
       for (let i = 0; i < token.identifiers.length; i++) {
         const var_name = token.identifiers[i]
         // const [frame_idx, var_idx] =
@@ -91,7 +92,20 @@ class Compiler {
         }
       }
     } else if (token instanceof ConstantDeclarationToken) {
-      // TODO: Handle Const separately: I.e. replace with literal
+      /**
+       * TODO: Handle Const separately, several different methods
+       *  1. Runtime Const and const tag to variable to make it immutable
+       *  2. Compile Time Const: Replace each reference to variable with Expression Token
+       *  3. Compile Time Const: Evaluate Expression Token literal value and replace each reference (Golang only allow compile time const)
+       */
+      for (let i = 0; i < token.identifiers.length; i++) {
+        const var_name = token.identifiers[i]
+        const expr = token.expressions[i]
+        const [frame_idx, var_idx] = this.env.declare_var(var_name.identifier)
+        this.compile(expr)
+        this.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
+        this.instructions.push(new StoreInstruction())
+      }
     } else if (token instanceof IdentifierToken) {
       const [frame_idx, var_idx] = this.env.find_var(token.identifier)
       this.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
@@ -99,7 +113,7 @@ class Compiler {
       // TODO: Figure what this does
       this.compile(token.operand)
     } else if (token instanceof AssignmentStatementToken) {
-      // TODO: Figure what this does
+      // TODO: Custom Instructions to avoid recalculation?
       for (let i = 0; i < token.left.length; i++) {
         const left = token.left[i]
         const right = token.right[i]
