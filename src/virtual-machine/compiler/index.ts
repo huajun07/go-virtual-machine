@@ -110,7 +110,7 @@ class Compiler {
       const [frame_idx, var_idx] = this.env.find_var(token.identifier)
       this.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
     } else if (token instanceof PrimaryExpressionToken) {
-      // TODO: Figure what this does
+      // TODO: Figure what this does for non-trivial ops like array access and selector
       this.compile(token.operand)
     } else if (token instanceof AssignmentStatementToken) {
       // TODO: Custom Instructions to avoid recalculation?
@@ -132,7 +132,7 @@ class Compiler {
         this.instructions.push(new StoreInstruction())
       }
     } else if (token instanceof IncDecStatementToken) {
-      // TODO: Figure what this does
+      // TODO: Custom Instructions to avoid recalculation?
       this.compile(token.expression)
       this.instructions.push(new LoadConstantInstruction(1, DataType.Number))
       if (token.operation === '++') {
@@ -143,19 +143,19 @@ class Compiler {
       this.compile(token.expression)
       this.instructions.push(new StoreInstruction())
     } else if (token instanceof ReturnStatementToken) {
-      // TODO: Figure what this does
+      // TODO: Implement
     } else if (token instanceof BreakStatementToken) {
-      // TODO: Figure what this does
+      // TODO: Implement
     } else if (token instanceof ContinueStatementToken) {
-      // TODO: Figure what this does
+      // TODO: Implement
     } else if (token instanceof FallthroughStatementToken) {
-      // TODO: Figure what this does
+      // TODO: Implement
     } else if (token instanceof IfStatementToken) {
-      // TODO: Figure what this does
+      // TODO: Implement
     } else if (token instanceof ForStatementToken) {
-      // TODO: Figure what this does
+      // TODO: Implement
     } else if (token instanceof DeferStatementToken) {
-      // TODO: Figure what this does
+      // TODO: Implement
     } else if (BinaryOperator.is(token)) {
       this.compile(token.children[0])
       this.compile(token.children[1])
