@@ -1,4 +1,16 @@
-import { Instruction, OpInstruction } from '../compiler'
+import {
+  BinaryInstruction,
+  BlockInstruction,
+  DataType,
+  ExitBlockInstruction,
+  Instruction,
+  LoadConstantInstruction,
+  LoadVariableInstruction,
+  OpInstruction,
+  SetTypeInstruction,
+  StoreInstruction,
+  UnaryInstruction,
+} from '../compiler/instructions'
 import { Heap } from '../heap'
 
 import { Context } from './context'
@@ -22,24 +34,42 @@ const execute_microcode = (
   instr: Instruction,
   heap: Heap,
 ) => {
-  switch (instr.tag) {
-    case 'BINOP':
-      {
-        const arg2 = context.popOS()
-        const arg1 = context.popOS()
-        context.pushOS(apply_binop(instr, arg1, arg2, heap))
-      }
-      break
-    case 'UNOP':
-      {
-        const arg1 = context.popOS()
-        context.pushOS(apply_unary(instr, arg1, heap))
-      }
-      break
-    case 'LDC':
-      // Check what type from the token
+  if (instr instanceof BinaryInstruction) {
+    const arg2 = context.popOS()
+    const arg1 = context.popOS()
+    context.pushOS(apply_binop(instr, arg1, arg2, heap))
+  } else if (instr instanceof UnaryInstruction) {
+    const arg1 = context.popOS()
+    context.pushOS(apply_unary(instr, arg1, heap))
+  } else if (instr instanceof LoadConstantInstruction) {
+    if (instr.data_type === DataType.Boolean) {
+      context.pushOS(heap.allocate_boolean(instr.val as boolean))
+    } else if (instr.data_type === DataType.Float) {
+      context.pushOS(heap.allocate_float(instr.val as number))
+    } else if (instr.data_type === DataType.Number) {
       context.pushOS(heap.allocate_number(instr.val as number))
-      break
+    } else if (instr.data_type === DataType.String) {
+      context.pushOS(heap.allocate_string(instr.val as string))
+    }
+    // Check what type from the token
+  } else if (instr instanceof LoadVariableInstruction) {
+    context.pushOS(heap.get_var(context.E, instr.frame_idx, instr.var_idx))
+  } else if (instr instanceof SetTypeInstruction) {
+    // TODO: Set type for runtime type check (Pending parser type check)
+  } else if (instr instanceof StoreInstruction) {
+    const dst = context.popOS()
+    const src = context.popOS()
+    heap.store_value(dst, src)
+  } else if (instr instanceof BlockInstruction) {
+    context.pushRTS(context.E)
+    const new_frame = heap.allocate_frame(instr.frame_size)
+    context.pushT(new_frame)
+    context.E = heap.extend_env(context.E, new_frame)
+    context.popT()
+  } else if (instr instanceof ExitBlockInstruction) {
+    context.E = context.popRTS()
+  } else {
+    throw Error('Invalid Instruction')
   }
 }
 

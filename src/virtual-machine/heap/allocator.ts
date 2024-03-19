@@ -113,24 +113,55 @@ export class Allocator {
   is_marked(addr: number) {
     return this.memory.get_bits(addr, 1, 6) === 1
   }
+
   set_mark(addr: number, mark: boolean) {
     this.memory.set_bits(mark ? 1 : 0, addr, 1, 6)
   }
 
-  get_num_children(addr: number) {
-    return this.memory.get_bytes(addr, 2, 2)
+  get_children_bit(addr: number) {
+    return this.memory.get_bits(addr, 1, 7)
   }
 
-  get_child(addr: number, index: number) {
-    return this.memory.get_word(addr + index + 1)
+  set_children_bit(addr: number, val: number) {
+    this.memory.set_bits(val, addr, 1, 7)
   }
 
+  set_children(addr: number, children: number[]) {
+    const max_size = 2 ** this.get_level(addr) + addr
+    if (children.length + addr >= max_size) throw Error('Too many children!')
+    if (children.length === 0) {
+      this.set_children_bit(addr, 0)
+      return
+    }
+    this.set_children_bit(addr, 1)
+    for (let i = 0; i < children.length; i++) {
+      this.memory.set_bytes(children[i], addr + i + 1, 4, 4)
+    }
+    if (children.length + addr + 1 < max_size) {
+      this.memory.set_word(-1, children.length + addr + 1)
+    }
+  }
+
+  get_children(addr: number) {
+    const max_size = 2 ** this.get_level(addr) + addr
+    if (this.get_children_bit(addr) === 0) {
+      return []
+    }
+    const children: number[] = []
+    let idx = addr + 1
+    while (idx < max_size) {
+      if (this.memory.get_bits(idx, 1) === 1) break
+      children.push(this.memory.get_bytes(idx, 4, 4))
+      idx++
+    }
+    return children
+  }
   mark(addr: number) {
     if (this.is_marked(addr)) return
     this.set_mark(addr, true)
-    const children = this.get_num_children(addr)
-    for (let i = 0; i < children; i++) {
-      this.mark(this.get_child(addr, i))
+    const children = this.get_children(addr)
+    for (const child of children) {
+      this.mark(child)
     }
   }
 
