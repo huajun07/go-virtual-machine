@@ -156,7 +156,7 @@ ElementType = Type
 SliceType = "[" "]" ElementType
 
 //* Struct Types
-StructType    = "struct" _ "{" _ (_ FieldDecl _ ";")* _ "}"
+StructType    = "struct" _ "{" _ (_ FieldDecl _ ";"?)* _ "}"
 FieldDecl      = (IdentifierList Type / EmbeddedField) Tag?
 EmbeddedField = "*"? TypeName TypeArgs?
 Tag           = string_lit
@@ -174,7 +174,7 @@ ParameterList = ParameterDecl ("," _ ParameterDecl)*
 ParameterDecl = IdentifierList? "..."? Type
 
 //* Interface Types
-InterfaceType  = "interface" _ "{" _ (_ InterfaceElem _ ";")* _ "}"
+InterfaceType  = "interface" _ "{" _ (_ InterfaceElem _ ";"?)* _ "}"
 InterfaceElem  = MethodElem / TypeElem
 MethodElem     = MethodName _ Signature
 MethodName     = identifier
@@ -195,7 +195,7 @@ ChannelType = ("chan" / "chan" _ "<-" / "<-" _ "chan") _ ElementType
 
 //* =============== Blocks ===============
 Block = "{" _ statements:StatementList _ "}" { return new BlockToken(statements) }
-StatementList = (_ @Statement _ ";")*
+StatementList = (_ @Statement _ ";"?)*
 
 
 
@@ -220,7 +220,7 @@ IdentifierList = head:identifier tail:(_ "," _ @identifier _)* { return [head, .
 ExpressionList = head:Expression tail:(_ "," _ @Expression _)* { return [head, ...tail] }
 
 //* Type Declarations
-TypeDecl  = "type" _ (TypeSpec / "(" _ (_ TypeSpec _ ";")* _ ")")
+TypeDecl  = "type" _ (TypeSpec / "(" _ (_ TypeSpec _ ";"?)* _ ")")
 TypeSpec  = AliasDecl / TypeDef
 AliasDecl = identifier _ "=" _ Type
 TypeDef   = identifier _ TypeParameters? _ Type
@@ -457,7 +457,7 @@ DeferStmt = "defer" _ expression:Expression { return new DeferStatementToken(exp
 
 //* =============== Packages ===============
 //* Source File
-SourceFile = pkg:PackageClause _ ";" _ imports:(_ @ImportDecl _ ";" _)* declarations:(_ @TopLevelDecl _ ";")*
+SourceFile = pkg:PackageClause _ ";"? _ imports:(_ @ImportDecl _ ";"? _)* declarations:(_ @TopLevelDecl _ ";"?)*
              { return new SourceFileToken(pkg, imports, declarations) }
 
 //* Package Clause
@@ -465,7 +465,7 @@ PackageClause = "package" _ @PackageName
 PackageName = identifier
 
 //* Import Declarations
-ImportDecl = "import" _ @(ImportSpec / "(" _ (_ ImportSpec _ ";")* _ ")")
+ImportDecl = "import" _ @(ImportSpec / "(" _ (_ ImportSpec _ ";"?)* _ ")")
 ImportSpec = name:("." / PackageName)? _ path:ImportPath
              { return new ImportToken(path, name) }
 ImportPath = string_lit
