@@ -3,7 +3,8 @@ import {
   Box,
   Center,
   Flex,
-  Spinner,
+  Image,
+  keyframes,
   useInterval,
   useToast,
 } from '@chakra-ui/react'
@@ -129,6 +130,11 @@ export const Main = () => {
     }, 500)
   }
 
+  const spin = keyframes`  
+    from {transform: rotate(0deg);}   
+    to {transform: rotate(360deg)} 
+  `
+
   return (
     <LoaderContext.Provider value={setLoading}>
       {loading ? (
@@ -139,14 +145,10 @@ export const Main = () => {
           bg="rgba(0, 0, 0, .5)"
           zIndex={3000}
         >
-          <Spinner
-            thickness="10px"
-            speed="0.65s"
-            emptyColor="gray.200"
-            color="blue.500"
-            h="calc(20vh)"
-            w="calc(20vh)"
-            opacity={1}
+          <Image
+            src="gopher.png"
+            width="150px"
+            animation={`${spin} infinite 0.5s linear`}
           />
         </Center>
       ) : null}
