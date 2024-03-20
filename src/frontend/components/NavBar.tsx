@@ -4,6 +4,7 @@ import {
   Button,
   Flex,
   Heading,
+  Image,
   Stack,
   useColorMode,
   useColorModeValue,
@@ -25,6 +26,13 @@ export const NavBar = () => {
           </Heading>
 
           <Flex alignItems={'center'} padding={6}>
+            <Image
+              src="gophers.png"
+              width="300px"
+              transform="rotate(180deg)"
+              zIndex={100}
+              marginRight={20}
+            />
             <Stack direction={'row'} spacing={7}>
               <Button
                 onClick={toggleColorMode}
