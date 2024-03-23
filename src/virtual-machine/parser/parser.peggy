@@ -156,7 +156,9 @@ TypeLit  = ArrayType / StructType / PointerType / FunctionType / InterfaceType /
 
 //* Array Types
 ArrayType   = "[" _ length:ArrayLength _ "]" element:ElementType { return new ArrayTypeToken(element, length) }
-ArrayLength = Expression
+// Note: ArrayLength is actually an Expression in Golang specification, but we didn't want to implement
+// expression evaluation INSIDE the compiler. Hence, we chose to only allow int_lit.
+ArrayLength = int_lit
 ElementType = Type
 
 //* Slice Types

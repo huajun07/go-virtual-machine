@@ -1,5 +1,5 @@
 import { Token } from './base'
-import { ExpressionToken } from './expressions'
+import { IntegerLiteralToken } from './literals'
 
 export class TypeToken extends Token {
   constructor() {
@@ -30,6 +30,13 @@ export class PrimitiveTypeToken extends TypeToken {
     )
   }
 
+  static isPrimitiveToken = (token: unknown): token is PrimitiveTypeToken => {
+    return (
+      token instanceof PrimitiveTypeToken &&
+      PrimitiveTypeToken.isPrimitive(token.name)
+    )
+  }
+
   name: (typeof PrimitiveTypeToken.primitiveTypes)[number]
 
   constructor(name: string) {
@@ -43,9 +50,9 @@ export class PrimitiveTypeToken extends TypeToken {
 
 export class ArrayTypeToken extends TypeToken {
   element: TypeToken
-  length: ExpressionToken
+  length: IntegerLiteralToken
 
-  constructor(element: TypeToken, length: ExpressionToken) {
+  constructor(element: TypeToken, length: IntegerLiteralToken) {
     super()
     this.element = element
     this.length = length
