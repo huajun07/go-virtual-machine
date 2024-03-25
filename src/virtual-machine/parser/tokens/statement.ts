@@ -1,10 +1,13 @@
 import { Token } from './base'
 import { BlockToken } from './block'
-import { ShortVariableDeclarationToken } from './declaration'
+import { DeclarationToken, ShortVariableDeclarationToken } from './declaration'
 import { ExpressionToken } from './expressions'
 
 //! TODO (P1): Add other types of statements and expressions
-export type StatementToken = ExpressionToken
+export type StatementToken =
+  | ExpressionToken
+  | SimpleStatementToken
+  | DeclarationToken
 
 export type SimpleStatementToken =
   | IncDecStatementToken

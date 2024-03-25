@@ -24,6 +24,10 @@
     BlockToken,
     ForStatementToken,
     DeferStatementToken,
+    PrimitiveTypeToken,
+    ArrayTypeToken,
+    SliceTypeToken,
+    FunctionTypeToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -140,20 +144,25 @@ interpreted_string_lit = '"' str:$[^\n"]* '"' { return StringLiteralToken.fromSo
 
 //* =============== Types ===============
 //! TODO (P5): If we ever add type checking, then type should return more than just an empty token.
-Type     = TypeName TypeArgs? / TypeLit / "(" _ Type _ ")" { return TypeToken() }
+// Note: `TypeName TypeArgs?` is reduced to `TypeName` as generics are not supported.
+Type     = @TypeName / TypeLit / "(" _ Type _ ")"
 //! TODO (P1): Support qualified identifiers for TypeName.
-TypeName = identifier 
+TypeName = iden:identifier &{ return PrimitiveTypeToken.isPrimitive(iden.identifier) }
+           { return new PrimitiveTypeToken(iden.identifier) }
+//! TODO (P2): Remove TypeArgs and TypeList once we remove all the generics from this parser file.
 TypeArgs = "[" _ TypeList _ ","? "]"
 TypeList = Type (_ "," _ Type )*
 TypeLit  = ArrayType / StructType / PointerType / FunctionType / InterfaceType / SliceType / MapType / ChannelType
 
 //* Array Types
-ArrayType   = "[" _ ArrayLength _ "]" ElementType
-ArrayLength = Expression
+ArrayType   = "[" _ length:ArrayLength _ "]" element:ElementType { return new ArrayTypeToken(element, length) }
+// Note: ArrayLength is actually an Expression in Golang specification, but we didn't want to implement
+// expression evaluation INSIDE the compiler. Hence, we chose to only allow int_lit.
+ArrayLength = int_lit
 ElementType = Type
 
 //* Slice Types
-SliceType = "[" "]" ElementType
+SliceType = "[" "]" element:ElementType { return new SliceTypeToken(element) }
 
 //* Struct Types
 StructType    = "struct" _ "{" _ (_ FieldDecl _ ";"?)* _ "}"
@@ -166,12 +175,17 @@ PointerType = "*" BaseType
 BaseType = Type
 
 //* Function Types
-FunctionType  = "func" _ Signature
-Signature     = Parameters _ Result?
-Result        = Parameters / Type
-Parameters    = "(" _ (_ ParameterList _ ",")? _ ")"
-ParameterList = ParameterDecl ("," _ ParameterDecl)*
-ParameterDecl = IdentifierList? "..."? Type
+FunctionType  = "func" _ @Signature
+Signature     = params:Parameters _ result:Result? { return new FunctionTypeToken(params, result) }
+Result        = @Parameters / type:Type { return [{ type }] }
+// Parameters is an array of { identifier?: string, type: TypeToken }.
+Parameters    = "(" _ @(_ @ParameterList _ ","?)? _ ")"
+ParameterList = head:ParameterDecl tail:(_ "," _ @ParameterDecl)* { return [head, ...tail].flat()}
+// Note: ParameterDecl does not support variadic parameters (i.e. no `xs ...int`).
+ParameterDecl = identifiers:IdentifierList? _ type:Type
+                { return identifiers == null || identifiers.length === 0
+                         ? [{ type }]
+                         : identifiers.map(iden => ({ identifier: iden.identifier, type })) }
 
 //* Interface Types
 InterfaceType  = "interface" _ "{" _ (_ InterfaceElem _ ";"?)* _ "}"

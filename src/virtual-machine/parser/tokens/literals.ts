@@ -20,6 +20,10 @@ export class IntegerLiteralToken extends LiteralToken {
     const value = parseInt(str.replace('_', ''), base)
     return new IntegerLiteralToken(value)
   }
+
+  getValue(): number {
+    return this.value as number
+  }
 }
 
 export class FloatLiteralToken extends LiteralToken {
@@ -27,6 +31,10 @@ export class FloatLiteralToken extends LiteralToken {
   static fromSource(str: string) {
     const value = parseFloat(str)
     return new FloatLiteralToken(value)
+  }
+
+  getValue(): number {
+    return this.value as number
   }
 }
 
@@ -41,5 +49,9 @@ export class StringLiteralToken extends LiteralToken {
   /** Tokenize an interpreted string literal. */
   static fromSourceInterpreted(str: string) {
     return new StringLiteralToken(str)
+  }
+
+  getValue(): string {
+    return this.value as string
   }
 }

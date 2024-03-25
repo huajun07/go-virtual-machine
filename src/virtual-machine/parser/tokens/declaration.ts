@@ -2,7 +2,7 @@ import { Token } from './base'
 import { BlockToken } from './block'
 import { ExpressionToken } from './expressions'
 import { IdentifierToken } from './identifier'
-import { TypeToken } from './type'
+import { FunctionTypeToken, TypeToken } from './type'
 
 export type TopLevelDeclarationToken =
   | DeclarationToken
@@ -12,25 +12,18 @@ export type TopLevelDeclarationToken =
 
 export class FunctionDeclarationToken extends Token {
   name: IdentifierToken
-  signature: SignatureToken
+  signature: FunctionTypeToken
   body?: BlockToken
 
   constructor(
     name: IdentifierToken,
-    _signature: SignatureToken,
+    signature: FunctionTypeToken,
     body?: BlockToken,
   ) {
     super('function_declaration')
     this.name = name
-    //! TODO (P1): Function signature
-    this.signature = new SignatureToken()
+    this.signature = signature
     this.body = body
-  }
-}
-
-export class SignatureToken extends Token {
-  constructor() {
-    super('signature')
   }
 }
 
