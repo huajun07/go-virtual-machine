@@ -9,6 +9,15 @@ export type ExpressionToken =
   | BinaryOperator
   | PrimaryExpressionToken
 
+export function isExpressionToken(obj: any): obj is ExpressionToken {
+    return (
+        obj instanceof LiteralToken ||
+        obj instanceof UnaryOperator ||
+        obj instanceof BinaryOperator ||
+        obj instanceof PrimaryExpressionToken
+    )
+}
+
 export type OperandToken = IdentifierToken | ExpressionToken
 
 export class PrimaryExpressionToken extends Token {

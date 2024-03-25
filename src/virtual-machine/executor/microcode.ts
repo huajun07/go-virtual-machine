@@ -7,6 +7,7 @@ import {
   LoadConstantInstruction,
   LoadVariableInstruction,
   OpInstruction,
+  PopInstruction,
   SetTypeInstruction,
   StoreInstruction,
   UnaryInstruction,
@@ -34,7 +35,9 @@ const execute_microcode = (
   instr: Instruction,
   heap: Heap,
 ) => {
-  if (instr instanceof BinaryInstruction) {
+  if(instr instanceof PopInstruction){
+    context.popOS()
+  } else if (instr instanceof BinaryInstruction) {
     const arg2 = context.popOS()
     const arg1 = context.popOS()
     context.pushOS(apply_binop(instr, arg1, arg2, heap))

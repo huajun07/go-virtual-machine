@@ -15,3 +15,14 @@ export class DoneInstruction extends Instruction {
     return instr.tag === 'DONE'
   }
 }
+
+export class PopInstruction extends Instruction {
+  constructor() {
+    super('POP')
+  }
+
+  static is(instr: Instruction): instr is DoneInstruction {
+    return instr.tag === 'POP'
+  }
+}
+

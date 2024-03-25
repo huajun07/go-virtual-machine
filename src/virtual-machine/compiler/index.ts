@@ -14,6 +14,7 @@ import {
   IfStatementToken,
   IncDecStatementToken,
   IntegerLiteralToken,
+  isExpressionToken,
   PrimaryExpressionToken,
   ReturnStatementToken,
   ShortVariableDeclarationToken,
@@ -35,6 +36,7 @@ import {
   Instruction,
   LoadConstantInstruction,
   LoadVariableInstruction,
+  PopInstruction,
   StoreInstruction,
   // SetTypeInstruction,
   UnaryInstruction,
@@ -58,6 +60,7 @@ class Compiler {
       this.type_environment = this.type_environment.extend()
       for (const sub_token of token.statements) {
         this.compile(sub_token)
+        if(isExpressionToken(sub_token)) this.instructions.push(new PopInstruction())
       }
       this.type_environment = this.type_environment.pop()
 

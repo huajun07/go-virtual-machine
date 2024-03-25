@@ -94,14 +94,14 @@ export class Memory {
         num_bits - bits_covered,
         bytes_in_int * bits_in_byte - block_offset,
       )
+      const val_end = val % (2 ** valid_bits_in_block)
       const mask = ~((2 ** valid_bits_in_block - 1) * 2 ** block_offset)
       const val_mask =
-        ((2 ** valid_bits_in_block - 1) & val) * 2 ** block_offset
+        ((2 ** valid_bits_in_block - 1) & val_end) * 2 ** block_offset
       const temp_val = (this.view.getUint32(block_idx * 4) & mask) | val_mask
-
       this.view.setUint32(block_idx * 4, temp_val)
 
-      val -= (2 ** valid_bits_in_block - 1) & val
+      val -= (2 ** valid_bits_in_block - 1) & val_end
       val = Math.floor(val / 2 ** valid_bits_in_block)
       bits_covered += valid_bits_in_block
       block_offset = 0

@@ -51,7 +51,7 @@ export class Heap {
   copy(dst: number, src: number) {
     const sz = 2 ** this.allocator.get_level(src)
     for (let i = 0; i < sz; i++) {
-      this.memory.set_word(this.memory.get_word(src + i), dst + i)
+      this.memory.set_number(this.memory.get_number(src + i), dst + i)
     }
   }
 
@@ -67,6 +67,7 @@ export class Heap {
     const prev_dst = dst
     dst = this.frame_ptr(dst)
     src = this.frame_ptr(src)
+
     if (this.get_tag(dst) === TAG.UNKNOWN) {
       this.set_addr(this.clone(src), prev_dst)
       return
