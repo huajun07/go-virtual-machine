@@ -44,6 +44,8 @@ export class Heap {
       return this.get_float(addr)
     } else if (this.is_string(addr)) {
       return this.get_string(addr)
+    }else if (this.is_unassigned(addr)){
+      return "unassigned"
     }
     throw Error('Unknown Type')
   }
@@ -116,6 +118,12 @@ export class Heap {
 
   get_child(addr: number, index: number) {
     return this.get_addr(addr + index + 1)
+  }
+
+
+  is_unassigned(addr: number) {
+    addr = this.frame_ptr(addr)
+    return this.get_tag(addr) === TAG.UNKNOWN
   }
 
   // -------------- [ Numbers ] -------------------
@@ -216,24 +224,29 @@ export class Heap {
   }
 
   // -------------- [ Environment ] -------------------
-  allocate_env(frames: number[]) {
+  allocate_env(frames: number[], for_block =  false) {
     const addr = this.allocator.allocate(frames.length + 1)
     this.set_tag(addr, TAG.ENVIRONMENT)
+    this.memory.set_bits(for_block ? 0 : 1, addr, 1, 16)
     this.allocator.set_children(addr, frames)
     // console.log("Env: ", addr)
     return addr
   }
 
-  extend_env(addr: number, frame: number) {
+  extend_env(addr: number, frame: number, for_block =  false) {
     const frames = this.allocator.get_children(addr)
     frames.push(frame)
-    const env = this.allocate_env(frames)
+    const env = this.allocate_env(frames, for_block)
     return env
   }
 
   get_var(addr: number, frame_idx: number, var_idx: number) {
     const frame = this.get_child(addr, frame_idx)
     return frame + var_idx + 1
+  }
+
+  is_for_block(addr:number){
+    return this.memory.get_bits(addr, 1, 16) === 1
   }
 
   // -------------- [ Frame ] -------------------

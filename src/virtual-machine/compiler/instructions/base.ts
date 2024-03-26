@@ -25,4 +25,3 @@ export class PopInstruction extends Instruction {
     return instr.tag === 'POP'
   }
 }
-

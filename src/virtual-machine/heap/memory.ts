@@ -41,7 +41,7 @@ export class Memory {
   /**
    * @param addr Starting Byte of the Memory
    * @param num_bits Number of bits to retrieve
-   * @param bit_offset Bit offset within the byte ([0 - 7]: Defaults to 0)
+   * @param bit_offset Bit offset within the byte ([0 - 63]: Defaults to 0)
    * @returns Number which is the value at the requested position
    */
   get_bits(addr: number, num_bits: number, bit_offset = 0) {
@@ -78,7 +78,7 @@ export class Memory {
    * @param val Value to update
    * @param addr Starting Word of the Memory
    * @param num_bits Number of bits to retrieve
-   * @param bit_offset Bit offset within the byte ([0 - 7]: Defaults to 0)
+   * @param bit_offset Bit offset within the byte ([0 - 63]: Defaults to 0)
    * @returns Number which is the value at the requested position
    */
   set_bits(val: number, addr: number, num_bits: number, bit_offset = 0) {
@@ -94,7 +94,7 @@ export class Memory {
         num_bits - bits_covered,
         bytes_in_int * bits_in_byte - block_offset,
       )
-      const val_end = val % (2 ** valid_bits_in_block)
+      const val_end = val % 2 ** valid_bits_in_block
       const mask = ~((2 ** valid_bits_in_block - 1) * 2 ** block_offset)
       const val_mask =
         ((2 ** valid_bits_in_block - 1) & val_end) * 2 ** block_offset

@@ -12,6 +12,7 @@ import {
   StoreInstruction,
   UnaryInstruction,
 } from '../compiler/instructions'
+import { ExitLoopInstruction, JumpIfFalseInstruction, JumpInstruction } from '../compiler/instructions/control'
 import { Heap } from '../heap'
 
 import { Context } from './context'
@@ -35,7 +36,7 @@ const execute_microcode = (
   instr: Instruction,
   heap: Heap,
 ) => {
-  if(instr instanceof PopInstruction){
+  if (instr instanceof PopInstruction) {
     context.popOS()
   } else if (instr instanceof BinaryInstruction) {
     const arg2 = context.popOS()
@@ -67,10 +68,18 @@ const execute_microcode = (
     context.pushRTS(context.E)
     const new_frame = heap.allocate_frame(instr.frame_size)
     context.pushT(new_frame)
-    context.E = heap.extend_env(context.E, new_frame)
+    context.E = heap.extend_env(context.E, new_frame, instr.for_block)
     context.popT()
   } else if (instr instanceof ExitBlockInstruction) {
     context.E = context.popRTS()
+  }  else if(instr instanceof JumpIfFalseInstruction){
+    const pred = heap.get_boolean(context.popOS())
+    if (!pred) context.PC = instr.addr
+  } else if(instr instanceof ExitLoopInstruction){
+    while(!heap.is_for_block(context.E)) context.E = context.popRTS()
+    context.PC = instr.addr
+  } else if(instr instanceof JumpInstruction){
+    context.PC = instr.addr
   } else {
     throw Error('Invalid Instruction')
   }

@@ -1,3 +1,5 @@
+import { Heap } from "../heap"
+
 class Context {
   PC = 0
   OS: number[] = []
@@ -19,9 +21,9 @@ class Context {
     return this.OS.pop()
   }
 
-  printOS() {
+  printOS(heap: Heap) {
     for (const item of this.OS) {
-      console.log('OS:', item)
+      console.log('OS:', item, heap.get_value(item))
     }
   }
 
