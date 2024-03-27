@@ -34,6 +34,8 @@
     IndexToken,
     SliceToken,
     CallToken,
+    SwitchCaseToken,
+    SwitchStatementToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -418,10 +420,12 @@ IfStmt = "if" _ init:(@SimpleStmt _ ";")? _ pred:Expression _ cons:Block _
 //* Switch Statements
 SwitchStmt      = ExprSwitchStmt / TypeSwitchStmt
 
-ExprSwitchStmt  = "switch" _ (SimpleStmt _ ";")? _ Expression? _ "{" _ (_ ExprCaseClause _)* "}"
-ExprCaseClause  = ExprSwitchCase _ ":" _ StatementList
-ExprSwitchCase  = "case" _ ExpressionList / "default"
+ExprSwitchStmt  = "switch" _ init:(@SimpleStmt _ ";")? _ expr:Expression? _ "{" _ cases:(_ @ExprCaseClause _)* "}"
+                  { return new SwitchStatementToken(init, expr, cases ) }
+ExprCaseClause = "case" _ "default" _ ":" _ statements:StatementList { return new SwitchCaseToken(null, statements) }
+               / "case" _ exprs:ExpressionList _ ":" _ statements:StatementList { return new SwitchCaseToken(exprs, statements) }
 
+// Note: TypeSwitchStmt will most likely not be supported.
 TypeSwitchStmt  = "switch" _ (SimpleStmt _ ";")? _ TypeSwitchGuard _ "{" _ (_ TypeCaseClause _)* _ ")"
 TypeSwitchGuard = (identifier _ ":=")? _ PrimaryExpr _ "." _ "(" _ "type" _ ")"
 TypeCaseClause  = TypeSwitchCase _ ":" _ StatementList
