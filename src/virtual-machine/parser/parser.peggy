@@ -28,6 +28,8 @@
     ArrayTypeToken,
     SliceTypeToken,
     FunctionTypeToken,
+    MapTypeToken,
+    ChannelTypeToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -143,7 +145,6 @@ interpreted_string_lit = '"' str:$[^\n"]* '"' { return StringLiteralToken.fromSo
 
 
 //* =============== Types ===============
-//! TODO (P5): If we ever add type checking, then type should return more than just an empty token.
 // Note: `TypeName TypeArgs?` is reduced to `TypeName` as generics are not supported.
 Type     = @TypeName / TypeLit / "(" _ Type _ ")"
 //! TODO (P1): Support qualified identifiers for TypeName.
@@ -197,11 +198,13 @@ TypeTerm       = Type / UnderlyingType
 UnderlyingType = "~" Type
 
 //* Map Types
-MapType = "map" _ "[" _ "KeyType" _ "]" ElementType
+MapType = "map" _ "[" _ key:KeyType _ "]" _ element:ElementType { return new MapTypeToken(key, element) }
 KeyType = Type
 
 //* Channel Types
-ChannelType = ("chan" / "chan" _ "<-" / "<-" _ "chan") _ ElementType
+ChannelType = "chan" _ "<-" _ element:ElementType { return new ChannelTypeToken(element, false, true) }
+              / "<-" _ "chan" _ element:ElementType { return new ChannelTypeToken(element, true, false) }
+              / "chan" _ ElementType { return new ChannelTypeToken(element, true, true) }
 
 
 

@@ -85,3 +85,19 @@ export class FunctionTypeToken extends TypeToken {
     this.result = result
   }
 }
+
+export class MapTypeToken extends TypeToken {
+  constructor(public key: TypeToken, public element: TypeToken) {
+    super()
+  }
+}
+
+export class ChannelTypeToken extends TypeToken {
+  constructor(
+    public element: TypeToken,
+    public readable: boolean,
+    public writable: boolean,
+  ) {
+    super()
+  }
+}
