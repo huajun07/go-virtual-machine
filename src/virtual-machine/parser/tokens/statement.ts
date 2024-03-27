@@ -91,6 +91,25 @@ export class IfStatementToken extends Token {
   }
 }
 
+export class SwitchStatementToken extends Token {
+  constructor(
+    public init: SimpleStatementToken | null,
+    public expressions: ExpressionToken | null,
+    public cases: SwitchCaseToken[],
+  ) {
+    super('switch')
+  }
+}
+
+export class SwitchCaseToken extends Token {
+  constructor(
+    public expressions: ExpressionToken[] | null,
+    public statements: StatementToken[],
+  ) {
+    super('case')
+  }
+}
+
 export class ForStatementToken extends Token {
   // There are 4 types of for loops:
   // 1. For statement that iterates the body repeatedly.
