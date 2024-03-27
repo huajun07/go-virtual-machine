@@ -30,6 +30,10 @@
     FunctionTypeToken,
     MapTypeToken,
     ChannelTypeToken,
+    SelectorToken,
+    IndexToken,
+    SliceToken,
+    CallToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -309,11 +313,14 @@ PrimaryExpr     = operand:Operand _ rest:PrimaryExprModifier* { return new Prima
 //! TODO (P2): Tokenize PrimaryExprModifier.
 // This PrimaryExprTerm is added to fix left recursion.
 PrimaryExprModifier = Selector / Index / Slice / TypeAssertion / Arguments
-Selector      = "." identifier
-Index         = "[" _ Expression (_ ",")? _ "]"
-Slice         = "[" _ Expression? _ ":" _ Expression _ ":" _ Expression _ "]"
+Selector      = "." identifier:identifier { return new SelectorToken(identifier.identifier) }
+Index         = "[" _ expr:Expression (_ ",")? _ "]" { return new IndexToken(expr) }
+// Note: Full slice expressions are not supported.
+Slice         = "[" _ from:Expression? _ ":" _ to:Expression? _ "]" { return new SliceToken(from, to) }
 TypeAssertion = "." _ "(" _ Type _ ")"
-Arguments     = "(" _ ((ExpressionList / Type (_ "," _ ExpressionList)?) _ "..."? _ ","? _)? _ ")"
+// Note: Variadic arguments are not supported.
+//! TODO (P5): Find out why Golang's spec say that Arguments can contain Type, and is it ok to ignore it?
+Arguments     = "(" _ exprs:ExpressionList? _ ","? _ ")" { return new CallToken(exprs) }
 
 //* Method Expressions
 MethodExpr   = ReceiverType "." MethodName

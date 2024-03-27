@@ -23,13 +23,43 @@ export type OperandToken = IdentifierToken | ExpressionToken
 export class PrimaryExpressionToken extends Token {
   operand: OperandToken
   /** The remaining modifier that is applied to the current operand. E.g. selector / index etc. */
-  rest?: PrimaryExpressionModifierToken
+  rest: PrimaryExpressionModifierToken[] | null
 
-  constructor(operand: OperandToken, rest?: PrimaryExpressionModifierToken) {
+  constructor(
+    operand: OperandToken,
+    rest: PrimaryExpressionModifierToken[] | null,
+  ) {
     super('primary_expression')
     this.operand = operand
     this.rest = rest
   }
 }
 
-export class PrimaryExpressionModifierToken {}
+export class PrimaryExpressionModifierToken extends Token {}
+
+export class SelectorToken extends PrimaryExpressionModifierToken {
+  constructor(public identifier: string) {
+    super('selector')
+  }
+}
+
+export class IndexToken extends PrimaryExpressionModifierToken {
+  constructor(public expression: ExpressionToken) {
+    super('index')
+  }
+}
+
+export class SliceToken extends PrimaryExpressionModifierToken {
+  constructor(
+    public from: ExpressionToken | null,
+    public to: ExpressionToken | null,
+  ) {
+    super('slice')
+  }
+}
+
+export class CallToken extends PrimaryExpressionModifierToken {
+  constructor(public expressions: ExpressionToken[] | null) {
+    super('call')
+  }
+}
