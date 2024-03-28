@@ -9,7 +9,7 @@ export class ContextNode extends BaseNode {
   // [metadata] [PC] [OS] [E] [RTS]
   static create(heap: Heap) {
     const addr = heap.allocate(5)
-    heap.set_tag(addr, TAG.NUMBER)
+    heap.set_tag(addr, TAG.CONTEXT)
     heap.memory.set_number(0, addr + 1)
     heap.temp_roots.push(addr)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 2)
@@ -91,5 +91,11 @@ export class ContextNode extends BaseNode {
       //   console.log(val)
       console.log(val)
     }
+  }
+
+  override get_children(): number[] {
+    const children = [this.RTS().addr, this.OS().addr]
+    if (this.E().addr !== -1) children.push(this.E().addr)
+    return children
   }
 }

@@ -21,3 +21,9 @@ export class ExitBlockInstruction extends Instruction {
     super('EXIT_BLOCK')
   }
 }
+
+export class ReturnInstruction extends Instruction {
+  constructor() {
+    super('RETURN')
+  }
+}

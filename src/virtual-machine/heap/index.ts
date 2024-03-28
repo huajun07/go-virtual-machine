@@ -39,6 +39,7 @@ export class Heap {
   constructor(size: number) {
     this.size = size
     if (this.size % 2 === 1) this.size -= 1
+    if (this.size < 34) throw Error('Insufficient Memory')
     this.memory = new Memory(size, word_size)
     this.max_level = Math.floor(Math.log2(size))
     this.freelist = []
@@ -46,7 +47,7 @@ export class Heap {
     let cur_addr = 0
     while (cur_addr < size) {
       this.set_free(cur_addr, true)
-      const lvl = this.calc_level(size - cur_addr)
+      const lvl = Math.floor(Math.log2(size - cur_addr))
       this.add_list(cur_addr, lvl)
       cur_addr += 2 ** lvl
     }

@@ -57,6 +57,7 @@ export class EnvironmentNode extends BaseNode {
   }
 
   override get_children(): number[] {
-    return this.heap.get_children(this.addr, 1)
+    // TODO: When defer is added this needs to be 1 instead
+    return this.heap.get_children(this.addr, 2)
   }
 }

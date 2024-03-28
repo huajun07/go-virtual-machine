@@ -8,6 +8,7 @@ import {
   LoadConstantInstruction,
   LoadVariableInstruction,
   PopInstruction,
+  ReturnInstruction,
   StoreInstruction,
   UnaryInstruction,
 } from '../compiler/instructions'
@@ -43,17 +44,16 @@ export class Process {
     this.context = new ContextNode(this.heap, this.heap.contexts.get_idx(0))
     const base_frame = FrameNode.create(0, this.heap)
     const base_env = EnvironmentNode.create([base_frame.addr], false, this.heap)
-    this.context.pushRTS(base_env.addr)
+    this.context.set_E(base_env.addr)
   }
 
   start() {
     let runtime_count = 0
-    console.log(this.context.PC())
     while (!DoneInstruction.is(this.instructions[this.context.PC()])) {
       const instr = this.instructions[this.context.incr_PC()]
-      console.log('Instr:', instr)
+      //   console.log('Instr:', instr)
       this.execute_microcode(instr)
-      this.context.printOS()
+      //   this.context.printOS()
       //   this.context.printRTS()
       runtime_count += 1
       if (runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
@@ -137,6 +137,8 @@ export class Process {
       this.context.set_PC(instr.addr)
     } else if (instr instanceof JumpInstruction) {
       this.context.set_PC(instr.addr)
+    } else if (instr instanceof ReturnInstruction) {
+      // pass
     } else {
       throw Error('Invalid Instruction')
     }

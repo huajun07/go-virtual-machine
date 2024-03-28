@@ -42,6 +42,7 @@ import {
   LoadConstantInstruction,
   LoadVariableInstruction,
   PopInstruction,
+  ReturnInstruction,
   StoreInstruction,
   // SetTypeInstruction,
   UnaryInstruction,
@@ -217,12 +218,20 @@ class Compiler {
       return new NoType()
     } else if (token instanceof ReturnStatementToken) {
       // TODO: Implement
+      if (token.returns) {
+        for (const expr of token.returns) {
+          this.compile(expr)
+        }
+      }
+      this.instructions.push(new ReturnInstruction())
     } else if (token instanceof BreakStatementToken) {
       const jumpInstr = new ExitLoopInstruction()
       this.context.add_break(jumpInstr)
+      this.instructions.push(jumpInstr)
     } else if (token instanceof ContinueStatementToken) {
       const jumpInstr = new ExitLoopInstruction()
       this.context.add_continue(jumpInstr)
+      this.instructions.push(jumpInstr)
     } else if (token instanceof FallthroughStatementToken) {
       // TODO: Implement
     } else if (token instanceof IfStatementToken) {

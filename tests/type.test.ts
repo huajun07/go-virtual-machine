@@ -1,13 +1,6 @@
-import { assert, describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
-import { runCode } from '../src/virtual-machine'
-
-// This file contains tests for type checking.
-
-/** Runs the code in a main function */
-const mainRunner = (code: string) => {
-  return runCode(`package main;\nfunc main() {\n${code}\n}`, 2048)
-}
+import { mainRunner } from './utility'
 
 describe('Assignment Type Checking', () => {
   test('Declaration', () => {
