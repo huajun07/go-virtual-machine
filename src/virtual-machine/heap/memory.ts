@@ -1,5 +1,6 @@
 const bytes_in_int = 4 // Number of bytes in int
 const bits_in_byte = 8 // Number of bits in byte
+const bits_in_int = bytes_in_int * bits_in_byte
 
 export class Memory {
   array: ArrayBuffer
@@ -10,7 +11,7 @@ export class Memory {
    * @param size Number of bytes in memory
    * @param word_size How many bytes in a word
    */
-  constructor(size: number, word_size = 8) {
+  constructor(size: number, word_size = 4) {
     if (!Number.isInteger(Math.log(word_size) / Math.log(2)))
       throw Error('Word Size must be power of 2')
     this.word_size = word_size
@@ -19,57 +20,31 @@ export class Memory {
   }
 
   check_valid(num_bits: number, bit_offset: number) {
-    const bits_in_word = this.word_size * bits_in_byte
-    if (num_bits > bits_in_word || num_bits < 0)
+    if (bit_offset >= bits_in_int || num_bits < 0 || bit_offset < 0)
       throw Error('Invalid number of bits')
-    if (bit_offset + num_bits > bits_in_word) throw Error('Exceed word length')
-  }
-
-  /**
-   * Figure out which 32 bit block to start in and what is the offset
-   */
-  get_block_and_offset(addr: number, bit_offset: number) {
-    addr *= this.word_size
-    const block_offset =
-      (bit_offset + addr * bits_in_byte) % (bits_in_byte * bytes_in_int)
-    const block_idx = Math.floor(
-      (addr + Math.floor(bit_offset / bits_in_byte)) / bytes_in_int,
-    )
-    return [block_idx, block_offset]
   }
 
   /**
    * @param addr Starting Byte of the Memory
    * @param num_bits Number of bits to retrieve
-   * @param bit_offset Bit offset within the byte ([0 - 7]: Defaults to 0)
+   * @param bit_offset Bit offset within the byte ([0 - 31]: Defaults to 0)
    * @returns Number which is the value at the requested position
    */
   get_bits(addr: number, num_bits: number, bit_offset = 0) {
     this.check_valid(num_bits, bit_offset)
-    let [block_idx, block_offset] = this.get_block_and_offset(addr, bit_offset)
-    /**
-     * Iterate through the 32 bit blocks and sum the values to get the answer
-     */
-    let bits_covered = 0
-    let carry = 1
     let val = 0
-    while (bits_covered < num_bits) {
-      const valid_bits_in_block = Math.min(
-        num_bits - bits_covered,
-        bytes_in_int * bits_in_byte - block_offset,
-      )
-      const mask = (2 ** valid_bits_in_block - 1) * 2 ** block_offset
-
+    let carry = 1
+    while (num_bits > 0) {
+      const effective_bits = Math.min(num_bits, bits_in_int - bit_offset)
+      const mask = (2 ** num_bits - 1) * 2 ** bit_offset
       val +=
         Math.floor(
-          ((mask & this.view.getUint32(block_idx * 4)) >>> 0) /
-            2 ** block_offset,
+          ((mask & this.view.getUint32(addr * 4)) >>> 0) / 2 ** bit_offset,
         ) * carry
-
-      bits_covered += valid_bits_in_block
-      block_offset = 0
-      carry *= 2 ** valid_bits_in_block
-      block_idx++
+      carry *= 2 ** effective_bits
+      bit_offset = 0
+      num_bits -= effective_bits
+      addr += 1
     }
     return val
   }
@@ -78,36 +53,22 @@ export class Memory {
    * @param val Value to update
    * @param addr Starting Word of the Memory
    * @param num_bits Number of bits to retrieve
-   * @param bit_offset Bit offset within the byte ([0 - 7]: Defaults to 0)
-   * @returns Number which is the value at the requested position
+   * @param bit_offset Bit offset within the byte ([0 - 31]: Defaults to 0)
    */
   set_bits(val: number, addr: number, num_bits: number, bit_offset = 0) {
     this.check_valid(num_bits, bit_offset)
-    let [block_idx, block_offset] = this.get_block_and_offset(addr, bit_offset)
-
-    /**
-     * Iterate through the 32 bit blocks and set the value in that block
-     */
-    let bits_covered = 0
-    while (bits_covered < num_bits) {
-      const valid_bits_in_block = Math.min(
-        num_bits - bits_covered,
-        bytes_in_int * bits_in_byte - block_offset,
-      )
-      const mask = ~((2 ** valid_bits_in_block - 1) * 2 ** block_offset)
+    while (num_bits > 0) {
+      const effective_bits = Math.min(num_bits, bits_in_int - bit_offset)
+      const mask = ~((2 ** effective_bits - 1) * 2 ** bit_offset)
       const val_mask =
-        ((2 ** valid_bits_in_block - 1) & val) * 2 ** block_offset
-      const temp_val = (this.view.getUint32(block_idx * 4) & mask) | val_mask
-
-      this.view.setUint32(block_idx * 4, temp_val)
-
-      val -= (2 ** valid_bits_in_block - 1) & val
-      val = Math.floor(val / 2 ** valid_bits_in_block)
-      bits_covered += valid_bits_in_block
-      block_offset = 0
-      block_idx++
+        ((2 ** num_bits - 1) & val % 2 ** effective_bits) * 2 ** bit_offset
+      const temp_val = (this.view.getUint32(addr * 4) & mask) | val_mask
+      this.view.setUint32(addr * 4, temp_val)
+      bit_offset = 0
+      val = Math.floor(val / 2 ** effective_bits)
+      num_bits -= effective_bits
+      addr += 1
     }
-    return val
   }
 
   /**
@@ -141,14 +102,14 @@ export class Memory {
    * @param addr Starting word index
    */
   set_word(val: number, addr: number) {
-    this.set_bits(val, addr, bits_in_byte * this.word_size)
+    this.view.setInt32(addr * 4, val >>> 0)
   }
 
   /**
    * @param addr Starting word index
    */
   get_word(addr: number) {
-    return this.get_bits(addr, bits_in_byte * this.word_size)
+    return this.view.getInt32(addr * 4)
   }
 
   /**
@@ -173,18 +134,18 @@ export class Memory {
   }
 
   get_number(addr: number) {
-    return this.view.getBigInt64(addr * this.word_size)
+    return this.view.getInt32(addr * this.word_size)
   }
 
-  set_number(val: bigint, addr: number) {
-    return this.view.setBigInt64(addr * this.word_size, val)
+  set_number(val: number, addr: number) {
+    return this.view.setInt32(addr * this.word_size, val)
   }
 
   get_float(addr: number) {
-    return this.view.getFloat64(addr * this.word_size)
+    return this.view.getFloat32(addr * this.word_size)
   }
 
   set_float(val: number, addr: number) {
-    return this.view.setFloat64(addr * this.word_size, val)
+    return this.view.setFloat32(addr * this.word_size, val)
   }
 }

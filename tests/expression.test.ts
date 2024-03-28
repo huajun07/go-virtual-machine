@@ -1,30 +1,17 @@
 import { describe, expect, test } from 'vitest'
 
-import { runCode } from '../src/virtual-machine'
+import { mainRunner } from './utility'
 
 describe('Basic Expression Tests', () => {
   test('Basic Arithmetic 1', () => {
-    expect(
-      runCode(
-        'package main;import "fmt"; func main() { 5 * -1 + 3 * 4 / 2 + 3;};',
-        256,
-      ).output,
-    ).toEqual('4')
+    expect(mainRunner('return 5 * -1 + 3 * 4 / 2 + 3').output).toEqual('4')
   })
   test('Basic Arithmetic 2', () => {
-    expect(
-      runCode(
-        'package main;import "fmt"; func main() { (4+3)*5%(5+3)+2;};',
-        256,
-      ).output,
-    ).toEqual('5')
+    expect(mainRunner('return (4+3)*5%(5+3)+2').output).toEqual('5')
   })
   test('Boolean Expression', () => {
-    expect(
-      runCode(
-        'package main;import "fmt"; func main() { (2+1 < 3) || (7 == 9%5 + 15/5);};',
-        256,
-      ).output,
-    ).toEqual('true')
+    expect(mainRunner('return (2+1 < 3) || (7 == 9%5 + 15/5)').output).toEqual(
+      'true',
+    )
   })
 })

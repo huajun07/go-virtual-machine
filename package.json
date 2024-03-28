@@ -4,7 +4,7 @@
   "scripts": {
     "local": "npm run generate-parser && react-scripts start",
     "dev": "NODE_ENV=dev && concurrently \"npm run generate-parser-watch\" \"react-scripts start\"",
-    "build": "react-scripts build",
+    "build": "npm run generate-parser && react-scripts build",
     "test": "npm run generate-parser && vitest",
     "eject": "react-scripts eject",
     "lint-no-fix": "eslint ./ --ignore-path .gitignore && prettier . -c",
