@@ -31,9 +31,9 @@ class CompileEnvironment {
     return [frame_idx, new_len - 1]
   }
 
-  get_frame_size() {
+  get_frame() {
     const frame_idx = this.frames.length - 1
-    return this.frames[frame_idx].length
+    return this.frames[frame_idx]
   }
 }
 
@@ -69,7 +69,7 @@ export class CompileContext {
   }
 
   push_loop() {
-    this.loop_stack.push( new LoopMarker())
+    this.loop_stack.push(new LoopMarker())
   }
 
   add_break(instr: JumpInstruction) {

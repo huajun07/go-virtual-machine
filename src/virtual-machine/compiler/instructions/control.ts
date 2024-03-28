@@ -21,8 +21,8 @@ export class JumpIfFalseInstruction extends JumpInstruction {
 }
 
 export class ExitLoopInstruction extends JumpInstruction {
-    constructor(addr = 0) {
-      super(addr)
-      this.tag = 'JUMP_LOOP'
-    }
+  constructor(addr = 0) {
+    super(addr)
+    this.tag = 'JUMP_LOOP'
   }
+}
