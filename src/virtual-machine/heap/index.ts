@@ -1,94 +1,310 @@
-import { Context } from '../executor/context'
-
-import { Allocator } from './allocator'
+import { ContextNode } from './types/context'
+import { EnvironmentNode, FrameNode } from './types/environment'
+import {
+  BoolNode,
+  FloatNode,
+  IntegerNode,
+  StringListNode,
+  StringNode,
+  UnassignedNode,
+} from './types/primitives'
+import { ListNode, StackNode } from './types/structures'
 import { Memory } from './memory'
 
 export enum TAG {
   UNKNOWN = 0,
   BOOLEAN = 1,
   NUMBER = 2,
-  FRAME_PTR = 3,
+  CONTEXT = 3,
   FRAME = 4,
   ENVIRONMENT = 5,
   FLOAT = 6,
   STRING = 7,
+  STRING_LIST = 8,
+  STACK = 9,
+  LIST = 10,
 }
+
+export const word_size = 4
 
 export class Heap {
   // Assume memory is an array of 8 byte words
   memory: Memory
   size: number
-  allocator: Allocator
-  UNASSIGNED = 0
-  constructor(size: number, context: Context) {
+  UNASSIGNED: UnassignedNode
+  freelist: number[]
+  max_level: number
+  temp_roots: StackNode
+  contexts: StackNode
+  constructor(size: number) {
     this.size = size
-    this.memory = new Memory(size, 8)
-    this.allocator = new Allocator(size, this.memory, context)
-    this.allocate_literals()
-  }
-
-  allocate_literals() {
-    this.UNASSIGNED = this.allocator.allocate(1)
-    this.set_tag(this.UNASSIGNED, TAG.UNKNOWN)
-    this.allocator.set_children(this.UNASSIGNED, [])
-
-    this.allocator.set_constants([this.UNASSIGNED])
+    if (this.size % 2 === 1) this.size -= 1
+    if (this.size < 34) throw Error('Insufficient Memory')
+    this.memory = new Memory(size, word_size)
+    this.max_level = Math.floor(Math.log2(size))
+    this.freelist = []
+    for (let i = 0; i < this.max_level; i++) this.freelist.push(-1)
+    let cur_addr = 0
+    while (cur_addr < size) {
+      this.set_free(cur_addr, true)
+      const lvl = Math.floor(Math.log2(size - cur_addr))
+      this.add_list(cur_addr, lvl)
+      cur_addr += 2 ** lvl
+    }
+    this.UNASSIGNED = UnassignedNode.create(this)
+    this.temp_roots = StackNode.create(this)
+    this.contexts = StackNode.create(this)
+    const context = ContextNode.create(this)
+    this.contexts.push(context.addr)
   }
 
   get_value(addr: number) {
-    if (this.is_number(addr)) {
-      return this.get_number(addr)
-    } else if (this.is_boolean(addr)) {
-      return this.get_boolean(addr)
-    } else if (this.is_float(addr)) {
-      return this.get_float(addr)
-    } else if (this.is_string(addr)) {
-      return this.get_string(addr)
+    const tag = this.get_tag(addr)
+    switch (tag) {
+      case TAG.UNKNOWN:
+        return new UnassignedNode(this, addr)
+      case TAG.NUMBER:
+        return new IntegerNode(this, addr)
+      case TAG.FLOAT:
+        return new FloatNode(this, addr)
+      case TAG.STRING:
+        return new StringNode(this, addr)
+      case TAG.STRING_LIST:
+        return new StringListNode(this, addr)
+      case TAG.BOOLEAN:
+        return new BoolNode(this, addr)
+      case TAG.CONTEXT:
+        return new ContextNode(this, addr)
+      case TAG.FRAME:
+        return new FrameNode(this, addr)
+      case TAG.ENVIRONMENT:
+        return new EnvironmentNode(this, addr)
+      case TAG.LIST:
+        return new ListNode(this, addr)
+      case TAG.STACK:
+        return new StackNode(this, addr)
+      default:
+        throw Error('Unknown Data Type')
     }
-    throw Error('Unknown Type')
+  }
+
+  // [********** Linked List Helper Funcs ****************]
+
+  /**
+   * Doubly Linked List Implementation for LogN Freelists
+   * A Node is the first node if prev_node = cur_addr
+   * Similarly a node is the last node if next_node = cur_addr
+   */
+
+  add_list(addr: number, lvl: number) {
+    this.set_level(addr, lvl)
+    this.set_prev(addr, addr)
+    if (this.freelist[lvl] === -1) {
+      this.set_next(addr, addr)
+    } else this.set_next(addr, this.freelist[lvl])
+    this.freelist[lvl] = addr
+  }
+
+  pop_list(addr: number) {
+    const lvl = this.get_level(addr)
+    const prev_addr = this.get_prev(addr)
+    const next_addr = this.get_next(addr)
+    if (prev_addr === addr) {
+      // Is head
+      this.freelist[lvl] = next_addr === addr ? -1 : next_addr
+    } else {
+      this.set_next(prev_addr, next_addr === addr ? prev_addr : next_addr)
+    }
+    if (next_addr !== addr) {
+      this.set_prev(next_addr, prev_addr === addr ? next_addr : prev_addr)
+    }
+    this.memory.set_word(0, addr)
+  }
+
+  get_prev(addr: number) {
+    return this.memory.get_bits(addr, 29, 6) * 2
+  }
+
+  set_prev(addr: number, val: number) {
+    this.memory.set_bits(val / 2, addr, 29, 6)
+  }
+
+  get_next(addr: number) {
+    return this.memory.get_bits(addr + 1, 29, 3) * 2
+  }
+
+  set_next(addr: number, val: number) {
+    this.memory.set_bits(val / 2, addr + 1, 29, 3)
+  }
+
+  set_level(addr: number, lvl: number) {
+    this.memory.set_bits(lvl, addr, 5, 1)
+  }
+
+  get_level(addr: number) {
+    return this.memory.get_bits(addr, 5, 1)
+  }
+
+  get_size(addr: number) {
+    return 2 ** this.get_level(addr)
+  }
+
+  is_free(addr: number) {
+    return this.memory.get_bits(addr, 1) === 1
+  }
+
+  set_free(addr: number, free: boolean) {
+    this.memory.set_bits(free ? 1 : 0, addr, 1)
+  }
+
+  // [********** Buddy Block Allocation + Free-ing ****************]
+
+  allocate(size: number) {
+    const try_allocate = () => {
+      const lvl = Math.max(1, this.calc_level(size))
+      for (let cur_lvl = lvl; cur_lvl < this.freelist.length; cur_lvl++) {
+        if (this.freelist[cur_lvl] !== -1) {
+          const addr = this.freelist[cur_lvl]
+          this.pop_list(addr)
+          this.set_free(addr, false)
+          while (cur_lvl > lvl) {
+            cur_lvl--
+            const sibling = addr + 2 ** cur_lvl
+            this.set_free(sibling, true)
+            this.add_list(sibling, cur_lvl)
+          }
+          this.set_level(addr, lvl)
+          return addr
+        }
+      }
+      return -1
+    }
+
+    let addr = try_allocate()
+    if (addr === -1) {
+      this.mark_and_sweep()
+      addr = try_allocate()
+    }
+    if (addr === -1) throw Error('Ran out of memory!')
+    return addr
+  }
+
+  free(addr: number) {
+    let lvl = this.get_level(addr)
+    while (lvl < this.freelist.length) {
+      const sibling = addr ^ (1 << lvl)
+      if (sibling >= this.size || !this.is_free(sibling)) break
+      this.pop_list(sibling)
+      addr = Math.min(addr, sibling)
+      lvl++
+    }
+    this.set_free(addr, true)
+    this.add_list(addr, lvl)
+    return addr + (1 << lvl)
+  }
+  calc_level(x: number) {
+    return Math.ceil(Math.log2(x))
+  }
+
+  // [********** Garbage Collection: Mark and Sweep ****************]
+
+  is_marked(addr: number) {
+    return this.memory.get_bits(addr, 1, 6) === 1
+  }
+
+  set_mark(addr: number, mark: boolean) {
+    this.memory.set_bits(mark ? 1 : 0, addr, 1, 6)
+  }
+
+  get_child(addr: number, index: number) {
+    return this.memory.get_word(addr + index)
+  }
+
+  set_child(val: number, addr: number, index: number) {
+    this.memory.set_word(val, addr + index)
+  }
+
+  set_end_child(addr: number, index: number) {
+    this.memory.set_word(-1, addr + index)
+  }
+
+  set_children(addr: number, children: number[], offset = 1) {
+    const max_size = this.get_size(addr) + addr
+    addr += offset
+    if (children.length + addr > max_size) throw Error('Too many children!')
+    for (let i = 0; i < children.length; i++) {
+      this.set_child(children[i], addr, i)
+    }
+    if (children.length + addr < max_size) {
+      this.set_end_child(addr, children.length)
+    }
+  }
+
+  get_children(addr: number, offset = 1) {
+    const max_size = this.get_size(addr) + addr
+    addr += offset
+    const children: number[] = []
+    let idx = 0
+    while (idx + addr < max_size) {
+      if (this.get_child(addr, idx) === -1) break
+      children.push(this.get_child(addr, idx))
+      idx++
+    }
+    return children
+  }
+
+  mark(addr: number) {
+    if (this.is_marked(addr)) return
+    this.set_mark(addr, true)
+    const children = this.get_value(addr).get_children()
+    for (const child of children) {
+      this.mark(child)
+    }
+  }
+
+  mark_and_sweep() {
+    const roots: number[] = [
+      this.contexts.addr,
+      this.temp_roots.addr,
+      this.UNASSIGNED.addr,
+    ]
+    for (const root of roots) {
+      this.mark(root)
+    }
+    for (let cur_addr = 0; cur_addr < this.size; ) {
+      if (!this.is_free(cur_addr) && !this.is_marked(cur_addr)) {
+        cur_addr = this.free(cur_addr)
+      } else {
+        if (this.is_marked(cur_addr)) this.set_mark(cur_addr, false)
+        cur_addr += this.get_size(cur_addr)
+      }
+    }
+    return
   }
 
   copy(dst: number, src: number) {
-    const sz = 2 ** this.allocator.get_level(src)
+    const sz = Math.min(this.get_size(src), this.get_size(dst))
+    const lvl = this.get_level(dst)
     for (let i = 0; i < sz; i++) {
       this.memory.set_word(this.memory.get_word(src + i), dst + i)
     }
+    this.set_level(dst, lvl)
   }
 
   clone(addr: number) {
-    const sz = 2 ** this.allocator.get_level(addr)
-    const res = this.allocator.allocate(sz)
+    const sz = 2 ** this.get_level(addr)
+    const res = this.allocate(sz)
     // console.log("clone", res)
     this.copy(res, addr)
     return res
-  }
-
-  store_value(dst: number, src: number) {
-    const prev_dst = dst
-    dst = this.frame_ptr(dst)
-    src = this.frame_ptr(src)
-    if (this.get_tag(dst) === TAG.UNKNOWN) {
-      this.set_addr(this.clone(src), prev_dst)
-      return
-    }
-    if (this.get_tag(dst) !== this.get_tag(src))
-      throw Error('Invalid Type Assignment')
-    // TODO: Array length check
-    this.copy(dst, src)
-  }
-
-  frame_ptr(addr: number) {
-    if (this.get_tag(addr) === TAG.FRAME_PTR)
-      return this.memory.get_bytes(addr, 4, 4)
-    return addr
   }
 
   /**
    *                [ Word Format ]
    *
    *     Free Node: [1 bit free bit] [5 bits Level data] [29 bits Prev Node] [29 bits Next Node]
-   * Not-Free Node: [1 bit free bit] [5 bits Level data] [1 bit Mark & Sweep] [1 bit Children Bit]
-   *                [1 Byte Type Tag] [6 Bytes Payload - Depends on type]
+   * Not-Free Node: [1 bit free bit] [5 bits Level data] [1 bit Mark & Sweep] [1 bit Used]
+   *                [1 Byte Type Tag] [2 Bytes Payload - Depends on type]
    *
    * Assumptions:
    *    - Address space is 2^32 bytes or 2^29 words max (Browser Memory Limit is 64 GB)
@@ -103,147 +319,5 @@ export class Heap {
 
   get_tag(addr: number) {
     return this.memory.get_bytes(addr, 1, 1)
-  }
-
-  get_addr(addr: number) {
-    return this.memory.get_bytes(addr, 4, 4)
-  }
-
-  set_addr(val: number, addr: number) {
-    return this.memory.set_bytes(val, addr, 4, 4)
-  }
-
-  get_child(addr: number, index: number) {
-    return this.get_addr(addr + index + 1)
-  }
-
-  // -------------- [ Numbers ] -------------------
-  allocate_number(num: number) {
-    const addr = this.allocator.allocate(2)
-    this.set_tag(addr, TAG.NUMBER)
-    this.allocator.set_children(addr, [])
-    this.memory.set_number(BigInt(num), addr + 1)
-    // console.log("Number: ", num, addr)
-    return addr
-  }
-
-  is_number(addr: number) {
-    addr = this.frame_ptr(addr)
-    return this.get_tag(addr) === TAG.NUMBER
-  }
-
-  get_number(addr: number) {
-    addr = this.frame_ptr(addr)
-    return Number(this.memory.get_number(addr + 1))
-  }
-
-  // -------------- [ Floats ] -------------------
-  allocate_float(num: number) {
-    const addr = this.allocator.allocate(2)
-    this.set_tag(addr, TAG.FLOAT)
-    this.allocator.set_children(addr, [])
-    this.memory.set_float(num, addr + 1)
-    // console.log("Float: ", num, addr)
-    return addr
-  }
-
-  is_float(addr: number) {
-    addr = this.frame_ptr(addr)
-    return this.get_tag(addr) === TAG.FLOAT
-  }
-
-  get_float(addr: number) {
-    addr = this.frame_ptr(addr)
-    return this.memory.get_float(addr + 1)
-  }
-
-  // -------------- [ String ] -------------------
-  // [6 Bytes Payload]: String Length
-  allocate_string(str: string) {
-    const sz = Math.ceil(str.length / 8)
-    const addr = this.allocator.allocate(sz + 1)
-    this.set_tag(addr, TAG.STRING)
-    this.allocator.set_children(addr, [])
-    this.memory.set_bytes(str.length, addr, 6, 2)
-    for (let i = 0; i < str.length; i++) {
-      this.memory.set_bytes(
-        str.charCodeAt(i),
-        Math.floor(i / 8) + addr + 1,
-        1,
-        i % 8,
-      )
-    }
-    // console.log("String: ", str, addr)
-    return addr
-  }
-
-  is_string(addr: number) {
-    addr = this.frame_ptr(addr)
-    return this.get_tag(addr) === TAG.STRING
-  }
-
-  get_string(addr: number) {
-    addr = this.frame_ptr(addr)
-    const len = this.memory.get_bytes(addr, 6, 2)
-    let res = ''
-    for (let i = 0; i < len; i++) {
-      res += String.fromCharCode(
-        this.memory.get_bytes(Math.floor(i / 8) + addr + 1, 1, i % 8),
-      )
-    }
-    return res
-  }
-
-  // -------------- [ Boolean ] -------------------
-  // [6 byte payload: first byte determines false or true]
-  allocate_boolean(val: boolean) {
-    const addr = this.allocator.allocate(1)
-    this.set_tag(addr, TAG.BOOLEAN)
-    this.allocator.set_children(addr, [])
-    this.memory.set_bytes(val ? -1 : 0, addr, 1, 2)
-    return addr
-  }
-
-  is_boolean(addr: number) {
-    addr = this.frame_ptr(addr)
-    return this.get_tag(addr) === TAG.BOOLEAN
-  }
-
-  get_boolean(addr: number) {
-    addr = this.frame_ptr(addr)
-    return this.memory.get_bytes(addr, 1, 2) !== 0
-  }
-
-  // -------------- [ Environment ] -------------------
-  allocate_env(frames: number[]) {
-    const addr = this.allocator.allocate(frames.length + 1)
-    this.set_tag(addr, TAG.ENVIRONMENT)
-    this.allocator.set_children(addr, frames)
-    // console.log("Env: ", addr)
-    return addr
-  }
-
-  extend_env(addr: number, frame: number) {
-    const frames = this.allocator.get_children(addr)
-    frames.push(frame)
-    const env = this.allocate_env(frames)
-    return env
-  }
-
-  get_var(addr: number, frame_idx: number, var_idx: number) {
-    const frame = this.get_child(addr, frame_idx)
-    return frame + var_idx + 1
-  }
-
-  // -------------- [ Frame ] -------------------
-  allocate_frame(frame_size: number) {
-    const addr = this.allocator.allocate(frame_size + 1)
-    this.set_tag(addr, TAG.FRAME)
-    this.allocator.set_children(addr, Array(frame_size).fill(this.UNASSIGNED))
-    for (let i = 0; i < frame_size; i++) {
-      this.set_tag(addr + i + 1, TAG.FRAME_PTR)
-    }
-    // console.log("Frame: ", frame_size, addr)
-    return addr
   }
 }

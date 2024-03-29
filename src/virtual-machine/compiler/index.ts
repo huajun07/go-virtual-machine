@@ -14,6 +14,7 @@ import {
   IfStatementToken,
   IncDecStatementToken,
   IntegerLiteralToken,
+  isExpressionToken,
   PrimaryExpressionToken,
   ReturnStatementToken,
   ShortVariableDeclarationToken,
@@ -24,8 +25,13 @@ import {
   VariableDeclarationToken,
 } from '../parser/tokens'
 
+import {
+  ExitLoopInstruction,
+  JumpIfFalseInstruction,
+  JumpInstruction,
+} from './instructions/control'
 import { TypeEnvironment } from './typing/type_environment'
-import { CompileEnvironment } from './environment'
+import { CompileContext } from './environment'
 import {
   BinaryInstruction,
   BlockInstruction,
@@ -35,6 +41,8 @@ import {
   Instruction,
   LoadConstantInstruction,
   LoadVariableInstruction,
+  PopInstruction,
+  ReturnInstruction,
   StoreInstruction,
   // SetTypeInstruction,
   UnaryInstruction,
@@ -43,37 +51,34 @@ import { Float64Type, Int64Type, NoType, StringType, Type } from './typing'
 
 class Compiler {
   instructions: Instruction[] = []
-  env = new CompileEnvironment()
-  env_stack = [this.env]
+  context = new CompileContext()
   type_environment = new TypeEnvironment()
 
   compile(token: Token): Type {
     if (token instanceof BlockToken) {
-      const new_env = new CompileEnvironment(this.env)
-      this.env_stack.push(this.env)
-      this.env = new_env
-
+      this.context.push_env()
       const block_instr = new BlockInstruction()
       this.instructions.push(block_instr)
       this.type_environment = this.type_environment.extend()
       for (const sub_token of token.statements) {
         this.compile(sub_token)
+        if (isExpressionToken(sub_token))
+          this.instructions.push(new PopInstruction())
       }
+      const vars = this.context.env.get_frame()
+      block_instr.set_frame(vars.map((name) => this.type_environment.get(name)))
       this.type_environment = this.type_environment.pop()
+      this.context.pop_env()
 
       this.instructions.push(new ExitBlockInstruction())
 
-      block_instr.set_frame_size(this.env.get_frame_size())
-      const old_env = this.env_stack.pop()
-      if (!old_env) throw Error('Compile Env Stack Empty!')
-      this.env = old_env
       return new NoType()
     } else if (token instanceof ShortVariableDeclarationToken) {
       const { identifiers, expressions } = token
       for (let i = 0; i < identifiers.length; i++) {
         const var_name = identifiers[i].identifier
         const expr = expressions[i]
-        const [frame_idx, var_idx] = this.env.declare_var(var_name)
+        const [frame_idx, var_idx] = this.context.env.declare_var(var_name)
         const expressionType = this.compile(expr)
         this.type_environment.addType(var_name, expressionType)
         this.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
@@ -92,7 +97,7 @@ class Compiler {
 
       // Add identifiers to environment.
       for (const identifier of identifiers) {
-        this.env.declare_var(identifier.identifier)
+        this.context.env.declare_var(identifier.identifier)
       }
 
       const expectedType = varType ? Type.fromToken(varType) : undefined
@@ -107,7 +112,7 @@ class Compiler {
         for (let i = 0; i < identifiers.length; i++) {
           const identifier = identifiers[i].identifier
           const expression = expressions[i]
-          const [frame_idx, var_idx] = this.env.find_var(identifier)
+          const [frame_idx, var_idx] = this.context.env.find_var(identifier)
           const expressionType = this.compile(expression)
           if (expectedType && !expectedType.equals(expressionType)) {
             throw Error(
@@ -143,7 +148,7 @@ class Compiler {
       for (let i = 0; i < identifiers.length; i++) {
         const var_name = identifiers[i].identifier
         const expr = expressions[i]
-        const [frame_idx, var_idx] = this.env.declare_var(var_name)
+        const [frame_idx, var_idx] = this.context.env.declare_var(var_name)
         const expressionType = this.compile(expr)
         if (expectedType && !expressionType.equals(expectedType)) {
           throw Error(
@@ -155,7 +160,7 @@ class Compiler {
         this.instructions.push(new StoreInstruction())
       }
     } else if (token instanceof IdentifierToken) {
-      const [frame_idx, var_idx] = this.env.find_var(token.identifier)
+      const [frame_idx, var_idx] = this.context.env.find_var(token.identifier)
       this.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
       return this.type_environment.get(token.identifier)
     } else if (token instanceof PrimaryExpressionToken) {
@@ -213,16 +218,83 @@ class Compiler {
       return new NoType()
     } else if (token instanceof ReturnStatementToken) {
       // TODO: Implement
+      if (token.returns) {
+        for (const expr of token.returns) {
+          this.compile(expr)
+        }
+      }
+      this.instructions.push(new ReturnInstruction())
     } else if (token instanceof BreakStatementToken) {
-      // TODO: Implement
+      const jumpInstr = new ExitLoopInstruction()
+      this.context.add_break(jumpInstr)
+      this.instructions.push(jumpInstr)
     } else if (token instanceof ContinueStatementToken) {
-      // TODO: Implement
+      const jumpInstr = new ExitLoopInstruction()
+      this.context.add_continue(jumpInstr)
+      this.instructions.push(jumpInstr)
     } else if (token instanceof FallthroughStatementToken) {
       // TODO: Implement
     } else if (token instanceof IfStatementToken) {
-      // TODO: Implement
+      this.context.push_env()
+      const block_instr = new BlockInstruction()
+      this.instructions.push(block_instr)
+      this.type_environment = this.type_environment.extend()
+      // Initialisation
+      if (token.initialization) this.compile(token.initialization)
+
+      // Eval Predicate
+      this.compile(token.predicate)
+      // If False jump to alternative / end
+      const jumpToAlternative = new JumpIfFalseInstruction()
+
+      // Consequent Block
+      this.instructions.push(jumpToAlternative)
+      this.compile(token.consequent)
+      const jumpToEnd = new JumpInstruction()
+      this.instructions.push(jumpToEnd)
+
+      // Alternative Block
+      jumpToAlternative.set_addr(this.instructions.length)
+      if (token.alternative) this.compile(token.alternative)
+      jumpToEnd.set_addr(this.instructions.length)
+
+      this.instructions.push(new ExitBlockInstruction())
+      const vars = this.context.env.get_frame()
+      block_instr.set_frame(vars.map((name) => this.type_environment.get(name)))
+      this.type_environment = this.type_environment.pop()
+      this.context.pop_env()
     } else if (token instanceof ForStatementToken) {
-      // TODO: Implement
+      this.context.push_env()
+      this.type_environment = this.type_environment.extend()
+      const block_instr = new BlockInstruction(true)
+      this.instructions.push(block_instr)
+      this.context.push_loop()
+
+      // Initialisation
+      if (token.initialization) this.compile(token.initialization)
+      const start_addr = this.instructions.length
+
+      // Predicate
+      const predicate_false = new JumpIfFalseInstruction()
+      if (token.condition) {
+        this.compile(token.condition)
+        this.instructions.push(predicate_false)
+      }
+
+      this.compile(token.body)
+
+      const pre_post_addr = this.instructions.length
+      if (token.post) this.compile(token.post)
+      this.instructions.push(new JumpInstruction(start_addr))
+      const post_post_addr = this.instructions.length
+      predicate_false.set_addr(post_post_addr)
+
+      this.context.pop_loop(pre_post_addr, post_post_addr)
+      this.instructions.push(new ExitBlockInstruction())
+      const vars = this.context.env.get_frame()
+      block_instr.set_frame(vars.map((name) => this.type_environment.get(name)))
+      this.type_environment = this.type_environment.pop()
+      this.context.pop_env()
     } else if (token instanceof DeferStatementToken) {
       // TODO: Implement
     } else if (BinaryOperator.is(token)) {
