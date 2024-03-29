@@ -247,7 +247,7 @@ class Compiler {
       // If False jump to alternative / end
       const jumpToAlternative = new JumpIfFalseInstruction()
 
-      // Consqeunt Block
+      // Consequent Block
       this.instructions.push(jumpToAlternative)
       this.compile(token.consequent)
       const jumpToEnd = new JumpInstruction()
