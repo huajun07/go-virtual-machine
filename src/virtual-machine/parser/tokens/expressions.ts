@@ -1,5 +1,5 @@
 import { Compiler } from '../../compiler'
-import { NoType, Type } from '../../compiler/typing'
+import { FunctionType, NoType, Type, TypeUtility } from '../../compiler/typing'
 
 import { Token } from './base'
 import { IdentifierToken } from './identifier'
@@ -34,18 +34,29 @@ export class PrimaryExpressionToken extends Token {
 
   override compile(compiler: Compiler): Type {
     // TODO: Figure what this does for non-trivial ops like array access and selector
-    return this.operand.compile(compiler)
+    let operandType = this.operand.compile(compiler)
+    for (const modifier of this.rest ?? []) {
+      operandType = modifier.compile(compiler, operandType)
+    }
+    return operandType
   }
 }
 
-export abstract class PrimaryExpressionModifierToken extends Token {}
+// Note: The reason this class DOES NOT extend from Token, is because each modifier
+// requires type information about the previous operand in the chain in order to compile.
+// Hence, its compilation method must take in an extra argument. Idk if this is the correct way
+// to fix, but it doesn't make sense to force them to follow the structure of Token.
+export abstract class PrimaryExpressionModifierToken {
+  constructor(public type: string) {}
+  abstract compile(compiler: Compiler, operandType: Type): Type
+}
 
 export class SelectorToken extends PrimaryExpressionModifierToken {
   constructor(public identifier: string) {
     super('selector')
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compile(_compiler: Compiler, _operandType: Type): Type {
     //! TODO: Implement.
     return new NoType()
   }
@@ -56,7 +67,7 @@ export class IndexToken extends PrimaryExpressionModifierToken {
     super('index')
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compile(_compiler: Compiler, _operandType: Type): Type {
     //! TODO: Implement.
     return new NoType()
   }
@@ -70,19 +81,54 @@ export class SliceToken extends PrimaryExpressionModifierToken {
     super('slice')
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compile(_compiler: Compiler, _operandType: Type): Type {
     //! TODO: Implement.
     return new NoType()
   }
 }
 
 export class CallToken extends PrimaryExpressionModifierToken {
-  constructor(public expressions: ExpressionToken[] | null) {
+  expressions: ExpressionToken[]
+
+  constructor(expressions: ExpressionToken[] | null) {
     super('call')
+    this.expressions = expressions ?? []
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler, operandType: Type): Type {
+    //! TODO: Implement the actual calling of the function.
+    if (!(operandType instanceof FunctionType)) {
+      throw Error(
+        `Invalid operation: cannot call non-function (of type ${operandType})`,
+      )
+    }
+
+    const argumentTypes = this.expressions.map((e) => e.compile(compiler))
+
+    if (argumentTypes.length < operandType.parameters.length) {
+      throw Error(
+        `Not enough arguments in function call\n` +
+          `have (${TypeUtility.arrayToString(argumentTypes)})\n` +
+          `want (${TypeUtility.arrayToString(operandType.parameters)})`,
+      )
+    }
+    if (argumentTypes.length > operandType.parameters.length) {
+      throw Error(
+        `Too many arguments in function call\n` +
+          `have (${TypeUtility.arrayToString(argumentTypes)})\n` +
+          `want (${TypeUtility.arrayToString(operandType.parameters)})`,
+      )
+    }
+
+    for (let i = 0; i < argumentTypes.length; i++) {
+      if (argumentTypes[i].equals(operandType.parameters[i])) continue
+      throw Error(
+        `Cannot use ${argumentTypes[i]} as ${operandType.parameters[i]} in argument to function call`,
+      )
+    }
+
+    if (operandType.results.length === 0) return new NoType()
+    //! TODO: How to handle returning multiple values?
     return new NoType()
   }
 }

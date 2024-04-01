@@ -138,3 +138,10 @@ export class FunctionType extends Type {
     return `func(${parametersString}) (${resultsString})`
   }
 }
+
+export const TypeUtility = {
+  // Similar to Array.toString(), but adds a space after each comma.
+  arrayToString(types: Type[] | null) {
+    return (types ?? []).map((t) => t.toString()).join(', ')
+  },
+}
