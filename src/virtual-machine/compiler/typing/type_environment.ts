@@ -4,7 +4,7 @@ import {
   IntegerLiteralToken,
   LiteralToken,
   StringLiteralToken,
-} from 'src/virtual-machine/parser/tokens'
+} from '../../parser/tokens'
 
 import { Float64Type, Int64Type, StringType, Type } from '.'
 
@@ -48,15 +48,12 @@ export class TypeEnvironment {
   /** Evaluate the type of the given expression. */
   getExpressionType(expression: ExpressionToken): Type {
     if (expression instanceof LiteralToken) {
-      const literalToType = [
-        [IntegerLiteralToken, Int64Type],
-        [FloatLiteralToken, Float64Type],
-        [StringLiteralToken, StringType],
-      ] as const
-      for (const [tokenClass, typeClass] of literalToType) {
-        if (expression instanceof tokenClass) {
-          return new typeClass()
-        }
+      if (expression instanceof IntegerLiteralToken) {
+        return new Int64Type()
+      } else if (expression instanceof FloatLiteralToken) {
+        return new Float64Type()
+      } else if (expression instanceof StringLiteralToken) {
+        return new StringType()
       }
     }
 

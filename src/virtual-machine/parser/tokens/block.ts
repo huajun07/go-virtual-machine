@@ -1,10 +1,10 @@
-import { Compiler } from 'src/virtual-machine/compiler'
+import { Compiler } from '../../compiler'
 import {
   BlockInstruction,
   ExitBlockInstruction,
   PopInstruction,
-} from 'src/virtual-machine/compiler/instructions'
-import { NoType, Type } from 'src/virtual-machine/compiler/typing'
+} from '../../compiler/instructions'
+import { NoType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 import { isExpressionToken } from './expressions'

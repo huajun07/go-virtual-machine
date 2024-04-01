@@ -3,7 +3,7 @@ import {
   PrimitiveTypeToken,
   SliceTypeToken,
   TypeToken,
-} from 'src/virtual-machine/parser/tokens'
+} from '../../parser/tokens'
 
 export abstract class Type {
   abstract isPrimitive(): boolean

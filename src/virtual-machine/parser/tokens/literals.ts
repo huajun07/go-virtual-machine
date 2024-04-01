@@ -1,14 +1,6 @@
-import { Compiler } from 'src/virtual-machine/compiler'
-import {
-  DataType,
-  LoadConstantInstruction,
-} from 'src/virtual-machine/compiler/instructions'
-import {
-  Float64Type,
-  Int64Type,
-  StringType,
-  Type,
-} from 'src/virtual-machine/compiler/typing'
+import { Compiler } from '../../compiler'
+import { DataType, LoadConstantInstruction } from '../../compiler/instructions'
+import { Float64Type, Int64Type, StringType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 

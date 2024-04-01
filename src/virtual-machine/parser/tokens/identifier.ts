@@ -1,6 +1,6 @@
-import { Compiler } from 'src/virtual-machine/compiler'
-import { LoadVariableInstruction } from 'src/virtual-machine/compiler/instructions'
-import { Type } from 'src/virtual-machine/compiler/typing'
+import { Compiler } from '../../compiler'
+import { LoadVariableInstruction } from '../../compiler/instructions'
+import { Type } from '../../compiler/typing'
 
 import { Token } from './base'
 

@@ -1,5 +1,5 @@
-import { Compiler } from 'src/virtual-machine/compiler'
-import { NoType, Type } from 'src/virtual-machine/compiler/typing'
+import { Compiler } from '../../compiler'
+import { NoType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 import {

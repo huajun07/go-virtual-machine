@@ -1,9 +1,9 @@
-import { Compiler } from 'src/virtual-machine/compiler'
+import { Compiler } from '../../compiler'
 import {
   BinaryInstruction,
   UnaryInstruction,
-} from 'src/virtual-machine/compiler/instructions'
-import { Type } from 'src/virtual-machine/compiler/typing'
+} from '../../compiler/instructions'
+import { Type } from '../../compiler/typing'
 
 import { Token } from './base'
 

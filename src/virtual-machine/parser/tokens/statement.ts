@@ -1,4 +1,4 @@
-import { Compiler } from 'src/virtual-machine/compiler'
+import { Compiler } from '../../compiler'
 import {
   BinaryInstruction,
   BlockInstruction,
@@ -7,13 +7,13 @@ import {
   LoadConstantInstruction,
   ReturnInstruction,
   StoreInstruction,
-} from 'src/virtual-machine/compiler/instructions'
+} from '../../compiler/instructions'
 import {
   ExitLoopInstruction,
   JumpIfFalseInstruction,
   JumpInstruction,
-} from 'src/virtual-machine/compiler/instructions/control'
-import { NoType, Type } from 'src/virtual-machine/compiler/typing'
+} from '../../compiler/instructions/control'
+import { NoType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 import { BlockToken } from './block'
