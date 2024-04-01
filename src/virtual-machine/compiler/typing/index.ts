@@ -106,13 +106,8 @@ export class StringType extends Type {
 }
 
 export class ArrayType extends Type {
-  element: Type
-  length: number
-
-  constructor(element: Type, length: number) {
+  constructor(public element: Type, public length: number) {
     super()
-    this.element = element
-    this.length = length
   }
 
   isPrimitive(): boolean {
@@ -125,11 +120,8 @@ export class ArrayType extends Type {
 }
 
 export class SliceType extends Type {
-  element: Type
-
-  constructor(element: Type) {
+  constructor(public element: Type) {
     super()
-    this.element = element
   }
 
   isPrimitive(): boolean {
