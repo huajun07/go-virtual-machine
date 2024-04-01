@@ -127,8 +127,8 @@ export class FunctionType extends Type {
   }
 
   toString(): string {
-    const parametersString = this.parameters.map((p) => p.toString()).join(', ')
-    const resultsString = this.results.map((r) => r.toString()).join(', ')
+    const parametersString = TypeUtility.arrayToString(this.parameters)
+    const resultsString = TypeUtility.arrayToString(this.results)
     if (this.results.length === 0) {
       return `func(${parametersString})`
     }
