@@ -1,3 +1,6 @@
+import { Compiler } from 'src/virtual-machine/compiler'
+import { NoType, Type } from 'src/virtual-machine/compiler/typing'
+
 import { Token } from './base'
 import { IdentifierToken } from './identifier'
 import { LiteralToken } from './literals'
@@ -21,31 +24,41 @@ export function isExpressionToken(obj: any): obj is ExpressionToken {
 export type OperandToken = IdentifierToken | ExpressionToken
 
 export class PrimaryExpressionToken extends Token {
-  operand: OperandToken
-  /** The remaining modifier that is applied to the current operand. E.g. selector / index etc. */
-  rest: PrimaryExpressionModifierToken[] | null
-
   constructor(
-    operand: OperandToken,
-    rest: PrimaryExpressionModifierToken[] | null,
+    public operand: OperandToken,
+    /** The remaining modifier that is applied to the current operand. E.g. selector / index etc. */
+    public rest: PrimaryExpressionModifierToken[] | null,
   ) {
     super('primary_expression')
-    this.operand = operand
-    this.rest = rest
+  }
+
+  override compile(compiler: Compiler): Type {
+    // TODO: Figure what this does for non-trivial ops like array access and selector
+    return this.operand.compile(compiler)
   }
 }
 
-export class PrimaryExpressionModifierToken extends Token {}
+export abstract class PrimaryExpressionModifierToken extends Token {}
 
 export class SelectorToken extends PrimaryExpressionModifierToken {
   constructor(public identifier: string) {
     super('selector')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
   }
 }
 
 export class IndexToken extends PrimaryExpressionModifierToken {
   constructor(public expression: ExpressionToken) {
     super('index')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
   }
 }
 
@@ -56,10 +69,20 @@ export class SliceToken extends PrimaryExpressionModifierToken {
   ) {
     super('slice')
   }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
+  }
 }
 
 export class CallToken extends PrimaryExpressionModifierToken {
   constructor(public expressions: ExpressionToken[] | null) {
     super('call')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
   }
 }

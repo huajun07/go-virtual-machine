@@ -1,30 +1,43 @@
+import { Compiler } from 'src/virtual-machine/compiler'
+import { NoType, Type } from 'src/virtual-machine/compiler/typing'
+
 import { Token } from './base'
-import { TopLevelDeclarationToken } from './declaration'
+import {
+  FunctionDeclarationToken,
+  TopLevelDeclarationToken,
+} from './declaration'
 
 export class SourceFileToken extends Token {
-  pkg: string
-  imports: ImportToken[]
-  declarations: TopLevelDeclarationToken[]
-
   constructor(
-    pkg: string,
-    imports?: ImportToken[],
-    declarations?: TopLevelDeclarationToken[],
+    public pkg: string,
+    public imports: ImportToken[] | null,
+    public declarations: TopLevelDeclarationToken[] | null,
   ) {
     super('source_file')
-    this.pkg = pkg
-    this.imports = imports ?? []
-    this.declarations = declarations ?? []
+  }
+
+  override compile(compiler: Compiler): Type {
+    // TODO: Implement Calling of main function from function declaration
+    // Pending Function Signature Tokenisation
+    for (const declaration of this.declarations || []) {
+      if (declaration instanceof FunctionDeclarationToken) {
+        if (declaration.name.identifier === 'main') {
+          if (!declaration.body) throw Error('Main Body Empty')
+          declaration.body.compile(compiler)
+        }
+      }
+    }
+    return new NoType()
   }
 }
 
 export class ImportToken extends Token {
-  importPath: string
-  pkgName?: string
-
-  constructor(importPath: string, pkgName?: string) {
+  constructor(public importPath: string, public pkgName: string | null) {
     super('import')
-    this.importPath = importPath
-    this.pkgName = pkgName
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
   }
 }

@@ -1,7 +1,10 @@
+import { Compiler } from 'src/virtual-machine/compiler'
+import { NoType, Type } from 'src/virtual-machine/compiler/typing'
+
 import { Token } from './base'
 import { IntegerLiteralToken } from './literals'
 
-export class TypeToken extends Token {
+export abstract class TypeToken extends Token {
   constructor() {
     super('type')
   }
@@ -46,25 +49,32 @@ export class PrimitiveTypeToken extends TypeToken {
     }
     this.name = name
   }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
+  }
 }
 
 export class ArrayTypeToken extends TypeToken {
-  element: TypeToken
-  length: IntegerLiteralToken
-
-  constructor(element: TypeToken, length: IntegerLiteralToken) {
+  constructor(public element: TypeToken, public length: IntegerLiteralToken) {
     super()
-    this.element = element
-    this.length = length
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
   }
 }
 
 export class SliceTypeToken extends TypeToken {
-  element: TypeToken
-
-  constructor(element: TypeToken) {
+  constructor(public element: TypeToken) {
     super()
-    this.element = element
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
   }
 }
 
@@ -84,11 +94,21 @@ export class FunctionTypeToken extends TypeToken {
     this.parameters = parameters ?? []
     this.result = result
   }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
+  }
 }
 
 export class MapTypeToken extends TypeToken {
   constructor(public key: TypeToken, public element: TypeToken) {
     super()
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
   }
 }
 
@@ -99,5 +119,10 @@ export class ChannelTypeToken extends TypeToken {
     public writable: boolean,
   ) {
     super()
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
   }
 }
