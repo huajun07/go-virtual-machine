@@ -36,6 +36,7 @@
     CallToken,
     SwitchCaseToken,
     SwitchStatementToken,
+    FunctionLiteralToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -186,13 +187,14 @@ FunctionType  = "func" _ @Signature
 Signature     = params:Parameters _ result:Result? { return new FunctionTypeToken(params, result) }
 Result        = @Parameters / type:Type { return [{ type }] }
 // Parameters is an array of { identifier?: string, type: TypeToken }.
-Parameters    = "(" _ @(_ @ParameterList _ ","?)? _ ")"
+Parameters    = "(" _ @ParameterList? _ ","? _ ")"
 ParameterList = head:ParameterDecl tail:(_ "," _ @ParameterDecl)* { return [head, ...tail].flat()}
 // Note: ParameterDecl does not support variadic parameters (i.e. no `xs ...int`).
 ParameterDecl = identifiers:IdentifierList? _ type:Type
                 { return identifiers == null || identifiers.length === 0
-                         ? [{ type }]
+                         ? [{ identifier: null, type }]
                          : identifiers.map(iden => ({ identifier: iden.identifier, type })) }
+                / type:Type { return [{ identifier: null, type }] }
 
 //* Interface Types
 InterfaceType  = "interface" _ "{" _ (_ InterfaceElem _ ";"?)* _ "}"
@@ -307,7 +309,7 @@ FieldName    = identifier
 Element      = Expression / LiteralValue
 
 //* Function Literals
-FunctionLit = "func" _ Signature _ FunctionBody
+FunctionLit = "func" _ signature:Signature _ body:FunctionBody { return new FunctionLiteralToken(signature, body) }
 
 //* Primary Expressions
 //! TODO (P5): MethodExpr and Conversion are not supported.

@@ -1,10 +1,3 @@
-import {
-  ArrayTypeToken,
-  PrimitiveTypeToken,
-  SliceTypeToken,
-  TypeToken,
-} from '../../parser/tokens'
-
 export abstract class Type {
   abstract isPrimitive(): boolean
   abstract toString(): string
@@ -13,34 +6,6 @@ export abstract class Type {
     // Note: If this is too slow, we can speed it up by recursively comparing
     // without converting them to strings first.
     return t instanceof Type && this.toString() === t.toString()
-  }
-
-  /** Parse a type token into its corresponding type. */
-  static fromToken(token: TypeToken): Type {
-    if (PrimitiveTypeToken.isPrimitiveToken(token)) {
-      switch (token.name) {
-        case 'bool':
-          return new BoolType()
-        case 'uint64':
-          return new Uint64Type()
-        case 'int64':
-          return new Int64Type()
-        case 'float64':
-          return new Float64Type()
-        case 'int':
-          return new Int64Type()
-        case 'string':
-          return new StringType()
-      }
-    } else if (token instanceof ArrayTypeToken) {
-      return new ArrayType(
-        Type.fromToken(token.element),
-        token.length.getValue(),
-      )
-    } else if (token instanceof SliceTypeToken) {
-      return new SliceType(Type.fromToken(token.element))
-    }
-    throw Error('Unimplemented.')
   }
 }
 
@@ -130,5 +95,46 @@ export class SliceType extends Type {
 
   toString(): string {
     return `[]${this.element.toString()}`
+  }
+}
+
+export class ParameterType extends Type {
+  constructor(public identifier: string | null, public type: Type) {
+    super()
+  }
+
+  override isPrimitive(): boolean {
+    return false
+  }
+
+  toString(): string {
+    return this.identifier === null
+      ? `${this.type}`
+      : `${this.identifier} ${this.type}`
+  }
+}
+
+export class FunctionType extends Type {
+  constructor(
+    public parameters: ParameterType[],
+    public results: ParameterType[],
+  ) {
+    super()
+  }
+
+  override isPrimitive(): boolean {
+    return false
+  }
+
+  toString(): string {
+    const parametersString = this.parameters.map((p) => p.toString()).join(', ')
+    const resultsString = this.results.map((r) => r.toString()).join(', ')
+    if (this.results.length === 0) {
+      return `func(${parametersString})`
+    }
+    if (this.results.length === 1) {
+      return `func(${parametersString}) ${resultsString}`
+    }
+    return `func(${parametersString}) (${resultsString})`
   }
 }

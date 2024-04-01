@@ -1,12 +1,4 @@
-import {
-  ExpressionToken,
-  FloatLiteralToken,
-  IntegerLiteralToken,
-  LiteralToken,
-  StringLiteralToken,
-} from '../../parser/tokens'
-
-import { Float64Type, Int64Type, StringType, Type } from '.'
+import { Type } from '.'
 
 export class TypeEnvironment {
   parent?: TypeEnvironment
@@ -43,20 +35,5 @@ export class TypeEnvironment {
       throw Error(`Variable ${name} not found`)
     }
     return this.parent.get(name)
-  }
-
-  /** Evaluate the type of the given expression. */
-  getExpressionType(expression: ExpressionToken): Type {
-    if (expression instanceof LiteralToken) {
-      if (expression instanceof IntegerLiteralToken) {
-        return new Int64Type()
-      } else if (expression instanceof FloatLiteralToken) {
-        return new Float64Type()
-      } else if (expression instanceof StringLiteralToken) {
-        return new StringType()
-      }
-    }
-
-    throw Error('Unimplemented.')
   }
 }

@@ -1,5 +1,15 @@
 import { Compiler } from '../../compiler'
-import { NoType, Type } from '../../compiler/typing'
+import {
+  BoolType,
+  Float64Type,
+  FunctionType,
+  Int64Type,
+  NoType,
+  ParameterType,
+  StringType,
+  Type,
+  Uint64Type,
+} from '../../compiler/typing'
 
 import { Token } from './base'
 import { IntegerLiteralToken } from './literals'
@@ -52,7 +62,13 @@ export class PrimitiveTypeToken extends TypeToken {
 
   override compile(_compiler: Compiler): Type {
     //! TODO: Implement.
-    return new NoType()
+    if (this.name === 'bool') return new BoolType()
+    else if (this.name === 'float64') return new Float64Type()
+    else if (this.name === 'int') return new Int64Type()
+    else if (this.name === 'int64') return new Int64Type()
+    else if (this.name === 'uint64') return new Uint64Type()
+    else if (this.name === 'string') return new StringType()
+    else return new NoType()
   }
 }
 
@@ -79,25 +95,27 @@ export class SliceTypeToken extends TypeToken {
 }
 
 type ParameterDecl = {
-  identifier?: string
+  identifier: string | null
   type: TypeToken
 }
 export class FunctionTypeToken extends TypeToken {
-  parameters: ParameterDecl[]
-  result?: ParameterDecl[]
+  public parameters: ParameterDecl[]
+  public results: ParameterDecl[]
 
-  constructor(
-    parameters: ParameterDecl[] | undefined,
-    result?: ParameterDecl[],
-  ) {
+  constructor(parameters: ParameterDecl[], results: ParameterDecl[] | null) {
     super()
-    this.parameters = parameters ?? []
-    this.result = result
+    this.parameters = parameters
+    this.results = results ?? []
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
-    return new NoType()
+  override compile(compiler: Compiler): Type {
+    const parameterTypes = this.parameters.map(
+      (p) => new ParameterType(p.identifier, p.type.compile(compiler)),
+    )
+    const resultTypes = this.results.map(
+      (r) => new ParameterType(r.identifier, r.type.compile(compiler)),
+    )
+    return new FunctionType(parameterTypes, resultTypes)
   }
 }
 

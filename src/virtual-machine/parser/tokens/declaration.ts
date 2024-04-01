@@ -26,8 +26,10 @@ export class FunctionDeclarationToken extends Token {
     super('function_declaration')
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement type checking for function declaration.
+  override compile(compiler: Compiler): Type {
+    //! TODO: Type checking is done, implement actually compiling the function.
+    const functionType = this.signature.compile(compiler)
+    compiler.type_environment.addType(this.name.identifier, functionType)
     return new NoType()
   }
 }
@@ -86,7 +88,7 @@ export class VariableDeclarationToken extends DeclarationToken {
       compiler.context.env.declare_var(identifier.identifier)
     }
 
-    const expectedType = varType ? Type.fromToken(varType) : undefined
+    const expectedType = varType ? varType.compile(compiler) : undefined
 
     // Compile and add identifiers to type environment.
     if (expressions) {
@@ -141,7 +143,7 @@ export class ConstantDeclarationToken extends DeclarationToken {
      *  3. Compile Time Const: Evaluate Expression Token literal value and replace each reference (Golang only allow compile time const)
      */
     const { identifiers, varType, expressions } = this
-    const expectedType = varType ? Type.fromToken(varType) : undefined
+    const expectedType = varType ? varType.compile(compiler) : undefined
     for (let i = 0; i < identifiers.length; i++) {
       const var_name = identifiers[i].identifier
       const expr = expressions[i]
