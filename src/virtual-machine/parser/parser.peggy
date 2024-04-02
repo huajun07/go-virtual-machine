@@ -37,6 +37,7 @@
     SwitchCaseToken,
     SwitchStatementToken,
     FunctionLiteralToken,
+    GoStatementToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -384,8 +385,7 @@ Conversion = Type _ "(" _ Expression _ ")" _ ","? _ ")"
 //* Statements
 //! TODO (P5): LabeledStmt, GotoStmt are not tokenized as they're probably not so important.
 //!            Note that labels do not work for now.
-//! TODO (P4): SwitchStmt should be tokenized.
-//! TODO (P3): GoStmt, SelectStmt should be tokenized when we add concurrency.
+//! TODO (P3): SelectStmt should be tokenized when we add concurrency.
 Statement  = Declaration / LabeledStmt / SimpleStmt /
 	           GoStmt / ReturnStmt / BreakStmt / ContinueStmt / GotoStmt /
              FallthroughStmt / Block / IfStmt / SwitchStmt / SelectStmt / ForStmt /
@@ -451,7 +451,8 @@ PostStmt  = SimpleStmt
 RangeClause = (ExpressionList _ "=" / IdentifierList _ ":=")? _ "range" _ Expression
 
 //* Go Statements
-GoStmt = "go" _ Expression
+GoStmt = "go" _ expr:PrimaryExpr &{ return GoStatementToken.isValidGoroutine(expr) }
+         { return new GoStatementToken(expr) }
 
 //* Select Statements
 SelectStmt = "select" _ "{" _ (_ CommClause _)? _ "}"

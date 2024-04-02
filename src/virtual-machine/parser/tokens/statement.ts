@@ -18,7 +18,11 @@ import { NoType, Type } from '../../compiler/typing'
 import { Token } from './base'
 import { BlockToken } from './block'
 import { DeclarationToken, ShortVariableDeclarationToken } from './declaration'
-import { ExpressionToken } from './expressions'
+import {
+  CallToken,
+  ExpressionToken,
+  PrimaryExpressionToken,
+} from './expressions'
 
 //! TODO (P1): Add other types of statements and expressions
 export type StatementToken =
@@ -295,6 +299,26 @@ export class DeferStatementToken extends Token {
 
   override compile(_compiler: Compiler): Type {
     // TODO: Implement
+    return new NoType()
+  }
+}
+
+export class GoStatementToken extends Token {
+  constructor(public call: PrimaryExpressionToken) {
+    super('go')
+  }
+
+  /** Used in the parser to only parse function calls */
+  static isValidGoroutine(expression: PrimaryExpressionToken) {
+    return (
+      expression.rest &&
+      expression.rest.length > 0 &&
+      expression.rest[expression.rest.length - 1] instanceof CallToken
+    )
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
     return new NoType()
   }
 }
