@@ -68,6 +68,9 @@ export const Main = () => {
       status: 'error',
       duration: 2000,
       isClosable: true,
+      containerStyle: {
+        whiteSpace: 'pre-line',
+      },
     })
   }
 
