@@ -132,6 +132,6 @@ export class CallToken extends PrimaryExpressionModifierToken {
 
     if (operandType.results.length === 0) return new NoType()
     //! TODO: How to handle returning multiple values?
-    return new NoType()
+    return operandType.results[0].type
   }
 }
