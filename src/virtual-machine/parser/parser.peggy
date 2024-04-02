@@ -28,6 +28,15 @@
     ArrayTypeToken,
     SliceTypeToken,
     FunctionTypeToken,
+    MapTypeToken,
+    ChannelTypeToken,
+    SelectorToken,
+    IndexToken,
+    SliceToken,
+    CallToken,
+    SwitchCaseToken,
+    SwitchStatementToken,
+    FunctionLiteralToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -143,7 +152,6 @@ interpreted_string_lit = '"' str:$[^\n"]* '"' { return StringLiteralToken.fromSo
 
 
 //* =============== Types ===============
-//! TODO (P5): If we ever add type checking, then type should return more than just an empty token.
 // Note: `TypeName TypeArgs?` is reduced to `TypeName` as generics are not supported.
 Type     = @TypeName / TypeLit / "(" _ Type _ ")"
 //! TODO (P1): Support qualified identifiers for TypeName.
@@ -179,13 +187,14 @@ FunctionType  = "func" _ @Signature
 Signature     = params:Parameters _ result:Result? { return new FunctionTypeToken(params, result) }
 Result        = @Parameters / type:Type { return [{ type }] }
 // Parameters is an array of { identifier?: string, type: TypeToken }.
-Parameters    = "(" _ @(_ @ParameterList _ ","?)? _ ")"
+Parameters    = "(" _ @ParameterList? _ ","? _ ")"
 ParameterList = head:ParameterDecl tail:(_ "," _ @ParameterDecl)* { return [head, ...tail].flat()}
 // Note: ParameterDecl does not support variadic parameters (i.e. no `xs ...int`).
 ParameterDecl = identifiers:IdentifierList? _ type:Type
                 { return identifiers == null || identifiers.length === 0
-                         ? [{ type }]
+                         ? [{ identifier: null, type }]
                          : identifiers.map(iden => ({ identifier: iden.identifier, type })) }
+                / type:Type { return [{ identifier: null, type }] }
 
 //* Interface Types
 InterfaceType  = "interface" _ "{" _ (_ InterfaceElem _ ";"?)* _ "}"
@@ -197,11 +206,13 @@ TypeTerm       = Type / UnderlyingType
 UnderlyingType = "~" Type
 
 //* Map Types
-MapType = "map" _ "[" _ "KeyType" _ "]" ElementType
+MapType = "map" _ "[" _ key:KeyType _ "]" _ element:ElementType { return new MapTypeToken(key, element) }
 KeyType = Type
 
 //* Channel Types
-ChannelType = ("chan" / "chan" _ "<-" / "<-" _ "chan") _ ElementType
+ChannelType = "chan" _ "<-" _ element:ElementType { return new ChannelTypeToken(element, false, true) }
+              / "<-" _ "chan" _ element:ElementType { return new ChannelTypeToken(element, true, false) }
+              / "chan" _ ElementType { return new ChannelTypeToken(element, true, true) }
 
 
 
@@ -298,7 +309,7 @@ FieldName    = identifier
 Element      = Expression / LiteralValue
 
 //* Function Literals
-FunctionLit = "func" _ Signature _ FunctionBody
+FunctionLit = "func" _ signature:Signature _ body:FunctionBody { return new FunctionLiteralToken(signature, body) }
 
 //* Primary Expressions
 //! TODO (P5): MethodExpr and Conversion are not supported.
@@ -306,11 +317,14 @@ PrimaryExpr     = operand:Operand _ rest:PrimaryExprModifier* { return new Prima
 //! TODO (P2): Tokenize PrimaryExprModifier.
 // This PrimaryExprTerm is added to fix left recursion.
 PrimaryExprModifier = Selector / Index / Slice / TypeAssertion / Arguments
-Selector      = "." identifier
-Index         = "[" _ Expression (_ ",")? _ "]"
-Slice         = "[" _ Expression? _ ":" _ Expression _ ":" _ Expression _ "]"
+Selector      = "." identifier:identifier { return new SelectorToken(identifier.identifier) }
+Index         = "[" _ expr:Expression (_ ",")? _ "]" { return new IndexToken(expr) }
+// Note: Full slice expressions are not supported.
+Slice         = "[" _ from:Expression? _ ":" _ to:Expression? _ "]" { return new SliceToken(from, to) }
 TypeAssertion = "." _ "(" _ Type _ ")"
-Arguments     = "(" _ ((ExpressionList / Type (_ "," _ ExpressionList)?) _ "..."? _ ","? _)? _ ")"
+// Note: Variadic arguments are not supported.
+//! TODO (P5): Find out why Golang's spec say that Arguments can contain Type, and is it ok to ignore it?
+Arguments     = "(" _ exprs:ExpressionList? _ ","? _ ")" { return new CallToken(exprs) }
 
 //* Method Expressions
 MethodExpr   = ReceiverType "." MethodName
@@ -408,10 +422,12 @@ IfStmt = "if" _ init:(@SimpleStmt _ ";")? _ pred:Expression _ cons:Block _
 //* Switch Statements
 SwitchStmt      = ExprSwitchStmt / TypeSwitchStmt
 
-ExprSwitchStmt  = "switch" _ (SimpleStmt _ ";")? _ Expression? _ "{" _ (_ ExprCaseClause _)* "}"
-ExprCaseClause  = ExprSwitchCase _ ":" _ StatementList
-ExprSwitchCase  = "case" _ ExpressionList / "default"
+ExprSwitchStmt  = "switch" _ init:(@SimpleStmt _ ";")? _ expr:Expression? _ "{" _ cases:(_ @ExprCaseClause _)* "}"
+                  { return new SwitchStatementToken(init, expr, cases ) }
+ExprCaseClause = "case" _ "default" _ ":" _ statements:StatementList { return new SwitchCaseToken(null, statements) }
+               / "case" _ exprs:ExpressionList _ ":" _ statements:StatementList { return new SwitchCaseToken(exprs, statements) }
 
+// Note: TypeSwitchStmt will most likely not be supported.
 TypeSwitchStmt  = "switch" _ (SimpleStmt _ ";")? _ TypeSwitchGuard _ "{" _ (_ TypeCaseClause _)* _ ")"
 TypeSwitchGuard = (identifier _ ":=")? _ PrimaryExpr _ "." _ "(" _ "type" _ ")"
 TypeCaseClause  = TypeSwitchCase _ ":" _ StatementList

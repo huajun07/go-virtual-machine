@@ -1,3 +1,10 @@
+import { Compiler } from '../../compiler'
+import {
+  LoadVariableInstruction,
+  StoreInstruction,
+} from '../../compiler/instructions'
+import { NoType, Type } from '../../compiler/typing'
+
 import { Token } from './base'
 import { BlockToken } from './block'
 import { ExpressionToken } from './expressions'
@@ -11,19 +18,19 @@ export type TopLevelDeclarationToken =
 //! TODO (P1): Add the other types of Top Level Declarations.
 
 export class FunctionDeclarationToken extends Token {
-  name: IdentifierToken
-  signature: FunctionTypeToken
-  body?: BlockToken
-
   constructor(
-    name: IdentifierToken,
-    signature: FunctionTypeToken,
-    body?: BlockToken,
+    public name: IdentifierToken,
+    public signature: FunctionTypeToken,
+    public body: BlockToken | null,
   ) {
     super('function_declaration')
-    this.name = name
-    this.signature = signature
-    this.body = body
+  }
+
+  override compile(compiler: Compiler): Type {
+    //! TODO: Type checking is done, implement actually compiling the function.
+    const functionType = this.signature.compile(compiler)
+    compiler.type_environment.addType(this.name.identifier, functionType)
+    return new NoType()
   }
 }
 
@@ -38,39 +45,121 @@ export class ShortVariableDeclarationToken extends DeclarationToken {
     this.identifiers = identifiers
     this.expressions = expressions
   }
+
+  override compile(compiler: Compiler): Type {
+    const { identifiers, expressions } = this
+    for (let i = 0; i < identifiers.length; i++) {
+      const var_name = identifiers[i].identifier
+      const expr = expressions[i]
+      const [frame_idx, var_idx] = compiler.context.env.declare_var(var_name)
+      const expressionType = expr.compile(compiler)
+      compiler.type_environment.addType(var_name, expressionType)
+      compiler.instructions.push(
+        new LoadVariableInstruction(frame_idx, var_idx),
+      )
+      compiler.instructions.push(new StoreInstruction())
+    }
+    return new NoType()
+  }
 }
 
 export class VariableDeclarationToken extends DeclarationToken {
-  identifiers: IdentifierToken[]
-  // Note: A variable declaration must have at least one of varType / expressions.
-  varType?: TypeToken
-  expressions?: ExpressionToken[]
-
   constructor(
-    identifiers: IdentifierToken[],
-    varType?: TypeToken,
-    expressions?: ExpressionToken[],
+    public identifiers: IdentifierToken[],
+    // Note: A variable declaration must have at least one of varType / expressions.
+    public varType?: TypeToken,
+    public expressions?: ExpressionToken[],
   ) {
     super('variable_declaration')
-    this.identifiers = identifiers
-    this.varType = varType
-    this.expressions = expressions
+  }
+
+  override compile(compiler: Compiler): Type {
+    const { identifiers, varType, expressions } = this
+    if (varType === undefined && expressions === undefined) {
+      //! TODO (P5): Golang implements this as a syntax error. Unfortunately, our current parsing
+      //! is unable to detect this error. A correct parser should require one of them to be present.
+      throw Error(
+        'Either variable type or assignment value(s) must be defined in variable declaration.',
+      )
+    }
+
+    // Add identifiers to environment.
+    for (const identifier of identifiers) {
+      compiler.context.env.declare_var(identifier.identifier)
+    }
+
+    const expectedType = varType ? varType.compile(compiler) : undefined
+
+    // Compile and add identifiers to type environment.
+    if (expressions) {
+      if (identifiers.length !== expressions.length) {
+        throw Error(
+          `Assignment mismatch: ${identifiers.length} variable(s) but ${expressions.length} value(s).`,
+        )
+      }
+      for (let i = 0; i < identifiers.length; i++) {
+        const identifier = identifiers[i].identifier
+        const expression = expressions[i]
+        const [frame_idx, var_idx] = compiler.context.env.find_var(identifier)
+        const expressionType = expression.compile(compiler)
+        if (expectedType && !expectedType.equals(expressionType)) {
+          throw Error(
+            `Cannot use ${expressionType} as ${expectedType} in variable declaration`,
+          )
+        }
+        compiler.type_environment.addType(identifier, expressionType)
+        compiler.instructions.push(
+          new LoadVariableInstruction(frame_idx, var_idx),
+        )
+        compiler.instructions.push(new StoreInstruction())
+      }
+    } else {
+      // Variables are uninitialized, but their type is given.
+      for (const identifier of identifiers) {
+        compiler.type_environment.addType(
+          identifier.identifier,
+          expectedType as Type,
+        )
+      }
+    }
+    return new NoType()
   }
 }
 
 export class ConstantDeclarationToken extends DeclarationToken {
-  identifiers: IdentifierToken[]
-  varType?: TypeToken
-  expressions: ExpressionToken[]
-
   constructor(
-    identifiers: IdentifierToken[],
-    expressions: ExpressionToken[],
-    varType?: TypeToken,
+    public identifiers: IdentifierToken[],
+    public expressions: ExpressionToken[],
+    public varType?: TypeToken,
   ) {
     super('const_declaration')
-    this.identifiers = identifiers
-    this.varType = varType
-    this.expressions = expressions
+  }
+
+  override compile(compiler: Compiler): Type {
+    /**
+     * TODO: Handle Const separately, several different methods
+     *  1. Runtime Const and const tag to variable to make it immutable
+     *  2. Compile Time Const: Replace each reference to variable with Expression Token
+     *  3. Compile Time Const: Evaluate Expression Token literal value and replace each reference (Golang only allow compile time const)
+     */
+    const { identifiers, varType, expressions } = this
+    const expectedType = varType ? varType.compile(compiler) : undefined
+    for (let i = 0; i < identifiers.length; i++) {
+      const var_name = identifiers[i].identifier
+      const expr = expressions[i]
+      const [frame_idx, var_idx] = compiler.context.env.declare_var(var_name)
+      const expressionType = expr.compile(compiler)
+      if (expectedType && !expressionType.equals(expectedType)) {
+        throw Error(
+          `Cannot use ${expressionType} as ${expectedType} in constant declaration`,
+        )
+      }
+      compiler.type_environment.addType(var_name, expressionType)
+      compiler.instructions.push(
+        new LoadVariableInstruction(frame_idx, var_idx),
+      )
+      compiler.instructions.push(new StoreInstruction())
+    }
+    return new NoType()
   }
 }

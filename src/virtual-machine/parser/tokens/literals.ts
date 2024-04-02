@@ -1,11 +1,14 @@
+import { Compiler } from '../../compiler'
+import { DataType, LoadConstantInstruction } from '../../compiler/instructions'
+import { Float64Type, Int64Type, StringType, Type } from '../../compiler/typing'
+
 import { Token } from './base'
+import { BlockToken } from './block'
+import { FunctionTypeToken } from './type'
 
 export abstract class LiteralToken extends Token {
-  value: number | string
-
-  constructor(value: number | string) {
+  constructor(public value: number | string) {
     super('literal')
-    this.value = value
   }
 
   static is(token: Token): token is LiteralToken {
@@ -24,6 +27,13 @@ export class IntegerLiteralToken extends LiteralToken {
   getValue(): number {
     return this.value as number
   }
+
+  override compile(compiler: Compiler): Type {
+    compiler.instructions.push(
+      new LoadConstantInstruction(this.value, DataType.Number),
+    )
+    return new Int64Type()
+  }
 }
 
 export class FloatLiteralToken extends LiteralToken {
@@ -35,6 +45,13 @@ export class FloatLiteralToken extends LiteralToken {
 
   getValue(): number {
     return this.value as number
+  }
+
+  override compile(compiler: Compiler): Type {
+    compiler.instructions.push(
+      new LoadConstantInstruction(this.value, DataType.Float),
+    )
+    return new Float64Type()
   }
 }
 
@@ -53,5 +70,23 @@ export class StringLiteralToken extends LiteralToken {
 
   getValue(): string {
     return this.value as string
+  }
+
+  override compile(compiler: Compiler): Type {
+    compiler.instructions.push(
+      new LoadConstantInstruction(this.value, DataType.String),
+    )
+    return new StringType()
+  }
+}
+
+export class FunctionLiteralToken extends Token {
+  constructor(public signature: FunctionTypeToken, public body: BlockToken) {
+    super('function_literal')
+  }
+
+  override compile(compiler: Compiler): Type {
+    //! TODO: Implement compiling the function body.
+    return this.signature.compile(compiler)
   }
 }

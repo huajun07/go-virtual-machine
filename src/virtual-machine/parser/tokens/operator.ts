@@ -1,3 +1,10 @@
+import { Compiler } from '../../compiler'
+import {
+  BinaryInstruction,
+  UnaryInstruction,
+} from '../../compiler/instructions'
+import { Type } from '../../compiler/typing'
+
 import { Token } from './base'
 
 abstract class Operator extends Token {
@@ -23,8 +30,10 @@ export class UnaryOperator extends Operator {
     }
   }
 
-  static is(token: Token): token is UnaryOperator {
-    return token.type === 'unary_operator'
+  override compile(compiler: Compiler): Type {
+    const expressionType = this.children[0].compile(compiler)
+    compiler.instructions.push(new UnaryInstruction(this.name))
+    return expressionType
   }
 }
 
@@ -40,7 +49,15 @@ export class BinaryOperator extends Operator {
     }
   }
 
-  static is(token: Token): token is BinaryOperator {
-    return token.type === 'binary_operator'
+  override compile(compiler: Compiler): Type {
+    const leftType = this.children[0].compile(compiler)
+    const rightType = this.children[1].compile(compiler)
+    if (!leftType.equals(rightType)) {
+      throw Error(
+        `Invalid operation (mismatched types ${leftType} and ${rightType})`,
+      )
+    }
+    compiler.instructions.push(new BinaryInstruction(this.name))
+    return leftType
   }
 }

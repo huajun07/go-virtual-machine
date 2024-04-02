@@ -1,3 +1,20 @@
+import { Compiler } from '../../compiler'
+import {
+  BinaryInstruction,
+  BlockInstruction,
+  DataType,
+  ExitBlockInstruction,
+  LoadConstantInstruction,
+  ReturnInstruction,
+  StoreInstruction,
+} from '../../compiler/instructions'
+import {
+  ExitLoopInstruction,
+  JumpIfFalseInstruction,
+  JumpInstruction,
+} from '../../compiler/instructions/control'
+import { NoType, Type } from '../../compiler/typing'
+
 import { Token } from './base'
 import { BlockToken } from './block'
 import { DeclarationToken, ShortVariableDeclarationToken } from './declaration'
@@ -16,39 +33,92 @@ export type SimpleStatementToken =
   | ExpressionToken
 
 export class AssignmentStatementToken extends Token {
-  left: ExpressionToken[]
-  operation: '=' | '+=' | '*='
-  right: ExpressionToken[]
-
   constructor(
-    left: ExpressionToken[],
-    operation: '=' | '+=' | '*=',
-    right: ExpressionToken[],
+    public left: ExpressionToken[],
+    public operation: '=' | '+=' | '*=',
+    public right: ExpressionToken[],
   ) {
     super('assignment')
-    this.left = left
-    this.operation = operation
-    this.right = right
+  }
+
+  override compile(compiler: Compiler): Type {
+    // TODO: Custom Instructions to avoid recalculation?
+    for (let i = 0; i < this.left.length; i++) {
+      const left = this.left[i]
+      const right = this.right[i]
+      let assignType: Type
+      if (this.operation === '+=') {
+        const leftType = left.compile(compiler)
+        const rightType = right.compile(compiler)
+        if (!leftType.equals(rightType)) {
+          throw Error(
+            `Invalid operation (mismatched types ${leftType} and ${rightType})`,
+          )
+        }
+        assignType = leftType
+        compiler.instructions.push(new BinaryInstruction('sum'))
+      } else if (this.operation === '*=') {
+        const leftType = left.compile(compiler)
+        const rightType = right.compile(compiler)
+        if (!leftType.equals(rightType)) {
+          throw Error(
+            `Invalid operation (mismatched types ${leftType} and ${rightType})`,
+          )
+        }
+        assignType = leftType
+        compiler.instructions.push(new BinaryInstruction('product'))
+      } else if (this.operation === '=') {
+        assignType = right.compile(compiler)
+      } else {
+        throw Error('Unimplemented')
+      }
+      const varType = left.compile(compiler)
+      if (!varType.equals(assignType)) {
+        throw Error(`Cannot use ${assignType} as ${varType} in assignment`)
+      }
+      compiler.instructions.push(new StoreInstruction())
+    }
+    return new NoType()
   }
 }
 
 export class IncDecStatementToken extends Token {
-  expression: ExpressionToken
-  operation: '++' | '--'
-
-  constructor(expression: ExpressionToken, operation: '++' | '--') {
+  constructor(
+    public expression: ExpressionToken,
+    public operation: '++' | '--',
+  ) {
     super('inc_dec')
-    this.expression = expression
-    this.operation = operation
+  }
+
+  override compile(compiler: Compiler): Type {
+    // TODO: Custom Instructions to avoid recalculation?
+    this.expression.compile(compiler)
+    compiler.instructions.push(new LoadConstantInstruction(1, DataType.Number))
+    if (this.operation === '++') {
+      compiler.instructions.push(new BinaryInstruction('sum'))
+    } else if (this.operation === '--') {
+      compiler.instructions.push(new BinaryInstruction('difference'))
+    }
+    this.expression.compile(compiler)
+    compiler.instructions.push(new StoreInstruction())
+    return new NoType()
   }
 }
 
 export class ReturnStatementToken extends Token {
-  returns?: ExpressionToken[]
-
-  constructor(returns?: ExpressionToken[]) {
+  constructor(public returns?: ExpressionToken[]) {
     super('return')
-    this.returns = returns
+  }
+
+  override compile(compiler: Compiler): Type {
+    // TODO: Implement
+    if (this.returns) {
+      for (const expr of this.returns) {
+        expr.compile(compiler)
+      }
+    }
+    compiler.instructions.push(new ReturnInstruction())
+    return new NoType()
   }
 }
 
@@ -56,11 +126,25 @@ export class BreakStatementToken extends Token {
   constructor() {
     super('break')
   }
+
+  override compile(compiler: Compiler): Type {
+    const jumpInstr = new ExitLoopInstruction()
+    compiler.context.add_break(jumpInstr)
+    compiler.instructions.push(jumpInstr)
+    return new NoType()
+  }
 }
 
 export class ContinueStatementToken extends Token {
   constructor() {
     super('continue')
+  }
+
+  override compile(compiler: Compiler): Type {
+    const jumpInstr = new ExitLoopInstruction()
+    compiler.context.add_continue(jumpInstr)
+    compiler.instructions.push(jumpInstr)
+    return new NoType()
   }
 }
 
@@ -68,26 +152,85 @@ export class FallthroughStatementToken extends Token {
   constructor() {
     super('fallthrough')
   }
+
+  override compile(_compiler: Compiler): Type {
+    // TODO: Implement
+    return new NoType()
+  }
 }
 
 export class IfStatementToken extends Token {
-  /** Executed before the predicate (e.g. if x := 0; x < 1 {} ) */
-  initialization?: SimpleStatementToken
-  predicate: ExpressionToken
-  consequent: BlockToken
-  alternative?: IfStatementToken | BlockToken
-
   constructor(
-    initialization: SimpleStatementToken | undefined,
-    predicate: ExpressionToken,
-    consequent: BlockToken,
-    alternative: IfStatementToken | BlockToken | undefined,
+    /** Executed before the predicate (e.g. if x := 0; x < 1 {} ) */
+    public initialization: SimpleStatementToken | null,
+    public predicate: ExpressionToken,
+    public consequent: BlockToken,
+    public alternative: IfStatementToken | BlockToken | null,
   ) {
     super('if')
-    this.initialization = initialization
-    this.predicate = predicate
-    this.consequent = consequent
-    this.alternative = alternative
+  }
+
+  override compile(compiler: Compiler): Type {
+    compiler.context.push_env()
+    const block_instr = new BlockInstruction()
+    compiler.instructions.push(block_instr)
+    compiler.type_environment = compiler.type_environment.extend()
+    // Initialisation
+    if (this.initialization) this.initialization.compile(compiler)
+
+    // Eval Predicate
+    this.predicate.compile(compiler)
+    // If False jump to alternative / end
+    const jumpToAlternative = new JumpIfFalseInstruction()
+
+    // Consequent Block
+    compiler.instructions.push(jumpToAlternative)
+    this.consequent.compile(compiler)
+    const jumpToEnd = new JumpInstruction()
+    compiler.instructions.push(jumpToEnd)
+
+    // Alternative Block
+    jumpToAlternative.set_addr(compiler.instructions.length)
+    if (this.alternative) this.alternative.compile(compiler)
+    jumpToEnd.set_addr(compiler.instructions.length)
+
+    compiler.instructions.push(new ExitBlockInstruction())
+    const vars = compiler.context.env.get_frame()
+    block_instr.set_frame(
+      vars.map((name) => compiler.type_environment.get(name)),
+    )
+    compiler.type_environment = compiler.type_environment.pop()
+    compiler.context.pop_env()
+    return new NoType()
+  }
+}
+
+export class SwitchStatementToken extends Token {
+  constructor(
+    public init: SimpleStatementToken | null,
+    public expressions: ExpressionToken | null,
+    public cases: SwitchCaseToken[],
+  ) {
+    super('switch')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
+  }
+}
+
+export class SwitchCaseToken extends Token {
+  constructor(
+    public expressions: ExpressionToken[] | null,
+    public statements: StatementToken[],
+  ) {
+    super('case')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
   }
 }
 
@@ -98,31 +241,60 @@ export class ForStatementToken extends Token {
   // 3. For statements with a for clause (init, condition, post).
   // 4. For statements with a range clause.
   //! Note that range clauses are not supported for now. They will likely be a seperate class.
-
-  initialization?: SimpleStatementToken
-  condition?: ExpressionToken
-  post?: SimpleStatementToken
-  body: BlockToken
-
   constructor(
-    initialization: SimpleStatementToken | undefined,
-    condition: ExpressionToken | undefined,
-    post: ExpressionToken | undefined,
-    body: BlockToken,
+    public initialization: SimpleStatementToken | null,
+    public condition: ExpressionToken | null,
+    public post: ExpressionToken | null,
+    public body: BlockToken,
   ) {
     super('for')
-    this.initialization = initialization
-    this.condition = condition
-    this.post = post
-    this.body = body
+  }
+
+  override compile(compiler: Compiler): Type {
+    compiler.context.push_env()
+    compiler.type_environment = compiler.type_environment.extend()
+    const block_instr = new BlockInstruction(true)
+    compiler.instructions.push(block_instr)
+    compiler.context.push_loop()
+
+    // Initialisation
+    if (this.initialization) this.initialization.compile(compiler)
+    const start_addr = compiler.instructions.length
+
+    // Predicate
+    const predicate_false = new JumpIfFalseInstruction()
+    if (this.condition) {
+      this.condition.compile(compiler)
+      compiler.instructions.push(predicate_false)
+    }
+
+    this.body.compile(compiler)
+
+    const pre_post_addr = compiler.instructions.length
+    if (this.post) this.post.compile(compiler)
+    compiler.instructions.push(new JumpInstruction(start_addr))
+    const post_post_addr = compiler.instructions.length
+    predicate_false.set_addr(post_post_addr)
+
+    compiler.context.pop_loop(pre_post_addr, post_post_addr)
+    compiler.instructions.push(new ExitBlockInstruction())
+    const vars = compiler.context.env.get_frame()
+    block_instr.set_frame(
+      vars.map((name) => compiler.type_environment.get(name)),
+    )
+    compiler.type_environment = compiler.type_environment.pop()
+    compiler.context.pop_env()
+    return new NoType()
   }
 }
 
 export class DeferStatementToken extends Token {
-  expression: ExpressionToken
-
-  constructor(expression: ExpressionToken) {
+  constructor(public expression: ExpressionToken) {
     super('defer')
-    this.expression = expression
+  }
+
+  override compile(_compiler: Compiler): Type {
+    // TODO: Implement
+    return new NoType()
   }
 }

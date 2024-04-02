@@ -1,12 +1,4 @@
-import {
-  ExpressionToken,
-  FloatLiteralToken,
-  IntegerLiteralToken,
-  LiteralToken,
-  StringLiteralToken,
-} from 'src/virtual-machine/parser/tokens'
-
-import { Float64Type, Int64Type, StringType, Type } from '.'
+import { Type } from '.'
 
 export class TypeEnvironment {
   parent?: TypeEnvironment
@@ -43,23 +35,5 @@ export class TypeEnvironment {
       throw Error(`Variable ${name} not found`)
     }
     return this.parent.get(name)
-  }
-
-  /** Evaluate the type of the given expression. */
-  getExpressionType(expression: ExpressionToken): Type {
-    if (expression instanceof LiteralToken) {
-      const literalToType = [
-        [IntegerLiteralToken, Int64Type],
-        [FloatLiteralToken, Float64Type],
-        [StringLiteralToken, StringType],
-      ] as const
-      for (const [tokenClass, typeClass] of literalToType) {
-        if (expression instanceof tokenClass) {
-          return new typeClass()
-        }
-      }
-    }
-
-    throw Error('Unimplemented.')
   }
 }

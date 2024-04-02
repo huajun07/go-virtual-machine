@@ -1,11 +1,18 @@
+import { Compiler } from '../../compiler'
+import { LoadVariableInstruction } from '../../compiler/instructions'
+import { Type } from '../../compiler/typing'
+
 import { Token } from './base'
 
 export class IdentifierToken extends Token {
-  identifier: string
-
-  constructor(idenifier: string) {
+  constructor(public identifier: string) {
     super('identifier')
-    this.identifier = idenifier
+  }
+
+  override compile(compiler: Compiler): Type {
+    const [frame_idx, var_idx] = compiler.context.env.find_var(this.identifier)
+    compiler.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
+    return compiler.type_environment.get(this.identifier)
   }
 }
 

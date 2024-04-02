@@ -5,8 +5,7 @@ import {
   NumStrBinaryToBoolOp,
   NumUnaryOp,
   StrBinaryOp,
-} from 'src/virtual-machine/executor/ops'
-
+} from '../../executor/ops'
 import { Heap, TAG, word_size } from '..'
 
 import { BaseNode } from './base'
