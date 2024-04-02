@@ -2,11 +2,7 @@ export abstract class Type {
   abstract isPrimitive(): boolean
   abstract toString(): string
 
-  equals(t: unknown): boolean {
-    // Note: If this is too slow, we can speed it up by recursively comparing
-    // without converting them to strings first.
-    return t instanceof Type && this.toString() === t.toString()
-  }
+  abstract equals(t: Type): boolean
 }
 
 /** This type represents things that don't have an associated type, like statements. */
@@ -18,6 +14,10 @@ export class NoType extends Type {
   toString(): string {
     return ''
   }
+
+  override equals(t: Type): boolean {
+    return t instanceof NoType
+  }
 }
 
 export class BoolType extends Type {
@@ -27,6 +27,10 @@ export class BoolType extends Type {
 
   toString(): string {
     return 'bool'
+  }
+
+  override equals(t: Type): boolean {
+    return t instanceof BoolType
   }
 }
 
@@ -38,6 +42,10 @@ export class Uint64Type extends Type {
   toString(): string {
     return 'uint64'
   }
+
+  override equals(t: Type): boolean {
+    return t instanceof Uint64Type
+  }
 }
 
 export class Int64Type extends Type {
@@ -47,6 +55,10 @@ export class Int64Type extends Type {
 
   toString(): string {
     return 'int64'
+  }
+
+  override equals(t: Type): boolean {
+    return t instanceof Int64Type
   }
 }
 
@@ -58,6 +70,10 @@ export class Float64Type extends Type {
   toString(): string {
     return 'float64'
   }
+
+  override equals(t: Type): boolean {
+    return t instanceof Float64Type
+  }
 }
 
 export class StringType extends Type {
@@ -67,6 +83,10 @@ export class StringType extends Type {
 
   toString(): string {
     return 'string'
+  }
+
+  override equals(t: Type): boolean {
+    return t instanceof StringType
   }
 }
 
@@ -82,6 +102,14 @@ export class ArrayType extends Type {
   toString(): string {
     return `[${this.length}]${this.element.toString()}`
   }
+
+  override equals(t: Type): boolean {
+    return (
+      t instanceof ArrayType &&
+      this.element.equals(t.element) &&
+      this.length === t.length
+    )
+  }
 }
 
 export class SliceType extends Type {
@@ -95,6 +123,10 @@ export class SliceType extends Type {
 
   toString(): string {
     return `[]${this.element.toString()}`
+  }
+
+  override equals(t: Type): boolean {
+    return t instanceof SliceType && this.element.equals(t.element)
   }
 }
 
@@ -111,6 +143,10 @@ export class ParameterType extends Type {
     return this.identifier === null
       ? `${this.type}`
       : `${this.identifier} ${this.type}`
+  }
+
+  override equals(t: Type): boolean {
+    return t instanceof ParameterType && this.type.equals(t.type)
   }
 }
 
@@ -136,6 +172,16 @@ export class FunctionType extends Type {
       return `func(${parametersString}) ${resultsString}`
     }
     return `func(${parametersString}) (${resultsString})`
+  }
+
+  override equals(t: Type): boolean {
+    return (
+      t instanceof FunctionType &&
+      this.parameters.length === t.parameters.length &&
+      this.results.length === t.results.length &&
+      this.parameters.every((p, index) => p.equals(t.parameters[index])) &&
+      this.results.every((r, index) => r.equals(t.results[index]))
+    )
   }
 }
 
