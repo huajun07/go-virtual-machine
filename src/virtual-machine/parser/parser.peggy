@@ -38,6 +38,10 @@
     SwitchStatementToken,
     FunctionLiteralToken,
     GoStatementToken,
+    SendStatementToken,
+    ReceiveStatementToken,
+    CommunicationClauseToken,
+    SelectStatementToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -402,7 +406,8 @@ Label       = identifier
 ExpressionStmt = Expression
 
 //* Send Statements
-SendStmt = Channel _ "<-" _ Expression
+SendStmt = channel:Channel _ "<-" _ value:Expression { return new SendStatementToken(channel, value) }
+// For simplicity, we only allow channels to be identifiers instead of Expression
 Channel  = Expression
 
 //* IncDec Statements
@@ -455,11 +460,15 @@ GoStmt = "go" _ expr:PrimaryExpr &{ return GoStatementToken.isValidGoroutine(exp
          { return new GoStatementToken(expr) }
 
 //* Select Statements
-SelectStmt = "select" _ "{" _ (_ CommClause _)? _ "}"
-CommClause = CommCase _ ":" _ StatementList
-CommCase   = "case" _ (SendStmt / RecvStmt)? / "default"
-RecvStmt   = (ExpressionList _ "=" / IdentifierList _ ":=")? RecvExpr
-RecvExpr   = Expression
+SelectStmt = "select" _ "{" _ clauses:(_ @CommClause _)* _ "}" { return new SelectStatementToken(clauses ?? []) }
+CommClause = predicate:CommCase _ ":" _ body:StatementList
+             { return new CommunicationClauseToken(predicate, body) }
+CommCase   = "case" _ @(RecvStmt / SendStmt) / @"default"
+// For simplicity, we disallow an ExpressionList with assignment here.
+RecvStmt   = identifiers:(@IdentifierList _ ":=")? _ channel:RecvExpr
+             &{ return ReceiveStatementToken.isReceiveStatement(identifiers) }
+             { return new ReceiveStatementToken(identifiers, channel) }
+RecvExpr   = expr:Expression &{ return expr instanceof UnaryOperator && expr.name === 'receive' } { return expr }
 
 //* Return Statements
 ReturnStmt = "return" _ returns:ExpressionList?

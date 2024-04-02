@@ -23,6 +23,7 @@ import {
   ExpressionToken,
   PrimaryExpressionToken,
 } from './expressions'
+import { IdentifierToken } from './identifier'
 
 //! TODO (P1): Add other types of statements and expressions
 export type StatementToken =
@@ -35,6 +36,7 @@ export type SimpleStatementToken =
   | AssignmentStatementToken
   | ShortVariableDeclarationToken
   | ExpressionToken
+  | SendStatementToken
 
 export class AssignmentStatementToken extends Token {
   constructor(
@@ -315,6 +317,65 @@ export class GoStatementToken extends Token {
       expression.rest.length > 0 &&
       expression.rest[expression.rest.length - 1] instanceof CallToken
     )
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
+  }
+}
+
+/** Sends a `value` into `channel`. */
+export class SendStatementToken extends Token {
+  constructor(public channel: IdentifierToken, public value: ExpressionToken) {
+    super('send')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
+  }
+}
+
+/** Receive and assign the results to one or two variables. Note that RecvStmt is NOT a SimpleStmt. */
+export class ReceiveStatementToken extends Token {
+  constructor(
+    public identifiers: IdentifierToken[] | null,
+    public channel: ExpressionToken,
+  ) {
+    super('receive')
+  }
+
+  /** Used in the parser to only parse valid receive statements. */
+  static isReceiveStatement(identifiers: IdentifierToken[] | null) {
+    return (
+      identifiers === null ||
+      (identifiers.length > 0 && identifiers.length <= 2)
+    )
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
+  }
+}
+
+export class SelectStatementToken extends Token {
+  constructor(public clauses: CommunicationClauseToken[]) {
+    super('select')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    //! TODO: Implement.
+    return new NoType()
+  }
+}
+export class CommunicationClauseToken extends Token {
+  constructor(
+    public predicate: 'default' | SendStatementToken | ReceiveStatementToken,
+    public body: StatementToken[],
+  ) {
+    super('communication_clause')
   }
 
   override compile(_compiler: Compiler): Type {
