@@ -60,6 +60,15 @@ export class ContextNode extends BaseNode {
     return this.OS().peek()
   }
 
+  /**
+   * @param val 0-indexed from the back
+   * @returns
+   */
+  peekOSIdx(val: number) {
+    const sz = this.OS().sz()
+    return this.OS().get_idx(sz - val - 1)
+  }
+
   popOS() {
     return this.OS().pop()
   }
@@ -82,7 +91,9 @@ export class ContextNode extends BaseNode {
     const old_E = this.RTS().pop()
     if (!old_E) throw Error('RTS Stack Empty')
     this.heap.memory.set_word(old_E, this.addr + 3)
+    return old_E
   }
+
   printRTS() {
     console.log('RTS:')
     for (let i = 0; i < this.RTS().sz(); i++) {
@@ -95,7 +106,8 @@ export class ContextNode extends BaseNode {
 
   override get_children(): number[] {
     const children = [this.RTS().addr, this.OS().addr]
-    if (this.E().addr !== -1) children.push(this.E().addr)
+    const E_addr = this.heap.memory.get_word(this.addr + 3)
+    if (E_addr !== -1) children.push(E_addr)
     return children
   }
 }

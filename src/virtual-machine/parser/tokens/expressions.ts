@@ -1,3 +1,5 @@
+import { CallInstruction } from 'src/virtual-machine/compiler/instructions/funcs'
+
 import { Compiler } from '../../compiler'
 import { FunctionType, NoType, Type, TypeUtility } from '../../compiler/typing'
 
@@ -104,6 +106,7 @@ export class CallToken extends PrimaryExpressionModifierToken {
     }
 
     const argumentTypes = this.expressions.map((e) => e.compile(compiler))
+    compiler.instructions.push(new CallInstruction(this.expressions.length))
 
     if (argumentTypes.length < operandType.parameters.length) {
       throw Error(
