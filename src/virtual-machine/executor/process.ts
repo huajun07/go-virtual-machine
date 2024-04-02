@@ -132,6 +132,7 @@ export class Process {
           this.context.E().extend_env(new_frame.addr, instr.for_block).addr,
         )
       } else {
+        // This is to not trigger the exit scope condition of the closure env
         this.context.set_E(
           this.context.E().extend_env(new_frame.addr, instr.for_block).addr,
         )

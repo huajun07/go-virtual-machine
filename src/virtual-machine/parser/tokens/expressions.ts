@@ -1,6 +1,5 @@
-import { CallInstruction } from 'src/virtual-machine/compiler/instructions/funcs'
-
 import { Compiler } from '../../compiler'
+import { CallInstruction } from '../../compiler/instructions/funcs'
 import { FunctionType, NoType, Type, TypeUtility } from '../../compiler/typing'
 
 import { Token } from './base'
