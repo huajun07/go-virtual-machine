@@ -1,6 +1,7 @@
 import { Compiler } from '../../compiler'
 import {
   BoolType,
+  ChannelType,
   Float64Type,
   FunctionType,
   Int64Type,
@@ -139,8 +140,11 @@ export class ChannelTypeToken extends TypeToken {
     super()
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
-    return new NoType()
+  override compile(compiler: Compiler): Type {
+    return new ChannelType(
+      this.element.compile(compiler),
+      this.readable,
+      this.writable,
+    )
   }
 }
