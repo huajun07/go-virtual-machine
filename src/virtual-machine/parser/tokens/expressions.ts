@@ -132,7 +132,8 @@ export class CallToken extends PrimaryExpressionModifierToken {
     }
 
     for (let i = 0; i < argumentTypes.length; i++) {
-      if (argumentTypes[i].equals(operandType.parameters[i].type)) continue
+      if (argumentTypes[i].assignableBy(operandType.parameters[i].type))
+        continue
       throw Error(
         `Cannot use ${argumentTypes[i]} as ${operandType.parameters[i]} in argument to function call`,
       )

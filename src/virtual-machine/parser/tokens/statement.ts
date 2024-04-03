@@ -79,7 +79,7 @@ export class AssignmentStatementToken extends Token {
         throw Error('Unimplemented')
       }
       const varType = left.compile(compiler)
-      if (!varType.equals(assignType)) {
+      if (!varType.assignableBy(assignType)) {
         throw Error(`Cannot use ${assignType} as ${varType} in assignment`)
       }
       compiler.instructions.push(new StoreInstruction())
