@@ -187,7 +187,7 @@ FunctionType  = "func" _ @Signature
 Signature     = params:Parameters _ result:Result? { return new FunctionTypeToken(params, result) }
 Result        = @Parameters / type:Type { return [{ type }] }
 // Parameters is an array of { identifier?: string, type: TypeToken }.
-Parameters    = "(" _ @ParameterList? _ ","? _ ")"
+Parameters    = "(" _ parameters:ParameterList? _ ","? _ ")" { return parameters ?? [] }
 ParameterList = head:ParameterDecl tail:(_ "," _ @ParameterDecl)* { return [head, ...tail].flat()}
 // Note: ParameterDecl does not support variadic parameters (i.e. no `xs ...int`).
 ParameterDecl = identifiers:IdentifierList? _ type:Type
