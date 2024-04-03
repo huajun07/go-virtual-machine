@@ -113,4 +113,24 @@ describe('Function Execution tests', () => {
       ).output,
     ).toEqual('103')
   })
+
+  test('Recursive function', () => {
+    expect(
+      runCode(
+        `package main
+
+      func f(x int) int {
+        if x == 0 {
+          return 0
+        }
+        return f(x - 1) + 1
+      }
+      
+      func main() {
+        return f(10)
+      }`,
+        2048,
+      ).output,
+    ).toEqual('10')
+  })
 })
