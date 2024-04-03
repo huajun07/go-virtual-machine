@@ -51,18 +51,12 @@ export class Process {
   }
 
   start() {
-    // Note this is to simulate the main function as a func call
-    const global_env = this.context.E().addr
-    this.context.pushRTS(
-      CallRefNode.create(this.instructions.length - 1, this.heap).addr,
-    )
-    this.context.pushRTS(global_env)
     let runtime_count = 0
     while (!DoneInstruction.is(this.instructions[this.context.PC()])) {
       const instr = this.instructions[this.context.incr_PC()]
       // console.log('Instr:', instr)
       this.execute_microcode(instr)
-      //   this.context.printOS()
+      // this.context.printOS()
       // this.context.printRTS()
       runtime_count += 1
       if (runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')

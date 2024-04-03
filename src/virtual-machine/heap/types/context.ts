@@ -77,8 +77,8 @@ export class ContextNode extends BaseNode {
     console.log('OS:')
     for (let i = 0; i < this.OS().sz(); i++) {
       const val = this.heap.get_value(this.OS().get_idx(i)) as PrimitiveNode
-      //   console.log(val)
-      console.log(val.get_value())
+      console.log(val)
+      // console.log(val.get_value())
     }
   }
 
