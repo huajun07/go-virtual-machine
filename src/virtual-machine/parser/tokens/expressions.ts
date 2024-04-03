@@ -1,17 +1,26 @@
 import { Compiler } from '../../compiler'
 import { CallInstruction } from '../../compiler/instructions/funcs'
-import { FunctionType, NoType, Type, TypeUtility } from '../../compiler/typing'
+import {
+  ChannelType,
+  FunctionType,
+  NoType,
+  SliceType,
+  Type,
+  TypeUtility,
+} from '../../compiler/typing'
 
 import { Token } from './base'
 import { IdentifierToken } from './identifier'
 import { LiteralToken } from './literals'
 import { BinaryOperator, UnaryOperator } from './operator'
+import { TypeToken } from './type'
 
 export type ExpressionToken =
   | LiteralToken
   | UnaryOperator
   | BinaryOperator
   | PrimaryExpressionToken
+  | BuiltinCallToken
 
 export function isExpressionToken(obj: any): obj is ExpressionToken {
   return (
@@ -123,7 +132,8 @@ export class CallToken extends PrimaryExpressionModifierToken {
     }
 
     for (let i = 0; i < argumentTypes.length; i++) {
-      if (argumentTypes[i].equals(operandType.parameters[i].type)) continue
+      if (argumentTypes[i].assignableBy(operandType.parameters[i].type))
+        continue
       throw Error(
         `Cannot use ${argumentTypes[i]} as ${operandType.parameters[i]} in argument to function call`,
       )
@@ -132,5 +142,49 @@ export class CallToken extends PrimaryExpressionModifierToken {
     if (operandType.results.length === 0) return new NoType()
     //! TODO: How to handle returning multiple values?
     return operandType.results[0].type
+  }
+}
+
+type BuiltinFunctionName = (typeof BuiltinCallToken.validNames)[number]
+// The following builtin functions are omitted: new, panic, recover.
+// This does not extend from PrimaryExpression because its parsing is completely separate:
+// Certain builtin functions take in a type as the first argument (as opposed to a value).
+export class BuiltinCallToken extends Token {
+  static validNames = [
+    'append',
+    'clear',
+    'close',
+    'delete',
+    'len',
+    'cap',
+    'make',
+    'min',
+    'max',
+  ] as const
+
+  static namesThatTakeType = ['make'] as const
+
+  constructor(
+    public name: BuiltinFunctionName,
+    /** The first argument if it is a type. */
+    public firstTypeArg: TypeToken | null,
+    public args: ExpressionToken[],
+  ) {
+    super('builtin')
+  }
+
+  override compile(compiler: Compiler): Type {
+    if (this.name === 'make') {
+      const typeArg = (this.firstTypeArg as TypeToken).compile(compiler)
+      if (!(typeArg instanceof SliceType || typeArg instanceof ChannelType)) {
+        throw new Error(
+          `Invalid argument: cannot make ${typeArg}; type must be slice, map, or channel`,
+        )
+      }
+      //! TODO: Construct based on the args.
+      return typeArg
+    } else {
+      throw new Error(`Builtin function ${this.name} is not yet implemented.`)
+    }
   }
 }

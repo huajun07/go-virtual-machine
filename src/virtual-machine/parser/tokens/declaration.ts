@@ -102,7 +102,7 @@ export class VariableDeclarationToken extends DeclarationToken {
         const expression = expressions[i]
         const [frame_idx, var_idx] = compiler.context.env.find_var(identifier)
         const expressionType = expression.compile(compiler)
-        if (expectedType && !expectedType.equals(expressionType)) {
+        if (expectedType && !expectedType.assignableBy(expressionType)) {
           throw Error(
             `Cannot use ${expressionType} as ${expectedType} in variable declaration`,
           )
@@ -149,7 +149,7 @@ export class ConstantDeclarationToken extends DeclarationToken {
       const expr = expressions[i]
       const [frame_idx, var_idx] = compiler.context.env.declare_var(var_name)
       const expressionType = expr.compile(compiler)
-      if (expectedType && !expressionType.equals(expectedType)) {
+      if (expectedType && !expressionType.assignableBy(expectedType)) {
         throw Error(
           `Cannot use ${expressionType} as ${expectedType} in constant declaration`,
         )

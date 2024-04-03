@@ -3,6 +3,10 @@ export abstract class Type {
   abstract toString(): string
 
   abstract equals(t: Type): boolean
+  /** Returns true if `t` can be assigned to this type. */
+  assignableBy(t: Type): boolean {
+    return this.equals(t)
+  }
 }
 
 /** This type represents things that don't have an associated type, like statements. */
@@ -208,14 +212,22 @@ export class ChannelType extends Type {
     }
   }
 
-  //! TODO: Read up on how Golang handles type checking for channels,
-  //! such that we can use a `chan` for something that takes `chan<-`.
   override equals(t: Type): boolean {
     return (
       t instanceof ChannelType &&
       this.readable === t.readable &&
       this.writable === t.writable &&
       this.element.equals(t.element)
+    )
+  }
+
+  override assignableBy(t: Type): boolean {
+    return (
+      this.equals(t) ||
+      (this.readable &&
+        this.writable &&
+        t instanceof ChannelType &&
+        this.element.equals(t.element))
     )
   }
 }
