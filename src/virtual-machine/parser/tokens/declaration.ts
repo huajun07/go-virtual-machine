@@ -26,8 +26,14 @@ export class FunctionDeclarationToken extends Token {
     const [frame_idx, var_idx] = compiler.context.env.declare_var(
       this.name.identifier,
     )
-    const functionType = this.func.compile(compiler)
-    compiler.type_environment.addType(this.name.identifier, functionType)
+    //! TODO (P5): There is a double compilation of func.signature, once here and
+    //! once in the func.compile() call. Not really an issue as compiling types has
+    //! no side effects, but would be nice to fix.
+    compiler.type_environment.addType(
+      this.name.identifier,
+      this.func.signature.compile(compiler),
+    )
+    this.func.compile(compiler)
     compiler.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
     compiler.instructions.push(new StoreInstruction())
     return new NoType()
