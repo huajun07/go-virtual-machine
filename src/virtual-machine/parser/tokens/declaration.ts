@@ -6,10 +6,10 @@ import {
 import { NoType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
-import { BlockToken } from './block'
 import { ExpressionToken } from './expressions'
 import { IdentifierToken } from './identifier'
-import { FunctionTypeToken, TypeToken } from './type'
+import { FunctionLiteralToken } from './literals'
+import { TypeToken } from './type'
 
 export type TopLevelDeclarationToken =
   | DeclarationToken
@@ -18,18 +18,18 @@ export type TopLevelDeclarationToken =
 //! TODO (P1): Add the other types of Top Level Declarations.
 
 export class FunctionDeclarationToken extends Token {
-  constructor(
-    public name: IdentifierToken,
-    public signature: FunctionTypeToken,
-    public body: BlockToken | null,
-  ) {
+  constructor(public name: IdentifierToken, public func: FunctionLiteralToken) {
     super('function_declaration')
   }
 
   override compile(compiler: Compiler): Type {
-    //! TODO: Type checking is done, implement actually compiling the function.
-    const functionType = this.signature.compile(compiler)
+    const [frame_idx, var_idx] = compiler.context.env.declare_var(
+      this.name.identifier,
+    )
+    const functionType = this.func.compile(compiler)
     compiler.type_environment.addType(this.name.identifier, functionType)
+    compiler.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
+    compiler.instructions.push(new StoreInstruction())
     return new NoType()
   }
 }

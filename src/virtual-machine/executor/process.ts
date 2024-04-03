@@ -51,18 +51,12 @@ export class Process {
   }
 
   start() {
-    // Note this is to simulate the main function as a func call
-    const global_env = this.context.E().addr
-    this.context.pushRTS(
-      CallRefNode.create(this.instructions.length - 1, this.heap).addr,
-    )
-    this.context.pushRTS(global_env)
     let runtime_count = 0
     while (!DoneInstruction.is(this.instructions[this.context.PC()])) {
       const instr = this.instructions[this.context.incr_PC()]
       // console.log('Instr:', instr)
       this.execute_microcode(instr)
-      //   this.context.printOS()
+      // this.context.printOS()
       // this.context.printRTS()
       runtime_count += 1
       if (runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
@@ -171,11 +165,10 @@ export class Process {
       const func = this.heap.get_value(this.context.peekOSIdx(instr.args))
       if (!(func instanceof FuncNode))
         throw Error('Stack does not contain closure')
-      const cur_env = this.context.E().addr
       this.context.pushRTS(
         CallRefNode.create(this.context.PC(), this.heap).addr,
       )
-      this.context.pushRTS(cur_env)
+      this.context.pushRTS(func.E())
       this.context.set_PC(func.PC())
     } else if (instr instanceof ReturnInstruction) {
       let val = null

@@ -103,6 +103,20 @@ export class Heap {
    * Similarly a node is the last node if next_node = cur_addr
    */
 
+  print_freelist() {
+    for (let lvl = 0; lvl < this.freelist.length; lvl++) {
+      let cur = this.freelist[lvl]
+      const arr = []
+      while (cur !== -1) {
+        arr.push(cur)
+        const nex = this.get_next(cur)
+        if (nex === cur) break
+        cur = nex
+      }
+      console.log('LEVEL', lvl, arr)
+    }
+  }
+
   add_list(addr: number, lvl: number) {
     this.set_level(addr, lvl)
     this.set_prev(addr, addr)
@@ -200,7 +214,12 @@ export class Heap {
     let lvl = this.get_level(addr)
     while (lvl < this.freelist.length) {
       const sibling = addr ^ (1 << lvl)
-      if (sibling >= this.size || !this.is_free(sibling)) break
+      if (
+        sibling >= this.size ||
+        !this.is_free(sibling) ||
+        this.get_level(sibling) !== lvl
+      )
+        break
       this.pop_list(sibling)
       addr = Math.min(addr, sibling)
       lvl++
