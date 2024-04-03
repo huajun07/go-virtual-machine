@@ -1,4 +1,5 @@
 import { Compiler } from '../../compiler'
+import { CallInstruction } from '../../compiler/instructions/funcs'
 import { FunctionType, NoType, Type, TypeUtility } from '../../compiler/typing'
 
 import { Token } from './base'
@@ -104,6 +105,7 @@ export class CallToken extends PrimaryExpressionModifierToken {
     }
 
     const argumentTypes = this.expressions.map((e) => e.compile(compiler))
+    compiler.instructions.push(new CallInstruction(this.expressions.length))
 
     if (argumentTypes.length < operandType.parameters.length) {
       throw Error(
@@ -129,6 +131,6 @@ export class CallToken extends PrimaryExpressionModifierToken {
 
     if (operandType.results.length === 0) return new NoType()
     //! TODO: How to handle returning multiple values?
-    return new NoType()
+    return operandType.results[0].type
   }
 }

@@ -1,5 +1,6 @@
 import { ContextNode } from './types/context'
 import { EnvironmentNode, FrameNode } from './types/environment'
+import { CallRefNode, FuncNode } from './types/func'
 import {
   BoolNode,
   FloatNode,
@@ -23,6 +24,8 @@ export enum TAG {
   STRING_LIST = 8,
   STACK = 9,
   LIST = 10,
+  FUNC = 11,
+  CALLREF = 12,
 }
 
 export const word_size = 4
@@ -83,6 +86,10 @@ export class Heap {
         return new ListNode(this, addr)
       case TAG.STACK:
         return new StackNode(this, addr)
+      case TAG.FUNC:
+        return new FuncNode(this, addr)
+      case TAG.CALLREF:
+        return new CallRefNode(this, addr)
       default:
         throw Error('Unknown Data Type')
     }
@@ -254,6 +261,7 @@ export class Heap {
   }
 
   mark(addr: number) {
+    if (addr === -1) return
     if (this.is_marked(addr)) return
     this.set_mark(addr, true)
     const children = this.get_value(addr).get_children()

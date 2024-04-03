@@ -1,11 +1,17 @@
 import {
   BinaryInstruction,
   BlockInstruction,
+  CallInstruction,
   DataType,
   DoneInstruction,
   ExitBlockInstruction,
+  ExitLoopInstruction,
+  FuncBlockInstruction,
   Instruction,
+  JumpIfFalseInstruction,
+  JumpInstruction,
   LoadConstantInstruction,
+  LoadFuncInstruction,
   LoadVariableInstruction,
   PopInstruction,
   ReturnInstruction,
@@ -13,19 +19,16 @@ import {
   UnaryInstruction,
 } from '../compiler/instructions'
 import {
-  ExitLoopInstruction,
-  JumpIfFalseInstruction,
-  JumpInstruction,
-} from '../compiler/instructions/control'
-import {
   BoolType,
   Float64Type,
+  FunctionType,
   Int64Type,
   StringType,
 } from '../compiler/typing'
 import { Heap } from '../heap'
 import { ContextNode } from '../heap/types/context'
 import { EnvironmentNode, FrameNode } from '../heap/types/environment'
+import { CallRefNode, FuncNode } from '../heap/types/func'
 import {
   BoolNode,
   FloatNode,
@@ -48,13 +51,19 @@ export class Process {
   }
 
   start() {
+    // Note this is to simulate the main function as a func call
+    const global_env = this.context.E().addr
+    this.context.pushRTS(
+      CallRefNode.create(this.instructions.length - 1, this.heap).addr,
+    )
+    this.context.pushRTS(global_env)
     let runtime_count = 0
     while (!DoneInstruction.is(this.instructions[this.context.PC()])) {
       const instr = this.instructions[this.context.incr_PC()]
-      //   console.log('Instr:', instr)
+      // console.log('Instr:', instr)
       this.execute_microcode(instr)
       //   this.context.printOS()
-      //   this.context.printRTS()
+      // this.context.printRTS()
       runtime_count += 1
       if (runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
     }
@@ -102,7 +111,6 @@ export class Process {
       const src = this.context.popOS()
       this.heap.copy(dst, src)
     } else if (instr instanceof BlockInstruction) {
-      this.context.pushRTS(this.context.E().addr)
       const new_frame = FrameNode.create(instr.frame.length, this.heap)
       this.heap.temp_roots.push(new_frame.addr)
       for (let i = 0; i < instr.frame.length; i++) {
@@ -115,12 +123,30 @@ export class Process {
           new_frame.set_idx(FloatNode.default(this.heap).addr, i)
         } else if (T instanceof StringType) {
           new_frame.set_idx(StringNode.default(this.heap).addr, i)
+        } else if (T instanceof FunctionType) {
+          new_frame.set_idx(FuncNode.default(this.heap).addr, i)
         } else throw Error('Unsupported Type')
       }
-      this.context.set_E(
-        this.context.E().extend_env(new_frame.addr, instr.for_block).addr,
-      )
+      if (!(instr instanceof FuncBlockInstruction)) {
+        this.context.pushRTS(
+          this.context.E().extend_env(new_frame.addr, instr.for_block).addr,
+        )
+      } else {
+        // This is to not trigger the exit scope condition of the closure env
+        this.context.set_E(
+          this.context.E().extend_env(new_frame.addr, instr.for_block).addr,
+        )
+      }
       this.heap.temp_roots.pop()
+      if (instr instanceof FuncBlockInstruction) {
+        for (let i = instr.args - 1; i >= 0; i--) {
+          const src = this.context.popOS()
+          const dst = new_frame.get_idx(i)
+          this.heap.copy(dst, src)
+        }
+        // Pop function in stack
+        this.context.popOS()
+      }
     } else if (instr instanceof ExitBlockInstruction) {
       this.context.popRTS()
       // TODO: Implement defer in popRTS
@@ -130,15 +156,33 @@ export class Process {
       ).get_value()
       if (!pred) this.context.set_PC(instr.addr)
     } else if (instr instanceof ExitLoopInstruction) {
-      while (!this.context.E().if_for_block()) {
+      while (this.context.E().if_for_block()) {
         // TODO: Implement defer in popRTS
         this.context.popRTS()
       }
       this.context.set_PC(instr.addr)
     } else if (instr instanceof JumpInstruction) {
       this.context.set_PC(instr.addr)
+    } else if (instr instanceof LoadFuncInstruction) {
+      this.context.pushOS(
+        FuncNode.create(instr.PC, this.context.E().addr, this.heap).addr,
+      )
+    } else if (instr instanceof CallInstruction) {
+      const func = this.heap.get_value(this.context.peekOSIdx(instr.args))
+      if (!(func instanceof FuncNode))
+        throw Error('Stack does not contain closure')
+      const cur_env = this.context.E().addr
+      this.context.pushRTS(
+        CallRefNode.create(this.context.PC(), this.heap).addr,
+      )
+      this.context.pushRTS(cur_env)
+      this.context.set_PC(func.PC())
     } else if (instr instanceof ReturnInstruction) {
-      // pass
+      let val = null
+      do {
+        val = this.heap.get_value(this.context.popRTS())
+      } while (!(val instanceof CallRefNode))
+      this.context.set_PC(val.PC())
     } else {
       throw Error('Invalid Instruction')
     }

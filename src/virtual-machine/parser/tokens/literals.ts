@@ -1,9 +1,18 @@
 import { Compiler } from '../../compiler'
-import { DataType, LoadConstantInstruction } from '../../compiler/instructions'
+import {
+  DataType,
+  FuncBlockInstruction,
+  JumpInstruction,
+  LoadConstantInstruction,
+  LoadFuncInstruction,
+  PopInstruction,
+  ReturnInstruction,
+} from '../../compiler/instructions'
 import { Float64Type, Int64Type, StringType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 import { BlockToken } from './block'
+import { isExpressionToken } from './expressions'
 import { FunctionTypeToken } from './type'
 
 export abstract class LiteralToken extends Token {
@@ -86,7 +95,39 @@ export class FunctionLiteralToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    //! TODO: Implement compiling the function body.
+    compiler.context.push_env()
+    const jump_instr = new JumpInstruction()
+    compiler.instructions.push(jump_instr)
+    const func_start = compiler.instructions.length
+    const block_instr = new FuncBlockInstruction(
+      this.signature.parameters.length,
+    )
+    compiler.instructions.push(block_instr)
+    compiler.type_environment = compiler.type_environment.extend()
+
+    let cnt = 0
+    for (const param of this.signature.parameters) {
+      const name = param.identifier || (cnt++).toString()
+      compiler.context.env.declare_var(name)
+      compiler.type_environment.addType(name, param.type.compile(compiler))
+    }
+
+    for (const sub_token of this.body.statements) {
+      sub_token.compile(compiler)
+      //! TODO: Remove this once we implement ExpressionStatementToken
+      if (isExpressionToken(sub_token))
+        compiler.instructions.push(new PopInstruction())
+    }
+    const vars = compiler.context.env.get_frame()
+    block_instr.set_frame(
+      vars.map((name) => compiler.type_environment.get(name)),
+    )
+    compiler.type_environment = compiler.type_environment.pop()
+    compiler.context.pop_env()
+
+    compiler.instructions.push(new ReturnInstruction())
+    jump_instr.set_addr(compiler.instructions.length)
+    compiler.instructions.push(new LoadFuncInstruction(func_start))
     return this.signature.compile(compiler)
   }
 }

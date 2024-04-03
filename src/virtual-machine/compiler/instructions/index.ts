@@ -1,5 +1,7 @@
 export * from './base'
 export * from './block'
+export * from './control'
+export * from './funcs'
 export * from './load'
 export * from './operator'
 export * from './store'

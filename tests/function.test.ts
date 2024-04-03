@@ -35,3 +35,16 @@ describe('Function Type Checking', () => {
     ).toEqual('Cannot use string as int64 in argument to function call')
   })
 })
+
+describe('Function Execution tests', () => {
+  test('Function Literals', () => {
+    expect(
+      mainRunner(
+        'f := func(x int, y int) int{\
+        return x + y\
+      }\
+      return 1 + f(1, 2)',
+      ).output,
+    ).toEqual('4')
+  })
+})

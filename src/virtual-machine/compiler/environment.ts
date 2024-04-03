@@ -27,6 +27,9 @@ class CompileEnvironment {
 
   declare_var(name: string) {
     const frame_idx = this.frames.length - 1
+    for (const var_name of this.frames[frame_idx]) {
+      if (var_name === name) throw Error('Variable already declared')
+    }
     const new_len = this.frames[frame_idx].push(name)
     return [frame_idx, new_len - 1]
   }

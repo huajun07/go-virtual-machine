@@ -15,15 +15,17 @@ export class BlockInstruction extends Instruction {
     this.frame = [...frame]
   }
 }
+export class FuncBlockInstruction extends BlockInstruction {
+  args: number
+  constructor(args: number) {
+    super(false)
+    this.tag = 'FUNC_BLOCK'
+    this.args = args
+  }
+}
 
 export class ExitBlockInstruction extends Instruction {
   constructor() {
     super('EXIT_BLOCK')
-  }
-}
-
-export class ReturnInstruction extends Instruction {
-  constructor() {
-    super('RETURN')
   }
 }
