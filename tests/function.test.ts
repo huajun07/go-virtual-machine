@@ -91,4 +91,26 @@ describe('Function Execution tests', () => {
       ).output,
     ).toEqual('8')
   })
+
+  test('Function assignment in loop and if', () => {
+    expect(
+      runCode(
+        `package main
+        func main() {
+          f := func(x, y int) int {
+            return x + y
+          }
+          for i := 0; i < 100; i++ {
+            if i < 50 {
+              f = func(x, y int) int {
+                return x + y + i
+              }
+            }
+          }
+          return f(1, 2)
+        }`,
+        2048,
+      ).output,
+    ).toEqual('103')
+  })
 })
