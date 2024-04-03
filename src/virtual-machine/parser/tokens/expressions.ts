@@ -1,11 +1,19 @@
 import { Compiler } from '../../compiler'
 import { CallInstruction } from '../../compiler/instructions/funcs'
-import { FunctionType, NoType, Type, TypeUtility } from '../../compiler/typing'
+import {
+  ChannelType,
+  FunctionType,
+  NoType,
+  SliceType,
+  Type,
+  TypeUtility,
+} from '../../compiler/typing'
 
 import { Token } from './base'
 import { IdentifierToken } from './identifier'
 import { LiteralToken } from './literals'
 import { BinaryOperator, UnaryOperator } from './operator'
+import { TypeToken } from './type'
 
 export type ExpressionToken =
   | LiteralToken
@@ -158,33 +166,24 @@ export class BuiltinCallToken extends Token {
   constructor(
     public name: BuiltinFunctionName,
     /** The first argument if it is a type. */
-    public firstTypeArg: Type | null,
+    public firstTypeArg: TypeToken | null,
     public args: ExpressionToken[],
   ) {
     super('builtin')
   }
 
-  override compile(_compiler: Compiler): Type {
-    switch (this.name) {
-      //! TODO: Implement.
-      case 'append':
-        return new NoType()
-      case 'clear':
-        return new NoType()
-      case 'close':
-        return new NoType()
-      case 'delete':
-        return new NoType()
-      case 'len':
-        return new NoType()
-      case 'cap':
-        return new NoType()
-      case 'make':
-        return new NoType()
-      case 'min':
-        return new NoType()
-      case 'max':
-        return new NoType()
+  override compile(compiler: Compiler): Type {
+    if (this.name === 'make') {
+      const typeArg = (this.firstTypeArg as TypeToken).compile(compiler)
+      if (!(typeArg instanceof SliceType || typeArg instanceof ChannelType)) {
+        throw new Error(
+          `Invalid argument: cannot make ${typeArg}; type must be slice, map, or channel`,
+        )
+      }
+      //! TODO: Construct based on the args.
+      return typeArg
+    } else {
+      throw new Error(`Builtin function ${this.name} is not yet implemented.`)
     }
   }
 }

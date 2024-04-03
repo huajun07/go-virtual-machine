@@ -335,9 +335,11 @@ Arguments     = "(" _ exprs:ExpressionList? _ ","? _ ")" { return new CallToken(
 
 //* Builtin Call (This is not in Golang specifications)
 BuiltinCall   = name:$[a-z]+ _ "(" _ type:Type _ args:("," _ @ExpressionList)? _ ")"
-                &{ return BuiltinCallToken.namesThatTakeType.includes(name) } { return new BuiltinCallToken(name, type, args ?? []) }
+                &{ return BuiltinCallToken.validNames.includes(name) && BuiltinCallToken.namesThatTakeType.includes(name) }
+                { return new BuiltinCallToken(name, type, args ?? []) }
               / name:$[a-z]+ _ "(" _ args:ExpressionList? _ ")"
-                &{ return !BuiltinCallToken.namesThatTakeType.includes(name) } { return new BuiltinCallToken(name, null, args ?? []) }
+                &{ return BuiltinCallToken.validNames.includes(name) && !BuiltinCallToken.namesThatTakeType.includes(name) }
+                { return new BuiltinCallToken(name, null, args ?? []) }
 
 //* Method Expressions
 MethodExpr   = ReceiverType "." MethodName
