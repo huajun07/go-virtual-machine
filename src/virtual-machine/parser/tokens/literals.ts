@@ -114,6 +114,7 @@ export class FunctionLiteralToken extends Token {
 
     for (const sub_token of this.body.statements) {
       sub_token.compile(compiler)
+      //! TODO: Remove this once we implement ExpressionStatementToken
       if (isExpressionToken(sub_token))
         compiler.instructions.push(new PopInstruction())
     }
