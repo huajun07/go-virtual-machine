@@ -171,11 +171,10 @@ export class Process {
       const func = this.heap.get_value(this.context.peekOSIdx(instr.args))
       if (!(func instanceof FuncNode))
         throw Error('Stack does not contain closure')
-      const cur_env = this.context.E().addr
       this.context.pushRTS(
         CallRefNode.create(this.context.PC(), this.heap).addr,
       )
-      this.context.pushRTS(cur_env)
+      this.context.pushRTS(func.E())
       this.context.set_PC(func.PC())
     } else if (instr instanceof ReturnInstruction) {
       let val = null
