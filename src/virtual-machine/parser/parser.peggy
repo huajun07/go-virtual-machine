@@ -37,6 +37,11 @@
     SwitchCaseToken,
     SwitchStatementToken,
     FunctionLiteralToken,
+    GoStatementToken,
+    SendStatementToken,
+    ReceiveStatementToken,
+    CommunicationClauseToken,
+    SelectStatementToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -384,8 +389,7 @@ Conversion = Type _ "(" _ Expression _ ")" _ ","? _ ")"
 //* Statements
 //! TODO (P5): LabeledStmt, GotoStmt are not tokenized as they're probably not so important.
 //!            Note that labels do not work for now.
-//! TODO (P4): SwitchStmt should be tokenized.
-//! TODO (P3): GoStmt, SelectStmt should be tokenized when we add concurrency.
+//! TODO (P3): SelectStmt should be tokenized when we add concurrency.
 Statement  = Declaration / LabeledStmt / SimpleStmt /
 	           GoStmt / ReturnStmt / BreakStmt / ContinueStmt / GotoStmt /
              FallthroughStmt / Block / IfStmt / SwitchStmt / SelectStmt / ForStmt /
@@ -402,7 +406,8 @@ Label       = identifier
 ExpressionStmt = Expression
 
 //* Send Statements
-SendStmt = Channel _ "<-" _ Expression
+SendStmt = channel:Channel _ "<-" _ value:Expression { return new SendStatementToken(channel, value) }
+// For simplicity, we only allow channels to be identifiers instead of Expression
 Channel  = Expression
 
 //* IncDec Statements
@@ -451,14 +456,19 @@ PostStmt  = SimpleStmt
 RangeClause = (ExpressionList _ "=" / IdentifierList _ ":=")? _ "range" _ Expression
 
 //* Go Statements
-GoStmt = "go" _ Expression
+GoStmt = "go" _ expr:PrimaryExpr &{ return GoStatementToken.isValidGoroutine(expr) }
+         { return new GoStatementToken(expr) }
 
 //* Select Statements
-SelectStmt = "select" _ "{" _ (_ CommClause _)? _ "}"
-CommClause = CommCase _ ":" _ StatementList
-CommCase   = "case" _ (SendStmt / RecvStmt)? / "default"
-RecvStmt   = (ExpressionList _ "=" / IdentifierList _ ":=")? RecvExpr
-RecvExpr   = Expression
+SelectStmt = "select" _ "{" _ clauses:(_ @CommClause _)* _ "}" { return new SelectStatementToken(clauses ?? []) }
+CommClause = predicate:CommCase _ ":" _ body:StatementList
+             { return new CommunicationClauseToken(predicate, body) }
+CommCase   = "case" _ @(RecvStmt / SendStmt) / @"default"
+// For simplicity, we disallow an ExpressionList with assignment here.
+RecvStmt   = identifiers:(@IdentifierList _ ":=")? _ channel:RecvExpr
+             &{ return ReceiveStatementToken.isReceiveStatement(identifiers) }
+             { return new ReceiveStatementToken(identifiers, channel) }
+RecvExpr   = expr:Expression &{ return expr instanceof UnaryOperator && expr.name === 'receive' } { return expr }
 
 //* Return Statements
 ReturnStmt = "return" _ returns:ExpressionList?

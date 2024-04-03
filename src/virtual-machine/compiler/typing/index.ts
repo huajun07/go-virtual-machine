@@ -185,6 +185,41 @@ export class FunctionType extends Type {
   }
 }
 
+export class ChannelType extends Type {
+  constructor(
+    public element: Type,
+    public readable: boolean,
+    public writable: boolean,
+  ) {
+    super()
+  }
+
+  override isPrimitive(): boolean {
+    return false
+  }
+
+  override toString(): string {
+    if (this.readable && this.writable) {
+      return `chan ${this.element}`
+    } else if (this.readable) {
+      return `<-chan ${this.element}`
+    } else {
+      return `chan<- ${this.element}`
+    }
+  }
+
+  //! TODO: Read up on how Golang handles type checking for channels,
+  //! such that we can use a `chan` for something that takes `chan<-`.
+  override equals(t: Type): boolean {
+    return (
+      t instanceof ChannelType &&
+      this.readable === t.readable &&
+      this.writable === t.writable &&
+      this.element.equals(t.element)
+    )
+  }
+}
+
 export const TypeUtility = {
   // Similar to Array.toString(), but adds a space after each comma.
   arrayToString(types: Type[] | null) {

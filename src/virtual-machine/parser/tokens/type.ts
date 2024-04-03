@@ -1,11 +1,14 @@
 import { Compiler } from '../../compiler'
 import {
+  ArrayType,
   BoolType,
+  ChannelType,
   Float64Type,
   FunctionType,
   Int64Type,
   NoType,
   ParameterType,
+  SliceType,
   StringType,
   Type,
   Uint64Type,
@@ -77,9 +80,8 @@ export class ArrayTypeToken extends TypeToken {
     super()
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
-    return new NoType()
+  override compile(compiler: Compiler): Type {
+    return new ArrayType(this.element.compile(compiler), this.length.getValue())
   }
 }
 
@@ -88,9 +90,8 @@ export class SliceTypeToken extends TypeToken {
     super()
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
-    return new NoType()
+  override compile(compiler: Compiler): Type {
+    return new SliceType(this.element.compile(compiler))
   }
 }
 
@@ -139,8 +140,11 @@ export class ChannelTypeToken extends TypeToken {
     super()
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
-    return new NoType()
+  override compile(compiler: Compiler): Type {
+    return new ChannelType(
+      this.element.compile(compiler),
+      this.readable,
+      this.writable,
+    )
   }
 }
