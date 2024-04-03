@@ -12,6 +12,7 @@ export type ExpressionToken =
   | UnaryOperator
   | BinaryOperator
   | PrimaryExpressionToken
+  | BuiltinCallToken
 
 export function isExpressionToken(obj: any): obj is ExpressionToken {
   return (
@@ -132,5 +133,58 @@ export class CallToken extends PrimaryExpressionModifierToken {
     if (operandType.results.length === 0) return new NoType()
     //! TODO: How to handle returning multiple values?
     return operandType.results[0].type
+  }
+}
+
+type BuiltinFunctionName = (typeof BuiltinCallToken.validNames)[number]
+// The following builtin functions are omitted: new, panic, recover.
+// This does not extend from PrimaryExpression because its parsing is completely separate:
+// Certain builtin functions take in a type as the first argument (as opposed to a value).
+export class BuiltinCallToken extends Token {
+  static validNames = [
+    'append',
+    'clear',
+    'close',
+    'delete',
+    'len',
+    'cap',
+    'make',
+    'min',
+    'max',
+  ] as const
+
+  static namesThatTakeType = ['make'] as const
+
+  constructor(
+    public name: BuiltinFunctionName,
+    /** The first argument if it is a type. */
+    public firstTypeArg: Type | null,
+    public args: ExpressionToken[],
+  ) {
+    super('builtin')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    switch (this.name) {
+      //! TODO: Implement.
+      case 'append':
+        return new NoType()
+      case 'clear':
+        return new NoType()
+      case 'close':
+        return new NoType()
+      case 'delete':
+        return new NoType()
+      case 'len':
+        return new NoType()
+      case 'cap':
+        return new NoType()
+      case 'make':
+        return new NoType()
+      case 'min':
+        return new NoType()
+      case 'max':
+        return new NoType()
+    }
   }
 }

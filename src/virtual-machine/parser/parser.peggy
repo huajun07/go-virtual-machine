@@ -42,6 +42,7 @@
     ReceiveStatementToken,
     CommunicationClauseToken,
     SelectStatementToken,
+    BuiltinCallToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -217,7 +218,7 @@ KeyType = Type
 //* Channel Types
 ChannelType = "chan" _ "<-" _ element:ElementType { return new ChannelTypeToken(element, false, true) }
               / "<-" _ "chan" _ element:ElementType { return new ChannelTypeToken(element, true, false) }
-              / "chan" _ ElementType { return new ChannelTypeToken(element, true, true) }
+              / "chan" _ element:ElementType { return new ChannelTypeToken(element, true, true) }
 
 
 
@@ -318,7 +319,7 @@ FunctionLit = "func" _ signature:Signature _ body:FunctionBody { return new Func
 
 //* Primary Expressions
 //! TODO (P5): MethodExpr and Conversion are not supported.
-PrimaryExpr     = operand:Operand _ rest:PrimaryExprModifier* { return new PrimaryExpressionToken(operand, rest) }
+PrimaryExpr     = operand:(@BuiltinCall / @Operand) _ rest:PrimaryExprModifier* { return new PrimaryExpressionToken(operand, rest) }
 //! TODO (P2): Tokenize PrimaryExprModifier.
 // This PrimaryExprTerm is added to fix left recursion.
 PrimaryExprModifier = Selector / Index / Slice / TypeAssertion / Arguments
@@ -328,8 +329,15 @@ Index         = "[" _ expr:Expression (_ ",")? _ "]" { return new IndexToken(exp
 Slice         = "[" _ from:Expression? _ ":" _ to:Expression? _ "]" { return new SliceToken(from, to) }
 TypeAssertion = "." _ "(" _ Type _ ")"
 // Note: Variadic arguments are not supported.
-//! TODO (P5): Find out why Golang's spec say that Arguments can contain Type, and is it ok to ignore it?
+// Note: Golang specs allow a Type to be the first argument, but it is only used for certain builtin functions.
+// We split BuiltinCall out to a separate token to allow parsing types as first argument.
 Arguments     = "(" _ exprs:ExpressionList? _ ","? _ ")" { return new CallToken(exprs) }
+
+//* Builtin Call (This is not in Golang specifications)
+BuiltinCall   = name:$[a-z]+ _ "(" _ type:Type _ args:("," _ @ExpressionList)? _ ")"
+                &{ return BuiltinCallToken.namesThatTakeType.includes(name) } { return new BuiltinCallToken(name, type, args ?? []) }
+              / name:$[a-z]+ _ "(" _ args:ExpressionList? _ ")"
+                &{ return !BuiltinCallToken.namesThatTakeType.includes(name) } { return new BuiltinCallToken(name, null, args ?? []) }
 
 //* Method Expressions
 MethodExpr   = ReceiverType "." MethodName
