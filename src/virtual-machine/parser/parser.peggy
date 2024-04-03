@@ -278,7 +278,7 @@ ShortVarDecl = identifiers:IdentifierList _ ":=" _ expressions:ExpressionList
 //* Function Declarations
 // Note: TypeParameters? is omitted from FunctionDecl as we do not support generics.
 FunctionDecl = "func" _ name:FunctionName _ signature:Signature _ body:Block?
-               { return new FunctionDeclarationToken(name, signature, body) }
+               { return new FunctionDeclarationToken(name, new FunctionLiteralToken(signature, body)) }
 FunctionName = identifier
 FunctionBody = Block
 

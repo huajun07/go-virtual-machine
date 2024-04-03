@@ -17,16 +17,17 @@ export class SourceFileToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    // TODO: Implement Calling of main function from function declaration
+    //! TODO: Implement Calling of main function from function declaration
     // Pending Function Signature Tokenisation
     for (const declaration of this.declarations || []) {
       if (declaration instanceof FunctionDeclarationToken) {
-        if (declaration.name.identifier === 'main') {
-          if (!declaration.body) throw Error('Main Body Empty')
-          declaration.body.compile(compiler)
+        if (declaration.name.identifier === 'main' && !declaration.func.body) {
+          throw Error('Main Body Empty')
         }
+        declaration.compile(compiler)
       }
     }
+
     return new NoType()
   }
 }
