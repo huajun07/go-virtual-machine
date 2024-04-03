@@ -1,10 +1,9 @@
+import { Compiler } from '../../compiler'
 import {
   BlockInstruction,
   CallInstruction,
   LoadVariableInstruction,
-} from 'src/virtual-machine/compiler/instructions'
-
-import { Compiler } from '../../compiler'
+} from '../../compiler/instructions'
 import { NoType, Type } from '../../compiler/typing'
 
 import { Token } from './base'

@@ -1,11 +1,11 @@
-import { ContextNode } from 'src/virtual-machine/heap/types/context'
-import {
-  EnvironmentNode,
-  FrameNode,
-} from 'src/virtual-machine/heap/types/environment'
 import { describe, expect, test } from 'vitest'
 
 import { Heap } from '../src/virtual-machine/heap'
+import { ContextNode } from '../src/virtual-machine/heap/types/context'
+import {
+  EnvironmentNode,
+  FrameNode,
+} from '../src/virtual-machine/heap/types/environment'
 
 describe('Heap Tests', () => {
   test('Get Set Bits', () => {
