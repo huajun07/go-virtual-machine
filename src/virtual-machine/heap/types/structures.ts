@@ -100,3 +100,50 @@ export class ListNode extends BaseNode {
     )
   }
 }
+
+/**
+ * Each ArrayNode occupies (2 + `length`) words.
+ * Word 0: Array tag.
+ * Word 1: Length of array.
+ * Remaining `length` words: Each word is the address of an element.
+ */
+export class ArrayNode extends BaseNode {
+  static create(length: number, heap: Heap): ArrayNode {
+    const addr = heap.allocate(2 + length)
+    heap.set_tag(addr, TAG.ARRAY)
+    heap.memory.set_number(addr + 1, length)
+    return new ArrayNode(heap, addr)
+  }
+
+  /**
+   * `defaultCreator` is a function that allocates a default element on the heap,
+   * and returns its address.
+   */
+  static default(
+    length: number,
+    defaultCreator: (heap: Heap) => number,
+    heap: Heap,
+  ) {
+    const addr = heap.allocate(2 + length)
+    heap.set_tag(addr, TAG.ARRAY)
+    heap.memory.set_number(addr + 1, length)
+    for (let i = 0; i < length; i++) {
+      heap.memory.set_word(addr + 2 + i, defaultCreator(heap))
+    }
+    return new ArrayNode(heap, addr)
+  }
+
+  get_length(): number {
+    return this.heap.memory.get_number(this.addr + 1)
+  }
+
+  set_child(index: number, address: number) {
+    this.heap.memory.set_word(this.addr + 2 + index, address)
+  }
+
+  override get_children(): number[] {
+    return [...Array(this.get_length()).keys()].map((x) =>
+      this.heap.get_child(this.addr + 2, x),
+    )
+  }
+}

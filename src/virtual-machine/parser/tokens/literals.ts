@@ -1,19 +1,26 @@
 import { Compiler } from '../../compiler'
 import {
-  DataType,
   FuncBlockInstruction,
   JumpInstruction,
+  LoadArrayInstruction,
   LoadConstantInstruction,
+  LoadDefaultInstruction,
   LoadFuncInstruction,
   PopInstruction,
   ReturnInstruction,
 } from '../../compiler/instructions'
-import { Float64Type, Int64Type, StringType, Type } from '../../compiler/typing'
+import {
+  ArrayType,
+  Float64Type,
+  Int64Type,
+  StringType,
+  Type,
+} from '../../compiler/typing'
 
 import { Token } from './base'
 import { BlockToken } from './block'
-import { isExpressionToken } from './expressions'
-import { FunctionTypeToken } from './type'
+import { ExpressionToken, isExpressionToken } from './expressions'
+import { ArrayTypeToken, FunctionTypeToken } from './type'
 
 export abstract class LiteralToken extends Token {
   constructor(public value: number | string) {
@@ -39,7 +46,7 @@ export class IntegerLiteralToken extends LiteralToken {
 
   override compile(compiler: Compiler): Type {
     compiler.instructions.push(
-      new LoadConstantInstruction(this.value, DataType.Number),
+      new LoadConstantInstruction(this.value, new Int64Type()),
     )
     return new Int64Type()
   }
@@ -58,7 +65,7 @@ export class FloatLiteralToken extends LiteralToken {
 
   override compile(compiler: Compiler): Type {
     compiler.instructions.push(
-      new LoadConstantInstruction(this.value, DataType.Float),
+      new LoadConstantInstruction(this.value, new Float64Type()),
     )
     return new Float64Type()
   }
@@ -83,7 +90,7 @@ export class StringLiteralToken extends LiteralToken {
 
   override compile(compiler: Compiler): Type {
     compiler.instructions.push(
-      new LoadConstantInstruction(this.value, DataType.String),
+      new LoadConstantInstruction(this.value, new StringType()),
     )
     return new StringType()
   }
@@ -129,5 +136,61 @@ export class FunctionLiteralToken extends Token {
     jump_instr.set_addr(compiler.instructions.length)
     compiler.instructions.push(new LoadFuncInstruction(func_start))
     return this.signature.compile(compiler)
+  }
+}
+
+export class LiteralValueToken extends Token {
+  constructor(public elements: (LiteralValueToken | ExpressionToken)[]) {
+    super('literal_value')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    throw new Error(
+      'Do not use LiteralValueToken.compile, instead use LiteralValueToken.compileWithType',
+    )
+  }
+
+  //! TODO (P5): It is extremely weird to define a separate compilation method,
+  //! but we need the extra type information here. How to fix this?
+  compileWithType(compiler: Compiler, type: Type) {
+    if (type instanceof ArrayType) {
+      if (this.elements.length > type.length) {
+        throw new Error(
+          `Array literal has ${this.elements.length} elements but only expected ${type.length}, in type ${type}.`,
+        )
+      }
+
+      for (const element of this.elements) {
+        const actualType = element.compile(compiler)
+        if (!type.element.equals(actualType)) {
+          throw new Error(
+            `Cannot use ${actualType} as ${type.element} value in array literal.`,
+          )
+        }
+      }
+      for (let i = 0; i < type.length - this.elements.length; i++) {
+        // Ran out of literal values, use the default values.
+        compiler.instructions.push(new LoadDefaultInstruction(type.element))
+      }
+
+      compiler.instructions.push(new LoadArrayInstruction(type.length))
+    } else {
+      throw new Error('Parser Bug: Type of literal value is not supported.')
+    }
+  }
+}
+
+export class ArrayLiteralToken extends Token {
+  constructor(
+    public arrayType: ArrayTypeToken,
+    public body: LiteralValueToken,
+  ) {
+    super('array_literal')
+  }
+
+  override compile(compiler: Compiler): Type {
+    const type = this.arrayType.compile(compiler)
+    this.body.compileWithType(compiler, type)
+    return type
   }
 }

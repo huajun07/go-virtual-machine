@@ -1,12 +1,25 @@
+import { Heap } from '../../heap'
+import { FuncNode } from '../../heap/types/func'
+import {
+  BoolNode,
+  FloatNode,
+  IntegerNode,
+  StringNode,
+} from '../../heap/types/primitives'
+import { ArrayNode } from '../../heap/types/structures'
+
 export abstract class Type {
   abstract isPrimitive(): boolean
   abstract toString(): string
-
   abstract equals(t: Type): boolean
+
   /** Returns true if `t` can be assigned to this type. */
   assignableBy(t: Type): boolean {
     return this.equals(t)
   }
+
+  /** Returns a function that creates a default node of this type on the heap, and returns its address. */
+  abstract defaultNodeCreator(): (heap: Heap) => number
 }
 
 /** This type represents things that don't have an associated type, like statements. */
@@ -22,6 +35,10 @@ export class NoType extends Type {
   override equals(t: Type): boolean {
     return t instanceof NoType
   }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    throw new Error('Cannot create values of type NoType')
+  }
 }
 
 export class BoolType extends Type {
@@ -35,6 +52,10 @@ export class BoolType extends Type {
 
   override equals(t: Type): boolean {
     return t instanceof BoolType
+  }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    return (heap) => BoolNode.default(heap).addr
   }
 }
 
@@ -50,6 +71,10 @@ export class Uint64Type extends Type {
   override equals(t: Type): boolean {
     return t instanceof Uint64Type
   }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    return (heap) => IntegerNode.default(heap).addr
+  }
 }
 
 export class Int64Type extends Type {
@@ -63,6 +88,10 @@ export class Int64Type extends Type {
 
   override equals(t: Type): boolean {
     return t instanceof Int64Type
+  }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    return (heap) => IntegerNode.default(heap).addr
   }
 }
 
@@ -78,6 +107,10 @@ export class Float64Type extends Type {
   override equals(t: Type): boolean {
     return t instanceof Float64Type
   }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    return (heap) => FloatNode.default(heap).addr
+  }
 }
 
 export class StringType extends Type {
@@ -91,6 +124,10 @@ export class StringType extends Type {
 
   override equals(t: Type): boolean {
     return t instanceof StringType
+  }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    return (heap) => StringNode.default(heap).addr
   }
 }
 
@@ -114,6 +151,11 @@ export class ArrayType extends Type {
       this.length === t.length
     )
   }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    const elementCreator = this.element.defaultNodeCreator()
+    return (heap) => ArrayNode.default(this.length, elementCreator, heap).addr
+  }
 }
 
 export class SliceType extends Type {
@@ -131,6 +173,10 @@ export class SliceType extends Type {
 
   override equals(t: Type): boolean {
     return t instanceof SliceType && this.element.equals(t.element)
+  }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    throw new Error('Slice types are not supported.')
   }
 }
 
@@ -151,6 +197,11 @@ export class ParameterType extends Type {
 
   override equals(t: Type): boolean {
     return t instanceof ParameterType && this.type.equals(t.type)
+  }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    // Do nothing.
+    return (_) => 0
   }
 }
 
@@ -186,6 +237,10 @@ export class FunctionType extends Type {
       this.parameters.every((p, index) => p.equals(t.parameters[index])) &&
       this.results.every((r, index) => r.equals(t.results[index]))
     )
+  }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    return (heap) => FuncNode.default(heap).addr
   }
 }
 
@@ -229,6 +284,11 @@ export class ChannelType extends Type {
         t instanceof ChannelType &&
         this.element.equals(t.element))
     )
+  }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    //! TODO: Implement.
+    throw new Error('Channels are not supported yet.')
   }
 }
 

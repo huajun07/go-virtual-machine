@@ -2,7 +2,6 @@ import { Compiler } from '../../compiler'
 import {
   BinaryInstruction,
   BlockInstruction,
-  DataType,
   ExitBlockInstruction,
   LoadConstantInstruction,
   ReturnInstruction,
@@ -13,7 +12,7 @@ import {
   JumpIfFalseInstruction,
   JumpInstruction,
 } from '../../compiler/instructions/control'
-import { NoType, Type } from '../../compiler/typing'
+import { Int64Type, NoType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 import { BlockToken } from './block'
@@ -99,7 +98,7 @@ export class IncDecStatementToken extends Token {
   override compile(compiler: Compiler): Type {
     // TODO: Custom Instructions to avoid recalculation?
     this.expression.compile(compiler)
-    compiler.instructions.push(new LoadConstantInstruction(1, DataType.Number))
+    compiler.instructions.push(new LoadConstantInstruction(1, new Int64Type()))
     if (this.operation === '++') {
       compiler.instructions.push(new BinaryInstruction('sum'))
     } else if (this.operation === '--') {
