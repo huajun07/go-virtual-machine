@@ -1,8 +1,11 @@
 import { Compiler } from '../../compiler'
+import { LoadArrayElementInstruction } from '../../compiler/instructions'
 import { CallInstruction } from '../../compiler/instructions/funcs'
 import {
+  ArrayType,
   ChannelType,
   FunctionType,
+  Int64Type,
   NoType,
   SliceType,
   Type,
@@ -77,9 +80,21 @@ export class IndexToken extends PrimaryExpressionModifierToken {
     super('index')
   }
 
-  override compile(_compiler: Compiler, _operandType: Type): Type {
-    //! TODO: Implement.
-    return new NoType()
+  override compile(compiler: Compiler, operandType: Type): Type {
+    if (operandType instanceof ArrayType) {
+      const indexType = this.expression.compile(compiler)
+      if (!(indexType instanceof Int64Type)) {
+        throw new Error(
+          `Invalid argument: Index has type ${indexType} but must be an integer`,
+        )
+      }
+      compiler.instructions.push(new LoadArrayElementInstruction())
+      return operandType.element
+    } else {
+      throw Error(
+        `Invalid operation: Cannot index a variable of type ${operandType}`,
+      )
+    }
   }
 }
 

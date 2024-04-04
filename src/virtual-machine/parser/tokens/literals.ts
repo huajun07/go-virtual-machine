@@ -161,11 +161,15 @@ export class LiteralValueToken extends Token {
       }
 
       for (const element of this.elements) {
-        const actualType = element.compile(compiler)
-        if (!type.element.equals(actualType)) {
-          throw new Error(
-            `Cannot use ${actualType} as ${type.element} value in array literal.`,
-          )
+        if (element instanceof LiteralValueToken) {
+          element.compileWithType(compiler, type.element)
+        } else {
+          const actualType = element.compile(compiler)
+          if (!type.element.equals(actualType)) {
+            throw new Error(
+              `Cannot use ${actualType} as ${type.element} value in array literal.`,
+            )
+          }
         }
       }
       for (let i = 0; i < type.length - this.elements.length; i++) {

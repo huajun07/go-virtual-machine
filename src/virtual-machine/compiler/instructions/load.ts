@@ -67,9 +67,29 @@ export class LoadArrayInstruction extends Instruction {
   override execute(process: Process): void {
     const array = ArrayNode.create(this.length, process.heap).addr
     for (let i = this.length - 1; i >= 0; i--) {
-      process.heap.memory.set_word(array + 2 + i, process.context.popOS())
+      process.heap.memory.set_word(process.context.popOS(), array + 2 + i)
     }
     process.context.pushOS(array)
+  }
+}
+
+/** Takes the index, then array from the heap, and loads the element at the index onto the OS.  */
+export class LoadArrayElementInstruction extends Instruction {
+  constructor() {
+    super('LDAE')
+  }
+
+  override execute(process: Process): void {
+    const indexNode = new IntegerNode(process.heap, process.context.popOS())
+    const index = indexNode.get_value()
+    const array = new ArrayNode(process.heap, process.context.popOS())
+    if (index < 0 || index >= array.get_length()) {
+      throw new Error(
+        `Index out of range [${index}] with length ${array.get_length()}`,
+      )
+    }
+    const element = array.get_child(index)
+    process.context.pushOS(element)
   }
 }
 

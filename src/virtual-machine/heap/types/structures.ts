@@ -111,7 +111,7 @@ export class ArrayNode extends BaseNode {
   static create(length: number, heap: Heap): ArrayNode {
     const addr = heap.allocate(2 + length)
     heap.set_tag(addr, TAG.ARRAY)
-    heap.memory.set_number(addr + 1, length)
+    heap.memory.set_number(length, addr + 1)
     return new ArrayNode(heap, addr)
   }
 
@@ -126,9 +126,9 @@ export class ArrayNode extends BaseNode {
   ) {
     const addr = heap.allocate(2 + length)
     heap.set_tag(addr, TAG.ARRAY)
-    heap.memory.set_number(addr + 1, length)
+    heap.memory.set_number(length, addr + 1)
     for (let i = 0; i < length; i++) {
-      heap.memory.set_word(addr + 2 + i, defaultCreator(heap))
+      heap.memory.set_word(defaultCreator(heap), addr + 2 + i)
     }
     return new ArrayNode(heap, addr)
   }
@@ -138,7 +138,11 @@ export class ArrayNode extends BaseNode {
   }
 
   set_child(index: number, address: number) {
-    this.heap.memory.set_word(this.addr + 2 + index, address)
+    this.heap.memory.set_word(address, this.addr + 2 + index)
+  }
+
+  get_child(index: number): number {
+    return this.heap.memory.get_word(this.addr + 2 + index)
   }
 
   override get_children(): number[] {
