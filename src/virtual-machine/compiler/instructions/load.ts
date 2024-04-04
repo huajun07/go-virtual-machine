@@ -1,3 +1,11 @@
+import { Process } from '../../executor/process'
+import {
+  BoolNode,
+  FloatNode,
+  IntegerNode,
+  StringNode,
+} from '../../heap/types/primitives'
+
 import { Instruction } from './base'
 
 export enum DataType {
@@ -19,6 +27,25 @@ export class LoadConstantInstruction extends Instruction {
   static is(instr: Instruction): instr is LoadConstantInstruction {
     return instr.tag === 'LDC'
   }
+
+  override execute(process: Process): void {
+    if (this.data_type === DataType.Boolean) {
+      process.context.pushOS(
+        BoolNode.create(this.val as boolean, process.heap).addr,
+      )
+    } else if (this.data_type === DataType.Float) {
+      process.context.pushOS(
+        FloatNode.create(this.val as number, process.heap).addr,
+      )
+    } else if (this.data_type === DataType.Number) {
+      const temp = IntegerNode.create(this.val as number, process.heap).addr
+      process.context.pushOS(temp)
+    } else if (this.data_type === DataType.String) {
+      process.context.pushOS(
+        StringNode.create(this.val as string, process.heap).addr,
+      )
+    }
+  }
 }
 
 export class LoadVariableInstruction extends Instruction {
@@ -29,16 +56,10 @@ export class LoadVariableInstruction extends Instruction {
     this.frame_idx = frame_idx
     this.var_idx = var_idx
   }
-}
 
-export class SetTypeInstruction extends Instruction {
-  data_type: DataType
-  frame_idx: number
-  var_idx: number
-  constructor(data_type: DataType, frame_idx: number, var_idx: number) {
-    super('SET_TYPE')
-    this.data_type = data_type
-    this.frame_idx = frame_idx
-    this.var_idx = var_idx
+  override execute(process: Process): void {
+    process.context.pushOS(
+      process.context.E().get_var(this.frame_idx, this.var_idx),
+    )
   }
 }

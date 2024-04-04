@@ -1,9 +1,13 @@
+import { Process } from '../../executor/process'
+
 export abstract class Instruction {
   tag: string
 
   constructor(tag: string) {
     this.tag = tag
   }
+
+  abstract execute(process: Process): void
 }
 
 export class DoneInstruction extends Instruction {
@@ -14,6 +18,10 @@ export class DoneInstruction extends Instruction {
   static is(instr: Instruction): instr is DoneInstruction {
     return instr.tag === 'DONE'
   }
+
+  override execute(_process: Process): void {
+    // Do nothing.
+  }
 }
 
 export class PopInstruction extends Instruction {
@@ -23,5 +31,9 @@ export class PopInstruction extends Instruction {
 
   static is(instr: Instruction): instr is DoneInstruction {
     return instr.tag === 'POP'
+  }
+
+  override execute(process: Process): void {
+    process.context.popOS()
   }
 }
