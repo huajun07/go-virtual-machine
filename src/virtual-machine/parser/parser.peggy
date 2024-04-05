@@ -336,10 +336,10 @@ TypeAssertion = "." _ "(" _ Type _ ")"
 Arguments     = "(" _ exprs:ExpressionList? _ ","? _ ")" { return new CallToken(exprs) }
 
 //* Builtin Call (This is not in Golang specifications)
-BuiltinCall   = name:$[a-z]+ _ "(" _ type:Type _ args:("," _ @ExpressionList)? _ ")"
+BuiltinCall   = name:$[a-zA-Z]+ _ "(" _ type:Type _ args:("," _ @ExpressionList)? _ ")"
                 &{ return BuiltinCallToken.validNames.includes(name) && BuiltinCallToken.namesThatTakeType.includes(name) }
                 { return new BuiltinCallToken(name, type, args ?? []) }
-              / name:$[a-z]+ _ "(" _ args:ExpressionList? _ ")"
+              / name:$[a-zA-Z]+ _ "(" _ args:ExpressionList? _ ")"
                 &{ return BuiltinCallToken.validNames.includes(name) && !BuiltinCallToken.namesThatTakeType.includes(name) }
                 { return new BuiltinCallToken(name, null, args ?? []) }
 

@@ -1,5 +1,6 @@
 import { Process } from '../../executor/process'
 import { CallRefNode, FuncNode } from '../../heap/types/func'
+import { IntegerNode } from '../../heap/types/primitives'
 
 import { Instruction } from './base'
 
@@ -59,5 +60,31 @@ export class ReturnInstruction extends Instruction {
       val = process.heap.get_value(process.context.popRTS())
     } while (!(val instanceof CallRefNode))
     process.context.set_PC(val.PC())
+  }
+}
+
+/**
+ * Takes the top of the OS to be the number of arguments.
+ * Then takes its arguments from the OS (in reverse order), and prints them out.
+ */
+export class PrintInstruction extends Instruction {
+  constructor() {
+    super('PRINT')
+  }
+
+  override execute(process: Process): void {
+    const numOfArgs = new IntegerNode(
+      process.heap,
+      process.context.popOS(),
+    ).get_value()
+    const argAddresses = []
+    for (let i = 0; i < numOfArgs; i++) {
+      argAddresses.push(process.context.popOS())
+    }
+    for (let i = numOfArgs - 1; i >= 0; i--) {
+      const string = process.heap.get_value(argAddresses[i]).toString()
+      process.print(string)
+      process.print(i > 0 ? ' ' : '\n')
+    }
   }
 }

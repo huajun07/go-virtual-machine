@@ -45,7 +45,7 @@ describe('Function Execution tests', () => {
         'f := func(x int, y int) int{\
         return x + y\
       }\
-      return 1 + f(1, 2)',
+      Println(1 + f(1, 2))',
       ).output,
     ).toEqual('4')
   })
@@ -65,11 +65,11 @@ describe('Function Execution tests', () => {
           f := func(x, y int) int {
             return x + y + 100
           }
-          return f(1, 2)
+          Println(f(1, 2))
         }`,
         2048,
       ).output,
-    ).toEqual('103')
+    ).toEqual('103\n')
   })
 
   test('Function assignment in loop', () => {
@@ -85,11 +85,11 @@ describe('Function Execution tests', () => {
               return x + y + i
             }
           }
-          return f(1, 2)
+          Println(f(1, 2))
         }`,
         2048,
       ).output,
-    ).toEqual('8')
+    ).toEqual('8\n')
   })
 
   test('Function assignment in loop and if', () => {
@@ -107,11 +107,11 @@ describe('Function Execution tests', () => {
               }
             }
           }
-          return f(1, 2)
+          Println(f(1, 2))
         }`,
         2048,
       ).output,
-    ).toEqual('103')
+    ).toEqual('103\n')
   })
 
   test('Recursive function', () => {
@@ -127,10 +127,10 @@ describe('Function Execution tests', () => {
       }
       
       func main() {
-        return f(10)
+        Println(f(10))
       }`,
         2048,
       ).output,
-    ).toEqual('10')
+    ).toEqual('10\n')
   })
 })

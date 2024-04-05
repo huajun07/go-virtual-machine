@@ -14,6 +14,10 @@ export abstract class PrimitiveNode extends BaseNode {
   abstract apply_binop(operand: PrimitiveNode, operator: string): PrimitiveNode
   abstract apply_unary(operator: string): PrimitiveNode
   abstract get_value(): number | boolean | string
+
+  override toString(): string {
+    return this.get_value().toString()
+  }
 }
 
 export class IntegerNode extends PrimitiveNode {
@@ -46,6 +50,7 @@ export class IntegerNode extends PrimitiveNode {
     }
     throw Error('Invalid Operation')
   }
+
   override apply_unary(operator: string): PrimitiveNode {
     if (NumUnaryOp[operator]) {
       return IntegerNode.create(
