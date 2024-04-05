@@ -58,6 +58,14 @@ describe('Function Type Checking', () => {
       ).errorMessage,
     ).toEqual('Cannot use (string) as (int64) value in return statement.')
   })
+
+  test('Function with too many return values', () => {
+    expect(
+      mainRunner(
+        'f := func(x int) { if x == 1 { return 1 } else { return 1 } }',
+      ).errorMessage,
+    ).toEqual('Too many return values\nhave (int64)\nwant ()')
+  })
 })
 
 describe('Function Execution tests', () => {
