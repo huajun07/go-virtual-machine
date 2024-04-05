@@ -24,18 +24,27 @@ import {
 } from './expressions'
 import { IdentifierToken } from './identifier'
 
-//! TODO (P1): Add other types of statements and expressions
 export type StatementToken =
-  | ExpressionToken
-  | SimpleStatementToken
   | DeclarationToken
+  | SimpleStatementToken
+  | GoStatementToken
+  | ReturnStatementToken
+  | BreakStatementToken
+  | ContinueStatementToken
+  | FallthroughStatementToken
+  | BlockToken
+  | IfStatementToken
+  | SwitchStatementToken
+  | SelectStatementToken
+  | ForStatementToken
+  | DeferStatementToken
 
 export type SimpleStatementToken =
+  | ExpressionToken
+  | SendStatementToken
   | IncDecStatementToken
   | AssignmentStatementToken
   | ShortVariableDeclarationToken
-  | ExpressionToken
-  | SendStatementToken
 
 export class AssignmentStatementToken extends Token {
   constructor(
