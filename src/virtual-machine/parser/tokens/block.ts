@@ -2,12 +2,10 @@ import { Compiler } from '../../compiler'
 import {
   BlockInstruction,
   ExitBlockInstruction,
-  PopInstruction,
 } from '../../compiler/instructions'
 import { NoType, ReturnType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
-import { isExpressionToken } from './expressions'
 import { StatementToken } from './statement'
 
 export class BlockToken extends Token {

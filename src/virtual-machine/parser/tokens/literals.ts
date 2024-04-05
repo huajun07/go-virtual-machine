@@ -6,7 +6,6 @@ import {
   LoadConstantInstruction,
   LoadDefaultInstruction,
   LoadFuncInstruction,
-  PopInstruction,
   ReturnInstruction,
 } from '../../compiler/instructions'
 import {
@@ -20,7 +19,7 @@ import {
 
 import { Token } from './base'
 import { BlockToken } from './block'
-import { ExpressionToken, isExpressionToken } from './expressions'
+import { ExpressionToken } from './expressions'
 import { ArrayTypeToken, FunctionTypeToken } from './type'
 
 export abstract class LiteralToken extends Token {

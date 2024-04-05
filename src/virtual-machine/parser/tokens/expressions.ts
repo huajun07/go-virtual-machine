@@ -159,6 +159,13 @@ export class CallToken extends PrimaryExpressionModifierToken {
       )
     }
 
+    if (operandType.results.isVoid()) {
+      return new NoType()
+    }
+    if (operandType.results.types.length === 1) {
+      // A return type with a single value can be unwrapped.
+      return operandType.results.types[0]
+    }
     return operandType.results
   }
 }
