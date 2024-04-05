@@ -2,7 +2,9 @@ import { Compiler } from '../../compiler'
 import {
   BinaryInstruction,
   BlockInstruction,
+  DoneInstruction,
   ExitBlockInstruction,
+  ForkInstruction,
   LoadConstantInstruction,
   PopInstruction,
   ReturnInstruction,
@@ -360,8 +362,12 @@ export class GoStatementToken extends Token {
     )
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    const fork_instr = new ForkInstruction()
+    compiler.instructions.push(fork_instr)
+    this.call.compile(compiler)
+    compiler.instructions.push(new DoneInstruction())
+    fork_instr.set_addr(compiler.instructions.length)
     return new NoType()
   }
 }

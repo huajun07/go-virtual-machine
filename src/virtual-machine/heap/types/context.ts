@@ -109,6 +109,13 @@ export class ContextNode extends BaseNode {
     }
   }
 
+  fork() {
+    const newContext = ContextNode.create(this.heap)
+    newContext.set_PC(this.PC())
+    newContext.set_E(this.E().addr)
+    return newContext
+  }
+
   override get_children(): number[] {
     const children = [this.RTS().addr, this.OS().addr]
     const E_addr = this.heap.memory.get_word(this.addr + 3)

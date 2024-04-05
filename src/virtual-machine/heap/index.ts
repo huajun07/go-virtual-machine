@@ -9,7 +9,13 @@ import {
   StringNode,
   UnassignedNode,
 } from './types/primitives'
-import { ArrayNode, ListNode, SliceNode, StackNode } from './types/structures'
+import {
+  ArrayNode,
+  QueueNode,
+  SliceNode,
+  StackListNode,
+  StackNode,
+} from './types/structures'
 import { Memory } from './memory'
 
 export enum TAG {
@@ -23,11 +29,13 @@ export enum TAG {
   STRING = 7,
   STRING_LIST = 8,
   STACK = 9,
-  LIST = 10,
+  STACK_LIST = 10,
   FUNC = 11,
   CALLREF = 12,
   ARRAY = 13,
   SLICE = 14,
+  QUEUE = 14,
+  QUEUE_LIST = 15,
 }
 
 export const word_size = 4
@@ -40,9 +48,11 @@ export class Heap {
   freelist: number[]
   max_level: number
   temp_roots: StackNode
-  contexts: StackNode
+  contexts: QueueNode
+  mem_left: number
   constructor(size: number) {
     this.size = size
+    this.mem_left = size
     if (this.size % 2 === 1) this.size -= 1
     if (this.size < 34) throw Error('Insufficient Memory')
     this.memory = new Memory(size, word_size)
@@ -58,7 +68,7 @@ export class Heap {
     }
     this.UNASSIGNED = UnassignedNode.create(this)
     this.temp_roots = StackNode.create(this)
-    this.contexts = StackNode.create(this)
+    this.contexts = QueueNode.create(this)
     const context = ContextNode.create(this)
     this.contexts.push(context.addr)
   }
@@ -84,8 +94,8 @@ export class Heap {
         return new FrameNode(this, addr)
       case TAG.ENVIRONMENT:
         return new EnvironmentNode(this, addr)
-      case TAG.LIST:
-        return new ListNode(this, addr)
+      case TAG.STACK_LIST:
+        return new StackListNode(this, addr)
       case TAG.STACK:
         return new StackNode(this, addr)
       case TAG.FUNC:
@@ -213,11 +223,13 @@ export class Heap {
       addr = try_allocate()
     }
     if (addr === -1) throw Error('Ran out of memory!')
+    this.mem_left -= size
     return addr
   }
 
   free(addr: number) {
     let lvl = this.get_level(addr)
+    this.mem_left += 2 ** lvl
     while (lvl < this.freelist.length) {
       const sibling = addr ^ (1 << lvl)
       if (
