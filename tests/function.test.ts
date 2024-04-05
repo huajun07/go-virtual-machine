@@ -36,6 +36,28 @@ describe('Function Type Checking', () => {
       mainRunner('f := func(int, int) {}; f(1, "a")').errorMessage,
     ).toEqual('Cannot use string as int64 in argument to function call')
   })
+
+  test('Function missing return', () => {
+    expect(mainRunner('f := func(x int) int { x += 1}').errorMessage).toEqual(
+      'Missing return.',
+    )
+  })
+
+  test('Function with if statement missing return in one branch', () => {
+    expect(
+      mainRunner(
+        'f := func(x int) int { if x == 1 { x += 1 } else { return 1 } }',
+      ).errorMessage,
+    ).toEqual('Missing return.')
+  })
+
+  test('Function with wrong return type', () => {
+    expect(
+      mainRunner(
+        'f := func(x int) int { if x == 1 { return "hi" } else { return 1 } }',
+      ).errorMessage,
+    ).toEqual('Cannot use (string) as (int64) value in return statement.')
+  })
 })
 
 describe('Function Execution tests', () => {
