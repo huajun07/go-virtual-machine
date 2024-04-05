@@ -156,3 +156,29 @@ export class LoadVariableInstruction extends Instruction {
     )
   }
 }
+
+/** Takes an array address from the OS, and pushes the length of the array onto OS.  */
+export class LoadArrayLengthInstruction extends Instruction {
+  constructor() {
+    super('LDAL')
+  }
+
+  override execute(process: Process): void {
+    const array = process.context.popOSNode(ArrayNode)
+    const length = array.get_length()
+    process.context.pushOS(IntegerNode.create(length, process.heap).addr)
+  }
+}
+
+/** Takes a slice address from the OS, and pushes the length of the slice onto OS.  */
+export class LoadSliceLengthInstruction extends Instruction {
+  constructor() {
+    super('LDSL')
+  }
+
+  override execute(process: Process): void {
+    const slice = process.context.popOSNode(SliceNode)
+    const length = slice.get_length()
+    process.context.pushOS(IntegerNode.create(length, process.heap).addr)
+  }
+}

@@ -14,6 +14,28 @@ describe('Slice Type Checking', () => {
       mainRunner('var a []int = []int{1, 2, 3}; Println(a[1.2])').errorMessage,
     ).toEqual('Invalid argument: Index has type float64 but must be an integer')
   })
+
+  test('Slice len with too little arguments fails', () => {
+    expect(
+      mainRunner('a := []int{1, 2, 3, 4}; Println(len())').errorMessage,
+    ).toEqual(
+      'Invalid operation: not enough arguments for len (expected 1, found 0)',
+    )
+  })
+
+  test('Slice len with too many arguments fails', () => {
+    expect(
+      mainRunner('a := []int{1, 2, 3, 4}; Println(len(a, a))').errorMessage,
+    ).toEqual(
+      'Invalid operation: too many arguments for len (expected 1, found 2)',
+    )
+  })
+
+  test('Slice len with wrong type', () => {
+    expect(
+      mainRunner('a := []int{1, 2, 3, 4}; Println(len(1))').errorMessage,
+    ).toEqual('Invalid argument: (int64) for len')
+  })
 })
 
 describe('Slice Execution', () => {
@@ -44,5 +66,11 @@ describe('Slice Execution', () => {
         'a := [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}; Println(a[1][2])',
       ).output,
     ).toEqual('6\n')
+  })
+
+  test('Slice len works.', () => {
+    expect(
+      mainRunner('a := [][]int{{1}, {2}, {3}}; Println(len(a))').output,
+    ).toEqual('3\n')
   })
 })

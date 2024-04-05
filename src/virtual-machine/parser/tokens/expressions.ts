@@ -1,8 +1,10 @@
 import { Compiler } from '../../compiler'
 import {
   LoadArrayElementInstruction,
+  LoadArrayLengthInstruction,
   LoadConstantInstruction,
   LoadSliceElementInstruction,
+  LoadSliceLengthInstruction,
 } from '../../compiler/instructions'
 import {
   CallInstruction,
@@ -200,25 +202,64 @@ export class BuiltinCallToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    if (this.name === 'make') {
-      const typeArg = (this.firstTypeArg as TypeToken).compile(compiler)
-      if (!(typeArg instanceof SliceType || typeArg instanceof ChannelType)) {
-        throw new Error(
-          `Invalid argument: cannot make ${typeArg}; type must be slice, map, or channel`,
-        )
-      }
-      //! TODO: Construct based on the args.
-      return typeArg
-    } else if (this.name === 'Println') {
-      //! TODO: This should be fmt.Println.
-      for (const arg of this.args) arg.compile(compiler)
-      compiler.instructions.push(
-        new LoadConstantInstruction(this.args.length, new Int64Type()),
-      )
-      compiler.instructions.push(new PrintInstruction())
-      return new NoType()
-    } else {
+    if (this.name === 'make') return this.compileMake(compiler)
+    else if (this.name === 'Println') return this.compilePrintln(compiler)
+    else if (this.name === 'len') return this.compileLen(compiler)
+    else {
       throw new Error(`Builtin function ${this.name} is not yet implemented.`)
     }
+  }
+
+  private compileLen(compiler: Compiler): Type {
+    if (this.args.length !== 1) {
+      this.throwArgumentLengthError('len', 1, this.args.length)
+    }
+    const argType = this.args[0].compile(compiler)
+    if (argType instanceof ArrayType) {
+      compiler.instructions.push(new LoadArrayLengthInstruction())
+    } else if (argType instanceof SliceType) {
+      compiler.instructions.push(new LoadSliceLengthInstruction())
+    } else {
+      this.throwArgumentTypeError('len', argType)
+    }
+    return new Int64Type()
+  }
+
+  private compileMake(compiler: Compiler): Type {
+    const typeArg = (this.firstTypeArg as TypeToken).compile(compiler)
+    if (!(typeArg instanceof SliceType || typeArg instanceof ChannelType)) {
+      throw new Error(
+        `Invalid argument: cannot make ${typeArg}; type must be slice, map, or channel`,
+      )
+    }
+    //! TODO: Construct based on the args.
+    return typeArg
+  }
+
+  private compilePrintln(compiler: Compiler): Type {
+    //! TODO: This should be fmt.Println.
+    for (const arg of this.args) arg.compile(compiler)
+    compiler.instructions.push(
+      new LoadConstantInstruction(this.args.length, new Int64Type()),
+    )
+    compiler.instructions.push(new PrintInstruction())
+    return new NoType()
+  }
+
+  private throwArgumentLengthError(
+    name: string,
+    expectedNum: number,
+    actualNum: number,
+  ) {
+    const errorMessage =
+      expectedNum < actualNum
+        ? `Invalid operation: too many arguments for ${name} (expected ${expectedNum}, found ${actualNum})`
+        : `Invalid operation: not enough arguments for ${name} (expected ${expectedNum}, found ${actualNum})`
+    throw new Error(errorMessage)
+  }
+
+  private throwArgumentTypeError(name: string, type: Type) {
+    const errorMessage = `Invalid argument: (${type}) for ${name}`
+    throw new Error(errorMessage)
   }
 }
