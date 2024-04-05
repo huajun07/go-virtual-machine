@@ -92,6 +92,25 @@ export class LoadArrayElementInstruction extends Instruction {
     process.context.pushOS(element)
   }
 }
+/** Takes the index, then array from the heap, and loads the element at the index onto the OS.  */
+export class LoadSliceElementInstruction extends Instruction {
+  constructor() {
+    super('LDAE')
+  }
+
+  override execute(process: Process): void {
+    const index = process.context.popOSNode(IntegerNode).get_value()
+    const slice = process.context.popOSNode(SliceNode)
+    const array = new ArrayNode(process.heap, slice.get_array())
+    if (index < 0 || index >= array.get_length()) {
+      throw new Error(
+        `Index out of range [${index}] with length ${array.get_length()}`,
+      )
+    }
+    const element = array.get_child(index)
+    process.context.pushOS(element)
+  }
+}
 
 /**
  * Creates a slice on the heap, with the following arguments taken from the OS (bottom to top).

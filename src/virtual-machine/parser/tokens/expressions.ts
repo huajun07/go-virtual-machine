@@ -2,6 +2,7 @@ import { Compiler } from '../../compiler'
 import {
   LoadArrayElementInstruction,
   LoadConstantInstruction,
+  LoadSliceElementInstruction,
 } from '../../compiler/instructions'
 import {
   CallInstruction,
@@ -79,17 +80,25 @@ export class IndexToken extends PrimaryExpressionModifierToken {
 
   override compile(compiler: Compiler, operandType: Type): Type {
     if (operandType instanceof ArrayType) {
-      const indexType = this.expression.compile(compiler)
-      if (!(indexType instanceof Int64Type)) {
-        throw new Error(
-          `Invalid argument: Index has type ${indexType} but must be an integer`,
-        )
-      }
+      this.compileIndex(compiler)
       compiler.instructions.push(new LoadArrayElementInstruction())
+      return operandType.element
+    } else if (operandType instanceof SliceType) {
+      this.compileIndex(compiler)
+      compiler.instructions.push(new LoadSliceElementInstruction())
       return operandType.element
     } else {
       throw Error(
         `Invalid operation: Cannot index a variable of type ${operandType}`,
+      )
+    }
+  }
+
+  private compileIndex(compiler: Compiler) {
+    const indexType = this.expression.compile(compiler)
+    if (!(indexType instanceof Int64Type)) {
+      throw new Error(
+        `Invalid argument: Index has type ${indexType} but must be an integer`,
       )
     }
   }
