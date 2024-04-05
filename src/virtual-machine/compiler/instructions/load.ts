@@ -110,7 +110,7 @@ export class LoadSliceInstruction extends Instruction {
     const capacity = process.context.popOSNode(IntegerNode).get_value()
     const length = process.context.popOSNode(IntegerNode).get_value()
     const start = process.context.popOSNode(IntegerNode).get_value()
-    const array = process.context.popOSNode(IntegerNode).get_value()
+    const array = process.context.popOS()
     const sliceNode = SliceNode.create(
       array,
       start,

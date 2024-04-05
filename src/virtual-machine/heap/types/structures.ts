@@ -152,6 +152,15 @@ export class ArrayNode extends BaseNode {
       this.heap.get_child(this.addr + 2, x),
     )
   }
+
+  override toString(): string {
+    const length = this.get_length()
+    const elements = []
+    for (let i = 0; i < length; i++) {
+      elements.push(this.heap.get_value(this.get_child(i)).toString())
+    }
+    return `[${elements.join(' ')}]`
+  }
 }
 
 /**
@@ -172,7 +181,7 @@ export class SliceNode extends BaseNode {
   ): SliceNode {
     const addr = heap.allocate(5)
     heap.set_tag(addr, TAG.SLICE)
-    heap.memory.set_number(array, addr + 1)
+    heap.memory.set_word(array, addr + 1)
     heap.memory.set_number(start, addr + 2)
     heap.memory.set_number(length, addr + 3)
     heap.memory.set_number(capacity, addr + 4)
@@ -184,7 +193,7 @@ export class SliceNode extends BaseNode {
   }
 
   get_array(): number {
-    return this.heap.memory.get_number(this.addr + 1)
+    return this.heap.memory.get_word(this.addr + 1)
   }
 
   get_start(): number {
@@ -211,5 +220,14 @@ export class SliceNode extends BaseNode {
 
   override get_children(): number[] {
     return [this.get_array()]
+  }
+
+  override toString(): string {
+    const length = this.get_length()
+    const elements = []
+    for (let i = 0; i < length; i++) {
+      elements.push(this.heap.get_value(this.get_child(i)).toString())
+    }
+    return `[${elements.join(' ')}]`
   }
 }
