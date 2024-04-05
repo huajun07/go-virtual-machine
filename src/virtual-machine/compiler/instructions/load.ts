@@ -65,11 +65,11 @@ export class LoadArrayInstruction extends Instruction {
   }
 
   override execute(process: Process): void {
-    const array = ArrayNode.create(this.length, process.heap).addr
+    const arrayNode = ArrayNode.create(this.length, process.heap)
     for (let i = this.length - 1; i >= 0; i--) {
-      process.heap.memory.set_word(process.context.popOS(), array + 2 + i)
+      arrayNode.set_child(i, process.context.popOS())
     }
-    process.context.pushOS(array)
+    process.context.pushOS(arrayNode.addr)
   }
 }
 
