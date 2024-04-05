@@ -19,8 +19,6 @@ export class SourceFileToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    //! TODO: Implement Calling of main function from function declaration
-    // Pending Function Signature Tokenisation
     const global_block = new BlockInstruction()
     compiler.instructions.push(global_block)
     compiler.context.push_env()
