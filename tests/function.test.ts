@@ -47,7 +47,7 @@ describe('Function Execution tests', () => {
       }\
       Println(1 + f(1, 2))',
       ).output,
-    ).toEqual('4')
+    ).toEqual('4\n')
   })
 
   test('Function Declaration', () => {
