@@ -397,7 +397,6 @@ Conversion = Type _ "(" _ Expression _ ")" _ ","? _ ")"
 //* Statements
 //! TODO (P5): LabeledStmt, GotoStmt are not tokenized as they're probably not so important.
 //!            Note that labels do not work for now.
-//! TODO (P3): SelectStmt should be tokenized when we add concurrency.
 Statement  = Declaration / LabeledStmt / SimpleStmt /
 	           GoStmt / ReturnStmt / BreakStmt / ContinueStmt / GotoStmt /
              FallthroughStmt / Block / IfStmt / SwitchStmt / SelectStmt / ForStmt /
