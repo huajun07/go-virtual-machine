@@ -6,7 +6,6 @@ import {
   LoadConstantInstruction,
   LoadDefaultInstruction,
   LoadFuncInstruction,
-  PopInstruction,
   ReturnInstruction,
 } from '../../compiler/instructions'
 import {
@@ -19,7 +18,7 @@ import {
 
 import { Token } from './base'
 import { BlockToken } from './block'
-import { ExpressionToken, isExpressionToken } from './expressions'
+import { ExpressionToken } from './expressions'
 import { ArrayTypeToken, FunctionTypeToken } from './type'
 
 export abstract class LiteralToken extends Token {
@@ -121,9 +120,6 @@ export class FunctionLiteralToken extends Token {
 
     for (const sub_token of this.body.statements) {
       sub_token.compile(compiler)
-      //! TODO: Remove this once we implement ExpressionStatementToken
-      if (isExpressionToken(sub_token))
-        compiler.instructions.push(new PopInstruction())
     }
     const vars = compiler.context.env.get_frame()
     block_instr.set_frame(
