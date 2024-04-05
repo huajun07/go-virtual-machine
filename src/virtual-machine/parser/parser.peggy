@@ -319,7 +319,6 @@ FunctionLit = "func" _ signature:Signature _ body:FunctionBody { return new Func
 //* Primary Expressions
 //! TODO (P5): MethodExpr and Conversion are not supported.
 PrimaryExpr     = operand:(@BuiltinCall / @Operand) _ rest:PrimaryExprModifier* { return new PrimaryExpressionToken(operand, rest) }
-//! TODO (P2): Tokenize PrimaryExprModifier.
 // This PrimaryExprTerm is added to fix left recursion.
 PrimaryExprModifier = Selector / Index / Slice / TypeAssertion / Arguments
 Selector      = "." identifier:identifier { return new SelectorToken(identifier.identifier) }
