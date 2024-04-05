@@ -11,7 +11,6 @@ import {
   SliceType,
   StringType,
   Type,
-  Uint64Type,
 } from '../../compiler/typing'
 
 import { Token } from './base'
@@ -28,14 +27,7 @@ export abstract class TypeToken extends Token {
  * It is used to encompass Boolean, Numeric, and String types.
  */
 export class PrimitiveTypeToken extends TypeToken {
-  static primitiveTypes = [
-    'bool',
-    'uint64',
-    'int64',
-    'float64',
-    'int',
-    'string',
-  ] as const
+  static primitiveTypes = ['bool', 'int64', 'float64', 'int', 'string'] as const
 
   static isPrimitive = (
     name: unknown,
@@ -64,12 +56,10 @@ export class PrimitiveTypeToken extends TypeToken {
   }
 
   override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
     if (this.name === 'bool') return new BoolType()
     else if (this.name === 'float64') return new Float64Type()
     else if (this.name === 'int') return new Int64Type()
     else if (this.name === 'int64') return new Int64Type()
-    else if (this.name === 'uint64') return new Uint64Type()
     else if (this.name === 'string') return new StringType()
     else return new NoType()
   }

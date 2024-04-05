@@ -59,24 +59,6 @@ export class BoolType extends Type {
   }
 }
 
-export class Uint64Type extends Type {
-  isPrimitive(): boolean {
-    return true
-  }
-
-  toString(): string {
-    return 'uint64'
-  }
-
-  override equals(t: Type): boolean {
-    return t instanceof Uint64Type
-  }
-
-  override defaultNodeCreator(): (heap: Heap) => number {
-    return (heap) => IntegerNode.default(heap).addr
-  }
-}
-
 export class Int64Type extends Type {
   isPrimitive(): boolean {
     return true
