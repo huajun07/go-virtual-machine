@@ -56,7 +56,13 @@ export class StackListNode extends BaseNode {
 
   resize(new_size: number) {
     const new_pos = this.heap.allocate(new_size)
-    this.heap.copy(new_pos, this.addr)
+    this.heap.set_tag(new_pos, TAG.STACK_LIST)
+    const new_list = new StackListNode(this.heap, new_pos)
+    const sz = this.get_sz()
+    new_list.set_sz(sz)
+    for (let i = 0; i < sz; i++) {
+      new_list.set_idx(this.get_idx(i), i)
+    }
     this.addr = new_pos
   }
 
@@ -72,15 +78,15 @@ export class StackListNode extends BaseNode {
     const sz = this.get_sz()
     const capacity = this.heap.get_size(this.addr)
     if (sz + 3 > capacity) this.resize(capacity * 2)
-    this.heap.set_child(addr, this.addr + 2, sz)
+    this.set_idx(addr, sz)
     this.set_sz(sz + 1)
   }
 
   pop() {
-    const sz = this.heap.memory.get_word(this.addr + 1)
+    const sz = this.get_sz()
     if (sz === 0) throw Error('List Empty!')
     const capacity = this.heap.get_size(this.addr)
-    const val = this.heap.get_child(this.addr + 2, sz - 1)
+    const val = this.get_idx(sz - 1)
     this.set_sz(sz - 1)
     if (4 * (sz + 1) < capacity) this.resize(capacity / 2)
     return val
@@ -93,14 +99,16 @@ export class StackListNode extends BaseNode {
   }
 
   get_idx(index: number) {
-    return this.heap.get_child(this.addr + 2, index)
+    return this.heap.memory.get_word(this.addr + 2 + index)
+  }
+
+  set_idx(val: number, index: number) {
+    return this.heap.memory.set_word(val, this.addr + 2 + index)
   }
 
   override get_children(): number[] {
     const sz = this.get_sz()
-    return [...Array(sz).keys()].map((x) =>
-      this.heap.get_child(this.addr + 2, x),
-    )
+    return [...Array(sz).keys()].map((x) => this.get_idx(x))
   }
 }
 
@@ -278,6 +286,11 @@ export class QueueNode extends BaseNode {
   sz() {
     return this.list().get_sz()
   }
+
+  get_vals() {
+    return this.list().get_children()
+  }
+
   override get_children(): number[] {
     return [this.heap.memory.get_word(this.addr + 1)]
   }
@@ -296,6 +309,7 @@ export class QueueListNode extends BaseNode {
 
   resize(new_size: number) {
     const new_pos = this.heap.allocate(new_size)
+    this.heap.set_tag(new_pos, TAG.QUEUE_LIST)
     const newQueueList = new QueueListNode(this.heap, new_pos)
     newQueueList.set_sz(this.get_sz())
     newQueueList.set_start(0)
@@ -303,10 +317,7 @@ export class QueueListNode extends BaseNode {
     const start = this.get_start()
     const cap = this.get_cap()
     for (let x = 0; x < this.get_sz(); x++) {
-      newQueueList.set_idx(
-        this.get_idx((start + x) % cap),
-        new_pos + 4 + start + x,
-      )
+      newQueueList.set_idx(this.get_idx((start + x) % cap), x)
     }
     this.addr = new_pos
   }

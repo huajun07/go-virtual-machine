@@ -22,7 +22,7 @@ export class Process {
   }
 
   start() {
-    const time_quantum = 10
+    const time_quantum = 30
     let runtime_count = 0
     while (this.contexts.sz()) {
       this.context = new ContextNode(this.heap, this.contexts.peek())
@@ -45,6 +45,7 @@ export class Process {
       this.contexts.pop()
       // console.log('%c SWITCH!', 'background: #F7FF00; color: #FF0000')
       if (runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
+      // console.log('PC', this.contexts.get_vals())
     }
 
     return this.stdout

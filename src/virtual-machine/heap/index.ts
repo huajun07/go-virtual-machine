@@ -11,6 +11,7 @@ import {
 } from './types/primitives'
 import {
   ArrayNode,
+  QueueListNode,
   QueueNode,
   SliceNode,
   StackListNode,
@@ -106,6 +107,10 @@ export class Heap {
         return new ArrayNode(this, addr)
       case TAG.SLICE:
         return new SliceNode(this, addr)
+      case TAG.QUEUE:
+        return new QueueNode(this, addr)
+      case TAG.QUEUE_LIST:
+        return new QueueListNode(this, addr)
       default:
         throw Error('Unknown Data Type')
     }
@@ -328,12 +333,10 @@ export class Heap {
   }
 
   copy(dst: number, src: number) {
-    const sz = Math.min(this.get_size(src), this.get_size(dst))
-    const lvl = this.get_level(dst)
+    const sz = this.get_size(src)
     for (let i = 0; i < sz; i++) {
       this.memory.set_word(this.memory.get_word(src + i), dst + i)
     }
-    this.set_level(dst, lvl)
   }
 
   clone(addr: number) {
