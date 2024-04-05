@@ -206,10 +206,7 @@ export class ParameterType extends Type {
 }
 
 export class FunctionType extends Type {
-  constructor(
-    public parameters: ParameterType[],
-    public results: ParameterType[],
-  ) {
+  constructor(public parameters: ParameterType[], public results: ReturnType) {
     super()
   }
 
@@ -219,23 +216,15 @@ export class FunctionType extends Type {
 
   toString(): string {
     const parametersString = TypeUtility.arrayToString(this.parameters)
-    const resultsString = TypeUtility.arrayToString(this.results)
-    if (this.results.length === 0) {
-      return `func(${parametersString})`
-    }
-    if (this.results.length === 1) {
-      return `func(${parametersString}) ${resultsString}`
-    }
-    return `func(${parametersString}) (${resultsString})`
+    return `func(${parametersString}) ${this.results}`
   }
 
   override equals(t: Type): boolean {
     return (
       t instanceof FunctionType &&
       this.parameters.length === t.parameters.length &&
-      this.results.length === t.results.length &&
       this.parameters.every((p, index) => p.equals(t.parameters[index])) &&
-      this.results.every((r, index) => r.equals(t.results[index]))
+      this.results.equals(t.results)
     )
   }
 
@@ -289,6 +278,37 @@ export class ChannelType extends Type {
   override defaultNodeCreator(): (heap: Heap) => number {
     //! TODO: Implement.
     throw new Error('Channels are not supported yet.')
+  }
+}
+
+export class ReturnType extends Type {
+  constructor(public types: Type[]) {
+    super()
+  }
+
+  override isPrimitive(): boolean {
+    return false
+  }
+
+  override toString(): string {
+    return `(${TypeUtility.arrayToString(this.types)})`
+  }
+
+  override equals(t: Type): boolean {
+    return (
+      t instanceof ReturnType &&
+      t.types.length === this.types.length &&
+      this.types.every((r, index) => r.equals(t.types[index]))
+    )
+  }
+
+  override defaultNodeCreator(): (_heap: Heap) => number {
+    // Return values are pushed onto the OS, and should not be allocated.
+    throw Error('Unreachable')
+  }
+
+  isVoid(): boolean {
+    return this.types.length === 0
   }
 }
 

@@ -8,6 +8,7 @@ import {
   Int64Type,
   NoType,
   ParameterType,
+  ReturnType,
   SliceType,
   StringType,
   Type,
@@ -109,12 +110,12 @@ export class FunctionTypeToken extends TypeToken {
     this.results = results ?? []
   }
 
-  override compile(compiler: Compiler): Type {
+  override compile(compiler: Compiler): FunctionType {
     const parameterTypes = this.parameters.map(
       (p) => new ParameterType(p.identifier, p.type.compile(compiler)),
     )
-    const resultTypes = this.results.map(
-      (r) => new ParameterType(r.identifier, r.type.compile(compiler)),
+    const resultTypes = new ReturnType(
+      this.results.map((r) => r.type.compile(compiler)),
     )
     return new FunctionType(parameterTypes, resultTypes)
   }

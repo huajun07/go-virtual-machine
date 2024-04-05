@@ -121,7 +121,6 @@ export class CallToken extends PrimaryExpressionModifierToken {
   }
 
   override compile(compiler: Compiler, operandType: Type): Type {
-    //! TODO: Implement the actual calling of the function.
     if (!(operandType instanceof FunctionType)) {
       throw Error(
         `Invalid operation: cannot call non-function (of type ${operandType})`,
@@ -154,9 +153,7 @@ export class CallToken extends PrimaryExpressionModifierToken {
       )
     }
 
-    if (operandType.results.length === 0) return new NoType()
-    //! TODO: How to handle returning multiple values?
-    return operandType.results[0].type
+    return operandType.results
   }
 }
 

@@ -1,12 +1,14 @@
-import { Type } from '.'
+import { ReturnType, Type } from '.'
 
 export class TypeEnvironment {
   parent?: TypeEnvironment
   typings: Record<string, Type>
+  expectedReturn: ReturnType
 
   constructor(parent?: TypeEnvironment) {
     this.parent = parent
     this.typings = {}
+    this.expectedReturn = parent?.expectedReturn ?? new ReturnType([])
   }
 
   addType(name: string, type: Type) {
@@ -35,5 +37,9 @@ export class TypeEnvironment {
       throw Error(`Variable ${name} not found`)
     }
     return this.parent.get(name)
+  }
+
+  updateReturnType(newType: ReturnType) {
+    this.expectedReturn = newType
   }
 }

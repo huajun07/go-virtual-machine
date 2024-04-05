@@ -13,6 +13,7 @@ import {
   ArrayType,
   Float64Type,
   Int64Type,
+  ReturnType,
   StringType,
   Type,
 } from '../../compiler/typing'
@@ -110,7 +111,10 @@ export class FunctionLiteralToken extends Token {
       this.signature.parameters.length,
     )
     compiler.instructions.push(block_instr)
+
+    const signatureType = this.signature.compile(compiler)
     compiler.type_environment = compiler.type_environment.extend()
+    compiler.type_environment.updateReturnType(signatureType.results)
 
     let cnt = 0
     for (const param of this.signature.parameters) {
@@ -119,11 +123,10 @@ export class FunctionLiteralToken extends Token {
       compiler.type_environment.addType(name, param.type.compile(compiler))
     }
 
+    let hasReturn = false
     for (const sub_token of this.body.statements) {
-      sub_token.compile(compiler)
-      //! TODO: Remove this once we implement ExpressionStatementToken
-      if (isExpressionToken(sub_token))
-        compiler.instructions.push(new PopInstruction())
+      const statementType = sub_token.compile(compiler)
+      hasReturn ||= statementType instanceof ReturnType
     }
     const vars = compiler.context.env.get_frame()
     block_instr.set_frame(
@@ -135,7 +138,11 @@ export class FunctionLiteralToken extends Token {
     compiler.instructions.push(new ReturnInstruction())
     jump_instr.set_addr(compiler.instructions.length)
     compiler.instructions.push(new LoadFuncInstruction(func_start))
-    return this.signature.compile(compiler)
+
+    if (!hasReturn && signatureType.results.types.length > 0) {
+      throw new Error(`Missing return.`)
+    }
+    return signatureType
   }
 }
 
