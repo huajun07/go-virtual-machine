@@ -43,6 +43,8 @@
     CommunicationClauseToken,
     SelectStatementToken,
     BuiltinCallToken,
+    LiteralValueToken,
+    ArrayLiteralToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -305,13 +307,13 @@ OperandName = identifier / QualifiedIdent
 QualifiedIdent = PackageName "." identifier
 
 //* Composite Literals
-CompositeLit = LiteralType _ LiteralValue
-LiteralType  = StructType | ArrayType | "[" _ "..." _ "]" ElementType / SliceType / MapType / TypeName _ TypeArgs?
-LiteralValue = "{" (ElementList _ ","? _)? "}"
-ElementList  = KeyedElement (_ "," _ KeyedElement)*
-KeyedElement = (Key _ ":")? _ Element
-Key          = FieldName / Expression / LiteralValue
-FieldName    = identifier
+//! TODO: Add the other LiteralTypes
+// LiteralType  = StructType / ArrayType / SliceType / MapType / TypeName
+CompositeLit = type:ArrayType _ value:LiteralValue { return new ArrayLiteralToken(type, value) }
+LiteralValue = "{" elements:(@ElementList _ ","? _)? "}" { return new LiteralValueToken(elements ?? []) }
+ElementList  = head:KeyedElement rest:(_ "," _ @KeyedElement)* { return [head, ...rest] }
+// Ironically, KeyedElement will not support having a key for our implementation.
+KeyedElement = Element
 Element      = Expression / LiteralValue
 
 //* Function Literals

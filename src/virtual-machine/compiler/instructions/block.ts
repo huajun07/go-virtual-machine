@@ -1,20 +1,6 @@
 import { Process } from '../../executor/process'
 import { FrameNode } from '../../heap/types/environment'
-import { FuncNode } from '../../heap/types/func'
-import {
-  BoolNode,
-  FloatNode,
-  IntegerNode,
-  StringNode,
-} from '../../heap/types/primitives'
-import {
-  BoolType,
-  Float64Type,
-  FunctionType,
-  Int64Type,
-  StringType,
-  Type,
-} from '../typing'
+import { Type } from '../typing'
 
 import { Instruction } from './base'
 
@@ -36,17 +22,7 @@ export class BlockInstruction extends Instruction {
     process.heap.temp_roots.push(new_frame.addr)
     for (let i = 0; i < this.frame.length; i++) {
       const T = this.frame[i]
-      if (T instanceof BoolType) {
-        new_frame.set_idx(BoolNode.default(process.heap).addr, i)
-      } else if (T instanceof Int64Type) {
-        new_frame.set_idx(IntegerNode.default(process.heap).addr, i)
-      } else if (T instanceof Float64Type) {
-        new_frame.set_idx(FloatNode.default(process.heap).addr, i)
-      } else if (T instanceof StringType) {
-        new_frame.set_idx(StringNode.default(process.heap).addr, i)
-      } else if (T instanceof FunctionType) {
-        new_frame.set_idx(FuncNode.default(process.heap).addr, i)
-      } else throw Error('Unsupported Type')
+      new_frame.set_idx(T.defaultNodeCreator()(process.heap), i)
     }
 
     if (!(this instanceof FuncBlockInstruction)) {
