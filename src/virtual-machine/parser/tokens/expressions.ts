@@ -3,6 +3,7 @@ import {
   LoadArrayElementInstruction,
   LoadArrayLengthInstruction,
   LoadConstantInstruction,
+  LoadSliceCapacityInstruction,
   LoadSliceElementInstruction,
   LoadSliceLengthInstruction,
 } from '../../compiler/instructions'
@@ -205,9 +206,26 @@ export class BuiltinCallToken extends Token {
     if (this.name === 'make') return this.compileMake(compiler)
     else if (this.name === 'Println') return this.compilePrintln(compiler)
     else if (this.name === 'len') return this.compileLen(compiler)
+    else if (this.name === 'cap') return this.compileCap(compiler)
     else {
       throw new Error(`Builtin function ${this.name} is not yet implemented.`)
     }
+  }
+
+  private compileCap(compiler: Compiler): Type {
+    if (this.args.length !== 1) {
+      this.throwArgumentLengthError('cap', 1, this.args.length)
+    }
+    const argType = this.args[0].compile(compiler)
+    if (argType instanceof ArrayType) {
+      // The capacity of an array is the length of the array.
+      compiler.instructions.push(new LoadArrayLengthInstruction())
+    } else if (argType instanceof SliceType) {
+      compiler.instructions.push(new LoadSliceCapacityInstruction())
+    } else {
+      this.throwArgumentTypeError('cap', argType)
+    }
+    return new Int64Type()
   }
 
   private compileLen(compiler: Compiler): Type {

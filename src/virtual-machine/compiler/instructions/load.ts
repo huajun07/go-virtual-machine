@@ -182,3 +182,16 @@ export class LoadSliceLengthInstruction extends Instruction {
     process.context.pushOS(IntegerNode.create(length, process.heap).addr)
   }
 }
+
+/** Takes a slice address from the OS, and pushes the capacity of the slice onto OS.  */
+export class LoadSliceCapacityInstruction extends Instruction {
+  constructor() {
+    super('LDSC')
+  }
+
+  override execute(process: Process): void {
+    const slice = process.context.popOSNode(SliceNode)
+    const capacity = slice.get_capacity()
+    process.context.pushOS(IntegerNode.create(capacity, process.heap).addr)
+  }
+}

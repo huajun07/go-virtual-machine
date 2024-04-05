@@ -73,4 +73,10 @@ describe('Slice Execution', () => {
       mainRunner('a := [][]int{{1}, {2}, {3}}; Println(len(a))').output,
     ).toEqual('3\n')
   })
+
+  test('Slice capacity works.', () => {
+    expect(
+      mainRunner('a := [][]int{{1}, {2}, {3}}; Println(cap(a))').output,
+    ).toEqual('3\n')
+  })
 })
