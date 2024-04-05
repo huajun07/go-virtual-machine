@@ -3,7 +3,7 @@ import {
   BlockInstruction,
   ExitBlockInstruction,
 } from '../../compiler/instructions'
-import { NoType, Type } from '../../compiler/typing'
+import { NoType, ReturnType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 import { StatementToken } from './statement'
@@ -18,9 +18,15 @@ export class BlockToken extends Token {
     const block_instr = new BlockInstruction()
     compiler.instructions.push(block_instr)
     compiler.type_environment = compiler.type_environment.extend()
+    let hasReturn = false
     for (const sub_token of this.statements) {
-      sub_token.compile(compiler)
+      const statementType = sub_token.compile(compiler)
+      hasReturn ||= statementType instanceof ReturnType
     }
+    const blockType = hasReturn
+      ? compiler.type_environment.expectedReturn
+      : new NoType()
+
     const vars = compiler.context.env.get_frame()
     block_instr.set_frame(
       vars.map((name) => compiler.type_environment.get(name)),
@@ -30,6 +36,6 @@ export class BlockToken extends Token {
 
     compiler.instructions.push(new ExitBlockInstruction())
 
-    return new NoType()
+    return blockType
   }
 }

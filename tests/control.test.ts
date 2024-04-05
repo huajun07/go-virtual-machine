@@ -13,9 +13,9 @@ describe('Variable Declaration Tests', () => {
         } else {\
           a += -i\
         }\
-        return a',
+        Println(a)',
       ).output,
-    ).toEqual('1334')
+    ).toEqual('1334\n')
   })
   test('For loop', () => {
     expect(
@@ -26,9 +26,9 @@ describe('Variable Declaration Tests', () => {
           i := 3\
           a += i\
         }\
-        return a;',
+        Println(a)',
       ).output,
-    ).toEqual('25')
+    ).toEqual('25\n')
   })
   test('For loop continue', () => {
     expect(
@@ -42,9 +42,9 @@ describe('Variable Declaration Tests', () => {
           i := 3\
           a += i\
         }\
-        return a;',
+        Println(a)',
       ).output,
-    ).toEqual('19')
+    ).toEqual('19\n')
   })
   test('For loop break', () => {
     expect(
@@ -58,8 +58,8 @@ describe('Variable Declaration Tests', () => {
           i := 3\
           a += i\
         }\
-        return a;',
+        Println(a)',
       ).output,
-    ).toEqual('12')
+    ).toEqual('12\n')
   })
 })

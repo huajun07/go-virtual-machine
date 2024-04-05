@@ -9,17 +9,17 @@ describe('Variable Declaration Tests', () => {
         'var a int = 3;\
         const b int = 5;\
         const c int = b;\
-        return a+b+c;',
+        Println(a+b+c)',
       ).output,
-    ).toEqual('13')
+    ).toEqual('13\n')
   })
   test('String Variables', () => {
     expect(
       mainRunner(
         'a := "hi";\
         b := "hi2";\
-        return a + b;',
+        Println(a + b)',
       ).output,
-    ).toEqual('"hihi2"')
+    ).toEqual('hihi2\n')
   })
 })

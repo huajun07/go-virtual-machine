@@ -10,9 +10,9 @@ describe('Basic Environment Tests', () => {
           b:= a + 3;\
           c := a + b;\
           c *= a;\
-          return a + b + c;',
+          Println(a + b + c)',
       ).output,
-    ).toEqual('36')
+    ).toEqual('36\n')
   })
   test('Number Variables Scoping', () => {
     expect(
@@ -22,8 +22,8 @@ describe('Basic Environment Tests', () => {
           var a int = 1;\
           a = 2;\
         };\
-        return a;',
+        Println(a)',
       ).output,
-    ).toEqual('3')
+    ).toEqual('3\n')
   })
 })

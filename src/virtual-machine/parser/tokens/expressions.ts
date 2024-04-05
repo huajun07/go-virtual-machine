@@ -1,6 +1,12 @@
 import { Compiler } from '../../compiler'
-import { LoadArrayElementInstruction } from '../../compiler/instructions'
-import { CallInstruction } from '../../compiler/instructions/funcs'
+import {
+  LoadArrayElementInstruction,
+  LoadConstantInstruction,
+} from '../../compiler/instructions'
+import {
+  CallInstruction,
+  PrintInstruction,
+} from '../../compiler/instructions/funcs'
 import {
   ArrayType,
   ChannelType,
@@ -112,7 +118,6 @@ export class CallToken extends PrimaryExpressionModifierToken {
   }
 
   override compile(compiler: Compiler, operandType: Type): Type {
-    //! TODO: Implement the actual calling of the function.
     if (!(operandType instanceof FunctionType)) {
       throw Error(
         `Invalid operation: cannot call non-function (of type ${operandType})`,
@@ -145,9 +150,14 @@ export class CallToken extends PrimaryExpressionModifierToken {
       )
     }
 
-    if (operandType.results.length === 0) return new NoType()
-    //! TODO: How to handle returning multiple values?
-    return operandType.results[0].type
+    if (operandType.results.isVoid()) {
+      return new NoType()
+    }
+    if (operandType.results.types.length === 1) {
+      // A return type with a single value can be unwrapped.
+      return operandType.results.types[0]
+    }
+    return operandType.results
   }
 }
 
@@ -166,6 +176,7 @@ export class BuiltinCallToken extends Token {
     'make',
     'min',
     'max',
+    'Println',
   ] as const
 
   static namesThatTakeType = ['make'] as const
@@ -189,6 +200,14 @@ export class BuiltinCallToken extends Token {
       }
       //! TODO: Construct based on the args.
       return typeArg
+    } else if (this.name === 'Println') {
+      //! TODO: This should be fmt.Println.
+      for (const arg of this.args) arg.compile(compiler)
+      compiler.instructions.push(
+        new LoadConstantInstruction(this.args.length, new Int64Type()),
+      )
+      compiler.instructions.push(new PrintInstruction())
+      return new NoType()
     } else {
       throw new Error(`Builtin function ${this.name} is not yet implemented.`)
     }

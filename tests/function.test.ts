@@ -9,7 +9,7 @@ describe('Function Type Checking', () => {
     expect(
       mainRunner('var a func(int, int) = func(int, int, int) {}').errorMessage,
     ).toEqual(
-      'Cannot use func(int64, int64, int64) as func(int64, int64) in variable declaration',
+      'Cannot use func(int64, int64, int64) () as func(int64, int64) () in variable declaration',
     )
   })
 
@@ -36,6 +36,36 @@ describe('Function Type Checking', () => {
       mainRunner('f := func(int, int) {}; f(1, "a")').errorMessage,
     ).toEqual('Cannot use string as int64 in argument to function call')
   })
+
+  test('Function missing return', () => {
+    expect(mainRunner('f := func(x int) int { x += 1}').errorMessage).toEqual(
+      'Missing return.',
+    )
+  })
+
+  test('Function with if statement missing return in one branch', () => {
+    expect(
+      mainRunner(
+        'f := func(x int) int { if x == 1 { x += 1 } else { return 1 } }',
+      ).errorMessage,
+    ).toEqual('Missing return.')
+  })
+
+  test('Function with wrong return type', () => {
+    expect(
+      mainRunner(
+        'f := func(x int) int { if x == 1 { return "hi" } else { return 1 } }',
+      ).errorMessage,
+    ).toEqual('Cannot use (string) as (int64) value in return statement.')
+  })
+
+  test('Function with too many return values', () => {
+    expect(
+      mainRunner(
+        'f := func(x int) { if x == 1 { return 1 } else { return 1 } }',
+      ).errorMessage,
+    ).toEqual('Too many return values\nhave (int64)\nwant ()')
+  })
 })
 
 describe('Function Execution tests', () => {
@@ -45,9 +75,9 @@ describe('Function Execution tests', () => {
         'f := func(x int, y int) int{\
         return x + y\
       }\
-      return 1 + f(1, 2)',
+      Println(1 + f(1, 2))',
       ).output,
-    ).toEqual('4')
+    ).toEqual('4\n')
   })
 
   test('Function Declaration', () => {
@@ -65,11 +95,11 @@ describe('Function Execution tests', () => {
           f := func(x, y int) int {
             return x + y + 100
           }
-          return f(1, 2)
+          Println(f(1, 2))
         }`,
         2048,
       ).output,
-    ).toEqual('103')
+    ).toEqual('103\n')
   })
 
   test('Function assignment in loop', () => {
@@ -85,11 +115,11 @@ describe('Function Execution tests', () => {
               return x + y + i
             }
           }
-          return f(1, 2)
+          Println(f(1, 2))
         }`,
         2048,
       ).output,
-    ).toEqual('8')
+    ).toEqual('8\n')
   })
 
   test('Function assignment in loop and if', () => {
@@ -107,11 +137,11 @@ describe('Function Execution tests', () => {
               }
             }
           }
-          return f(1, 2)
+          Println(f(1, 2))
         }`,
         2048,
       ).output,
-    ).toEqual('103')
+    ).toEqual('103\n')
   })
 
   test('Recursive function', () => {
@@ -127,10 +157,10 @@ describe('Function Execution tests', () => {
       }
       
       func main() {
-        return f(10)
+        Println(f(10))
       }`,
         2048,
       ).output,
-    ).toEqual('10')
+    ).toEqual('10\n')
   })
 })
