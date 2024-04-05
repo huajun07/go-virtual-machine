@@ -11,7 +11,6 @@ interface ProgramData {
   output?: string
   instructions: InstructionData[]
   errorMessage?: string
-  returnVal: string
 }
 
 const runCode = (source_code: string, heapsize: number): ProgramData => {
@@ -24,16 +23,14 @@ const runCode = (source_code: string, heapsize: number): ProgramData => {
     const result = execute_instructions(instructions, heapsize)
     // console.log(result)
     return {
-      returnVal: 'test',
       instructions: [],
-      output: result === undefined ? 'undefined' : JSON.stringify(result),
+      output: result,
     }
   } catch (err) {
     console.warn(err)
     if (err instanceof Error) errorMessage = err.message
   }
   return {
-    returnVal: 'test',
     instructions: [],
     output: 'An Error Occurred!',
     errorMessage: errorMessage,

@@ -3,7 +3,7 @@ import {
   BinaryInstruction,
   UnaryInstruction,
 } from '../../compiler/instructions'
-import { Type } from '../../compiler/typing'
+import { BoolType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 
@@ -58,6 +58,16 @@ export class BinaryOperator extends Operator {
       )
     }
     compiler.instructions.push(new BinaryInstruction(this.name))
-    return leftType
+    const logical_operators = [
+      'equal',
+      'not_equal',
+      'less',
+      'less_or_equal',
+      'greater',
+      'greater_or_equal',
+      'conditional_or',
+      'conditional_and',
+    ]
+    return logical_operators.includes(this.name) ? new BoolType() : leftType
   }
 }

@@ -12,7 +12,13 @@ import {
   JumpIfFalseInstruction,
   JumpInstruction,
 } from '../../compiler/instructions/control'
-import { Int64Type, NoType, Type } from '../../compiler/typing'
+import {
+  BoolType,
+  Int64Type,
+  NoType,
+  ReturnType,
+  Type,
+} from '../../compiler/typing'
 
 import { Token } from './base'
 import { BlockToken } from './block'
@@ -116,14 +122,27 @@ export class ReturnStatementToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    // TODO: Implement
-    if (this.returns) {
-      for (const expr of this.returns) {
-        expr.compile(compiler)
-      }
+    const returnType = new ReturnType(
+      (this.returns ?? []).map((expr) => expr.compile(compiler)),
+    )
+
+    if (
+      returnType.types.length >
+      compiler.type_environment.expectedReturn.types.length
+    ) {
+      throw new Error(
+        `Too many return values\nhave ${returnType}\nwant ${compiler.type_environment.expectedReturn}`,
+      )
     }
+
+    if (!returnType.equals(compiler.type_environment.expectedReturn)) {
+      throw new Error(
+        `Cannot use ${returnType} as ${compiler.type_environment.expectedReturn} value in return statement.`,
+      )
+    }
+
     compiler.instructions.push(new ReturnInstruction())
-    return new NoType()
+    return returnType
   }
 }
 
@@ -184,19 +203,25 @@ export class IfStatementToken extends Token {
     if (this.initialization) this.initialization.compile(compiler)
 
     // Eval Predicate
-    this.predicate.compile(compiler)
+    const predicateType = this.predicate.compile(compiler)
+    if (!(predicateType instanceof BoolType)) {
+      throw new Error(`Non-boolean condition in if statement.`)
+    }
     // If False jump to alternative / end
     const jumpToAlternative = new JumpIfFalseInstruction()
 
     // Consequent Block
     compiler.instructions.push(jumpToAlternative)
-    this.consequent.compile(compiler)
+    const consequentType = this.consequent.compile(compiler)
     const jumpToEnd = new JumpInstruction()
     compiler.instructions.push(jumpToEnd)
 
     // Alternative Block
     jumpToAlternative.set_addr(compiler.instructions.length)
-    if (this.alternative) this.alternative.compile(compiler)
+    // AlternativeType defaults to the expected return type, so that if there is no alternative,
+    // we simply treat the consequent type as the type of the whole if statement.
+    let alternativeType: Type = compiler.type_environment.expectedReturn
+    if (this.alternative) alternativeType = this.alternative.compile(compiler)
     jumpToEnd.set_addr(compiler.instructions.length)
 
     compiler.instructions.push(new ExitBlockInstruction())
@@ -206,6 +231,13 @@ export class IfStatementToken extends Token {
     )
     compiler.type_environment = compiler.type_environment.pop()
     compiler.context.pop_env()
+
+    if (
+      consequentType instanceof ReturnType &&
+      alternativeType instanceof ReturnType
+    ) {
+      return consequentType
+    }
     return new NoType()
   }
 }
@@ -273,7 +305,7 @@ export class ForStatementToken extends Token {
       compiler.instructions.push(predicate_false)
     }
 
-    this.body.compile(compiler)
+    const bodyType = this.body.compile(compiler)
 
     const pre_post_addr = compiler.instructions.length
     if (this.post) this.post.compile(compiler)
@@ -289,7 +321,7 @@ export class ForStatementToken extends Token {
     )
     compiler.type_environment = compiler.type_environment.pop()
     compiler.context.pop_env()
-    return new NoType()
+    return bodyType
   }
 }
 
