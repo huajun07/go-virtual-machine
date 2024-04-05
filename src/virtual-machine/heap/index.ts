@@ -9,7 +9,7 @@ import {
   StringNode,
   UnassignedNode,
 } from './types/primitives'
-import { ArrayNode, ListNode, StackNode } from './types/structures'
+import { ArrayNode, ListNode, SliceNode, StackNode } from './types/structures'
 import { Memory } from './memory'
 
 export enum TAG {
@@ -27,6 +27,7 @@ export enum TAG {
   FUNC = 11,
   CALLREF = 12,
   ARRAY = 13,
+  SLICE = 14,
 }
 
 export const word_size = 4
@@ -93,6 +94,8 @@ export class Heap {
         return new CallRefNode(this, addr)
       case TAG.ARRAY:
         return new ArrayNode(this, addr)
+      case TAG.SLICE:
+        return new SliceNode(this, addr)
       default:
         throw Error('Unknown Data Type')
     }

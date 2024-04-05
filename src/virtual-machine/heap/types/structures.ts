@@ -153,3 +153,63 @@ export class ArrayNode extends BaseNode {
     )
   }
 }
+
+/**
+ * Each SliceNode occupies 5 words.
+ * Word 0: Slice tag.
+ * Word 1: Underlying array address.
+ * Word 2: Start index of this slice (a number).
+ * Word 3: Length (a number).
+ * Word 4: Capacity (a number).
+ */
+export class SliceNode extends BaseNode {
+  static create(
+    array: number,
+    start: number,
+    length: number,
+    capacity: number,
+    heap: Heap,
+  ): SliceNode {
+    const addr = heap.allocate(5)
+    heap.set_tag(addr, TAG.SLICE)
+    heap.memory.set_number(array, addr + 1)
+    heap.memory.set_number(start, addr + 2)
+    heap.memory.set_number(length, addr + 3)
+    heap.memory.set_number(capacity, addr + 4)
+    return new SliceNode(heap, addr)
+  }
+
+  static default(heap: Heap): SliceNode {
+    return SliceNode.create(0, 0, 0, 0, heap)
+  }
+
+  get_array(): number {
+    return this.heap.memory.get_number(this.addr + 1)
+  }
+
+  get_start(): number {
+    return this.heap.memory.get_number(this.addr + 2)
+  }
+
+  get_length(): number {
+    return this.heap.memory.get_number(this.addr + 3)
+  }
+
+  get_capacity(): number {
+    return this.heap.memory.get_number(this.addr + 4)
+  }
+
+  get_child(index: number): number {
+    const array = new ArrayNode(this.heap, this.get_array())
+    return array.get_child(this.get_start() + index)
+  }
+
+  set_child(index: number, address: number) {
+    const array = new ArrayNode(this.heap, this.get_array())
+    array.set_child(this.get_start() + index, address)
+  }
+
+  override get_children(): number[] {
+    return [this.get_array()]
+  }
+}

@@ -73,6 +73,11 @@ export class ContextNode extends BaseNode {
     return this.OS().pop()
   }
 
+  /** Pops the OS and constructs a node with its address.  */
+  popOSNode<T extends BaseNode>(nodeType: new (heap: Heap, addr: number) => T) {
+    return new nodeType(this.heap, this.OS().pop())
+  }
+
   printOS() {
     console.log('OS:')
     for (let i = 0; i < this.OS().sz(); i++) {

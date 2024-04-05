@@ -5,7 +5,7 @@ import {
   IntegerNode,
   StringNode,
 } from '../../heap/types/primitives'
-import { ArrayNode } from '../../heap/types/structures'
+import { ArrayNode, SliceNode } from '../../heap/types/structures'
 import { BoolType, Float64Type, Int64Type, StringType, Type } from '../typing'
 
 import { Instruction } from './base'
@@ -90,6 +90,35 @@ export class LoadArrayElementInstruction extends Instruction {
     }
     const element = array.get_child(index)
     process.context.pushOS(element)
+  }
+}
+
+/**
+ * Creates a slice on the heap, with the following arguments taken from the OS (bottom to top).
+ * - Array address
+ * - Start index of the slice.
+ * - Length of the slice.
+ * - Capacity of the slice.
+ * Pushes the address of the slice back onto the OS.
+ */
+export class LoadSliceInstruction extends Instruction {
+  constructor() {
+    super('LDS')
+  }
+
+  override execute(process: Process): void {
+    const capacity = process.context.popOSNode(IntegerNode).get_value()
+    const length = process.context.popOSNode(IntegerNode).get_value()
+    const start = process.context.popOSNode(IntegerNode).get_value()
+    const array = process.context.popOSNode(IntegerNode).get_value()
+    const sliceNode = SliceNode.create(
+      array,
+      start,
+      length,
+      capacity,
+      process.heap,
+    )
+    process.context.pushOS(sliceNode.addr)
   }
 }
 

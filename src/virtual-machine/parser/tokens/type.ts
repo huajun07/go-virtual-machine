@@ -71,7 +71,7 @@ export class ArrayTypeToken extends TypeToken {
     super()
   }
 
-  override compile(compiler: Compiler): Type {
+  override compile(compiler: Compiler): ArrayType {
     return new ArrayType(this.element.compile(compiler), this.length.getValue())
   }
 }
@@ -81,7 +81,7 @@ export class SliceTypeToken extends TypeToken {
     super()
   }
 
-  override compile(compiler: Compiler): Type {
+  override compile(compiler: Compiler): SliceType {
     return new SliceType(this.element.compile(compiler))
   }
 }

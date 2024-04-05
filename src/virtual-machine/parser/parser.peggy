@@ -45,6 +45,7 @@
     BuiltinCallToken,
     LiteralValueToken,
     ArrayLiteralToken,
+    SliceLiteralToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -304,9 +305,8 @@ OperandName = identifier / QualifiedIdent
 QualifiedIdent = PackageName "." identifier
 
 //* Composite Literals
-//! TODO: Add the other LiteralTypes
-// LiteralType  = StructType / ArrayType / SliceType / MapType / TypeName
 CompositeLit = type:ArrayType _ value:LiteralValue { return new ArrayLiteralToken(type, value) }
+             / type:SliceType _ value:LiteralValue { return new SliceLiteralToken(type, value) }
 LiteralValue = "{" elements:(@ElementList _ ","? _)? "}" { return new LiteralValueToken(elements ?? []) }
 ElementList  = head:KeyedElement rest:(_ "," _ @KeyedElement)* { return [head, ...rest] }
 // Ironically, KeyedElement will not support having a key for our implementation.

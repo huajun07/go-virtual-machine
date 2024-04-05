@@ -6,7 +6,7 @@ import {
   IntegerNode,
   StringNode,
 } from '../../heap/types/primitives'
-import { ArrayNode } from '../../heap/types/structures'
+import { ArrayNode, SliceNode } from '../../heap/types/structures'
 
 export abstract class Type {
   abstract isPrimitive(): boolean
@@ -158,7 +158,7 @@ export class SliceType extends Type {
   }
 
   override defaultNodeCreator(): (heap: Heap) => number {
-    throw new Error('Slice types are not supported.')
+    return (heap) => SliceNode.default(heap).addr
   }
 }
 
