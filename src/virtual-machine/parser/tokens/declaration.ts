@@ -15,8 +15,6 @@ export type TopLevelDeclarationToken =
   | DeclarationToken
   | FunctionDeclarationToken
 
-//! TODO (P1): Add the other types of Top Level Declarations.
-
 export class FunctionDeclarationToken extends Token {
   constructor(public name: IdentifierToken, public func: FunctionLiteralToken) {
     super('function_declaration')

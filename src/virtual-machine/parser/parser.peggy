@@ -165,9 +165,6 @@ Type     = @TypeName / TypeLit / "(" _ Type _ ")"
 //! TODO (P1): Support qualified identifiers for TypeName.
 TypeName = iden:identifier &{ return PrimitiveTypeToken.isPrimitive(iden.identifier) }
            { return new PrimitiveTypeToken(iden.identifier) }
-//! TODO (P2): Remove TypeArgs and TypeList once we remove all the generics from this parser file.
-TypeArgs = "[" _ TypeList _ ","? "]"
-TypeList = Type (_ "," _ Type )*
 TypeLit  = ArrayType / StructType / PointerType / FunctionType / InterfaceType / SliceType / MapType / ChannelType
 
 //* Array Types
@@ -183,7 +180,7 @@ SliceType = "[" "]" element:ElementType { return new SliceTypeToken(element) }
 //* Struct Types
 StructType    = "struct" _ "{" _ (_ FieldDecl _ ";"?)* _ "}"
 FieldDecl      = (IdentifierList Type / EmbeddedField) Tag?
-EmbeddedField = "*"? TypeName TypeArgs?
+EmbeddedField = "*"? TypeName
 Tag           = string_lit
 
 //* Pointer Types
@@ -322,7 +319,6 @@ FunctionLit = "func" _ signature:Signature _ body:FunctionBody { return new Func
 //* Primary Expressions
 //! TODO (P5): MethodExpr and Conversion are not supported.
 PrimaryExpr     = operand:(@BuiltinCall / @Operand) _ rest:PrimaryExprModifier* { return new PrimaryExpressionToken(operand, rest) }
-//! TODO (P2): Tokenize PrimaryExprModifier.
 // This PrimaryExprTerm is added to fix left recursion.
 PrimaryExprModifier = Selector / Index / Slice / TypeAssertion / Arguments
 Selector      = "." identifier:identifier { return new SelectorToken(identifier.identifier) }
@@ -401,7 +397,6 @@ Conversion = Type _ "(" _ Expression _ ")" _ ","? _ ")"
 //* Statements
 //! TODO (P5): LabeledStmt, GotoStmt are not tokenized as they're probably not so important.
 //!            Note that labels do not work for now.
-//! TODO (P3): SelectStmt should be tokenized when we add concurrency.
 Statement  = Declaration / LabeledStmt / SimpleStmt /
 	           GoStmt / ReturnStmt / BreakStmt / ContinueStmt / GotoStmt /
              FallthroughStmt / Block / IfStmt / SwitchStmt / SelectStmt / ForStmt /
@@ -437,7 +432,7 @@ IfStmt = "if" _ init:(@SimpleStmt _ ";")? _ pred:Expression _ cons:Block _
          { return new IfStatementToken(init, pred, cons, alt) }
 
 //* Switch Statements
-SwitchStmt      = ExprSwitchStmt / TypeSwitchStmt
+SwitchStmt      = ExprSwitchStmt /** / TypeSwitchStmt */
 
 ExprSwitchStmt  = "switch" _ init:(@SimpleStmt _ ";")? _ expr:Expression? _ "{" _ cases:(_ @ExprCaseClause _)* "}"
                   { return new SwitchStatementToken(init, expr, cases ) }
@@ -445,10 +440,10 @@ ExprCaseClause = "case" _ "default" _ ":" _ statements:StatementList { return ne
                / "case" _ exprs:ExpressionList _ ":" _ statements:StatementList { return new SwitchCaseToken(exprs, statements) }
 
 // Note: TypeSwitchStmt will most likely not be supported.
-TypeSwitchStmt  = "switch" _ (SimpleStmt _ ";")? _ TypeSwitchGuard _ "{" _ (_ TypeCaseClause _)* _ ")"
-TypeSwitchGuard = (identifier _ ":=")? _ PrimaryExpr _ "." _ "(" _ "type" _ ")"
-TypeCaseClause  = TypeSwitchCase _ ":" _ StatementList
-TypeSwitchCase  = "case" _ TypeList / "default"
+// TypeSwitchStmt  = "switch" _ (SimpleStmt _ ";")? _ TypeSwitchGuard _ "{" _ (_ TypeCaseClause _)* _ ")"
+// TypeSwitchGuard = (identifier _ ":=")? _ PrimaryExpr _ "." _ "(" _ "type" _ ")"
+// TypeCaseClause  = TypeSwitchCase _ ":" _ StatementList
+// TypeSwitchCase  = "case" _ TypeList / "default"
 
 //* For Statements
 //! TODO (P4): Support RangeClause in ForStmt.

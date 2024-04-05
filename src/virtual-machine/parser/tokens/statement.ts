@@ -4,6 +4,7 @@ import {
   BlockInstruction,
   ExitBlockInstruction,
   LoadConstantInstruction,
+  PopInstruction,
   ReturnInstruction,
   StoreInstruction,
 } from '../../compiler/instructions'
@@ -30,18 +31,27 @@ import {
 } from './expressions'
 import { IdentifierToken } from './identifier'
 
-//! TODO (P1): Add other types of statements and expressions
 export type StatementToken =
-  | ExpressionToken
-  | SimpleStatementToken
   | DeclarationToken
+  | SimpleStatementToken
+  | GoStatementToken
+  | ReturnStatementToken
+  | BreakStatementToken
+  | ContinueStatementToken
+  | FallthroughStatementToken
+  | BlockToken
+  | IfStatementToken
+  | SwitchStatementToken
+  | SelectStatementToken
+  | ForStatementToken
+  | DeferStatementToken
 
 export type SimpleStatementToken =
+  | ExpressionStatementToken
+  | SendStatementToken
   | IncDecStatementToken
   | AssignmentStatementToken
   | ShortVariableDeclarationToken
-  | ExpressionToken
-  | SendStatementToken
 
 export class AssignmentStatementToken extends Token {
   constructor(
@@ -411,6 +421,19 @@ export class CommunicationClauseToken extends Token {
 
   override compile(_compiler: Compiler): Type {
     //! TODO: Implement.
+    return new NoType()
+  }
+}
+
+/** An ExpressionStatement differs from an Expression: it should not leave a value on the OS. */
+export class ExpressionStatementToken extends Token {
+  constructor(public expression: ExpressionToken) {
+    super('expression_statement')
+  }
+
+  override compile(compiler: Compiler): Type {
+    this.expression.compile(compiler)
+    compiler.instructions.push(new PopInstruction())
     return new NoType()
   }
 }
