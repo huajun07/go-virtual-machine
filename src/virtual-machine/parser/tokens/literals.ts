@@ -186,7 +186,6 @@ export class LiteralValueToken extends Token {
         new LoadArrayInstruction(sliceLength),
         new LoadConstantInstruction(0, new Int64Type()),
         new LoadConstantInstruction(sliceLength, new Int64Type()),
-        new LoadConstantInstruction(sliceLength, new Int64Type()),
         new LoadSliceInstruction(),
       )
     } else {

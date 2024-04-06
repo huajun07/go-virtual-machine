@@ -36,6 +36,12 @@ describe('Slice Type Checking', () => {
       mainRunner('a := []int{1, 2, 3, 4}; Println(len(1))').errorMessage,
     ).toEqual('Invalid argument: (int64) for len')
   })
+
+  test('Slicing invalid types should fail.', () => {
+    expect(mainRunner('a := 1; b := a[:]').errorMessage).toEqual(
+      'Invalid operation: Cannot slice int64',
+    )
+  })
 })
 
 describe('Slice Execution', () => {
@@ -78,5 +84,26 @@ describe('Slice Execution', () => {
     expect(
       mainRunner('a := [][]int{{1}, {2}, {3}}; Println(cap(a))').output,
     ).toEqual('3\n')
+  })
+
+  test('Slicing works.', () => {
+    expect(
+      mainRunner(`a := [4]int{0, 1, 2, 3}
+      b := a[:]
+      Println(b)
+      b = b[2:]
+      Println(b)
+      c := b[1:]
+      Println(c)
+      c = c[1:]
+      Println(c)`).output,
+    ).toEqual('[0 1 2 3]\n[2 3]\n[3]\n[]\n')
+  })
+
+  test('Slicing with out of bounds range should error.', () => {
+    expect(
+      mainRunner(`a := [4]int{0, 1, 2, 3}
+      b := a[4:5]`).errorMessage,
+    ).toEqual('Slice bounds out of range')
   })
 })

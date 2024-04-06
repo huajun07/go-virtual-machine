@@ -135,8 +135,12 @@ export class ArrayNode extends BaseNode {
     return new ArrayNode(heap, addr)
   }
 
-  get_length(): number {
+  length(): number {
     return this.heap.memory.get_number(this.addr + 1)
+  }
+
+  capacity(): number {
+    return this.length()
   }
 
   set_child(index: number, address: number) {
@@ -148,13 +152,13 @@ export class ArrayNode extends BaseNode {
   }
 
   override get_children(): number[] {
-    return [...Array(this.get_length()).keys()].map((x) =>
+    return [...Array(this.length()).keys()].map((x) =>
       this.heap.get_child(this.addr + 2, x),
     )
   }
 
   override toString(): string {
-    const length = this.get_length()
+    const length = this.length()
     const elements = []
     for (let i = 0; i < length; i++) {
       elements.push(this.heap.get_value(this.get_child(i)).toString())
@@ -164,66 +168,69 @@ export class ArrayNode extends BaseNode {
 }
 
 /**
- * Each SliceNode occupies 5 words.
+ * Each SliceNode occupies 4 words.
  * Word 0: Slice tag.
  * Word 1: Underlying array address.
- * Word 2: Start index of this slice (a number).
- * Word 3: Length (a number).
- * Word 4: Capacity (a number).
+ * Word 2: Start (a number), the starting index in the array.
+ * Word 3: End (a number), the ending index in the array.
  */
 export class SliceNode extends BaseNode {
   static create(
     array: number,
     start: number,
-    length: number,
-    capacity: number,
+    end: number,
     heap: Heap,
   ): SliceNode {
     const addr = heap.allocate(5)
     heap.set_tag(addr, TAG.SLICE)
     heap.memory.set_word(array, addr + 1)
     heap.memory.set_number(start, addr + 2)
-    heap.memory.set_number(length, addr + 3)
-    heap.memory.set_number(capacity, addr + 4)
+    heap.memory.set_number(end, addr + 3)
     return new SliceNode(heap, addr)
   }
 
   static default(heap: Heap): SliceNode {
-    return SliceNode.create(0, 0, 0, 0, heap)
+    return SliceNode.create(0, 0, 0, heap)
   }
 
-  get_array(): number {
+  array(): number {
     return this.heap.memory.get_word(this.addr + 1)
   }
 
-  get_start(): number {
+  arrayNode(): ArrayNode {
+    return new ArrayNode(this.heap, this.array())
+  }
+
+  start(): number {
     return this.heap.memory.get_number(this.addr + 2)
   }
 
-  get_length(): number {
+  end(): number {
     return this.heap.memory.get_number(this.addr + 3)
   }
 
-  get_capacity(): number {
-    return this.heap.memory.get_number(this.addr + 4)
+  length(): number {
+    return this.end() - this.start()
+  }
+
+  capacity(): number {
+    return this.arrayNode().length() - this.start()
   }
 
   get_child(index: number): number {
-    const array = new ArrayNode(this.heap, this.get_array())
-    return array.get_child(this.get_start() + index)
+    return this.arrayNode().get_child(this.start() + index)
   }
 
   set_child(index: number, address: number) {
-    const array = new ArrayNode(this.heap, this.get_array())
-    array.set_child(this.get_start() + index, address)
+    this.arrayNode().set_child(this.start() + index, address)
   }
 
   override get_children(): number[] {
-    return [this.get_array()]
+    return [this.array()]
   }
 
   override toString(): string {
-    const length = this.get_length()
+    const length = this.length()
     const elements = []
     for (let i = 0; i < length; i++) {
       elements.push(this.heap.get_value(this.get_child(i)).toString())

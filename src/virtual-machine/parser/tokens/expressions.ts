@@ -1,11 +1,11 @@
 import { Compiler } from '../../compiler'
 import {
+  BuiltinCapInstruction,
+  BuiltinLenInstruction,
   LoadArrayElementInstruction,
-  LoadArrayLengthInstruction,
   LoadConstantInstruction,
-  LoadSliceCapacityInstruction,
   LoadSliceElementInstruction,
-  LoadSliceLengthInstruction,
+  SliceOperationInstruction,
 } from '../../compiler/instructions'
 import {
   CallInstruction,
@@ -13,6 +13,7 @@ import {
 } from '../../compiler/instructions/funcs'
 import {
   ArrayType,
+  BoolType,
   ChannelType,
   FunctionType,
   Int64Type,
@@ -115,9 +116,24 @@ export class SliceToken extends PrimaryExpressionModifierToken {
     super('slice')
   }
 
-  override compile(_compiler: Compiler, _operandType: Type): Type {
-    //! TODO: Implement.
-    return new NoType()
+  override compile(compiler: Compiler, operandType: Type): Type {
+    if (operandType instanceof ArrayType || operandType instanceof SliceType) {
+      this.compileIndex(compiler, this.from)
+      this.compileIndex(compiler, this.to)
+      compiler.instructions.push(new SliceOperationInstruction())
+      return new SliceType(operandType.element)
+    }
+    throw new Error(`Invalid operation: Cannot slice ${operandType}`)
+  }
+
+  private compileIndex(compiler: Compiler, index: ExpressionToken | null) {
+    if (index) index.compile(compiler)
+    else {
+      // Use a non integer type to represent the default value for the index.
+      compiler.instructions.push(
+        new LoadConstantInstruction(false, new BoolType()),
+      )
+    }
   }
 }
 
@@ -217,11 +233,8 @@ export class BuiltinCallToken extends Token {
       this.throwArgumentLengthError('cap', 1, this.args.length)
     }
     const argType = this.args[0].compile(compiler)
-    if (argType instanceof ArrayType) {
-      // The capacity of an array is the length of the array.
-      compiler.instructions.push(new LoadArrayLengthInstruction())
-    } else if (argType instanceof SliceType) {
-      compiler.instructions.push(new LoadSliceCapacityInstruction())
+    if (argType instanceof ArrayType || argType instanceof SliceType) {
+      compiler.instructions.push(new BuiltinCapInstruction())
     } else {
       this.throwArgumentTypeError('cap', argType)
     }
@@ -233,10 +246,8 @@ export class BuiltinCallToken extends Token {
       this.throwArgumentLengthError('len', 1, this.args.length)
     }
     const argType = this.args[0].compile(compiler)
-    if (argType instanceof ArrayType) {
-      compiler.instructions.push(new LoadArrayLengthInstruction())
-    } else if (argType instanceof SliceType) {
-      compiler.instructions.push(new LoadSliceLengthInstruction())
+    if (argType instanceof ArrayType || argType instanceof SliceType) {
+      compiler.instructions.push(new BuiltinLenInstruction())
     } else {
       this.throwArgumentTypeError('len', argType)
     }

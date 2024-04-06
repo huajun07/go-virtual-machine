@@ -83,9 +83,9 @@ export class LoadArrayElementInstruction extends Instruction {
     const indexNode = new IntegerNode(process.heap, process.context.popOS())
     const index = indexNode.get_value()
     const array = new ArrayNode(process.heap, process.context.popOS())
-    if (index < 0 || index >= array.get_length()) {
+    if (index < 0 || index >= array.length()) {
       throw new Error(
-        `Index out of range [${index}] with length ${array.get_length()}`,
+        `Index out of range [${index}] with length ${array.length()}`,
       )
     }
     const element = array.get_child(index)
@@ -101,10 +101,10 @@ export class LoadSliceElementInstruction extends Instruction {
   override execute(process: Process): void {
     const index = process.context.popOSNode(IntegerNode).get_value()
     const slice = process.context.popOSNode(SliceNode)
-    const array = new ArrayNode(process.heap, slice.get_array())
-    if (index < 0 || index >= array.get_length()) {
+    const array = slice.arrayNode()
+    if (index < 0 || index >= array.length()) {
       throw new Error(
-        `Index out of range [${index}] with length ${array.get_length()}`,
+        `Index out of range [${index}] with length ${array.length()}`,
       )
     }
     const element = array.get_child(index)
@@ -116,8 +116,7 @@ export class LoadSliceElementInstruction extends Instruction {
  * Creates a slice on the heap, with the following arguments taken from the OS (bottom to top).
  * - Array address
  * - Start index of the slice.
- * - Length of the slice.
- * - Capacity of the slice.
+ * - End index of the slice.
  * Pushes the address of the slice back onto the OS.
  */
 export class LoadSliceInstruction extends Instruction {
@@ -126,17 +125,10 @@ export class LoadSliceInstruction extends Instruction {
   }
 
   override execute(process: Process): void {
-    const capacity = process.context.popOSNode(IntegerNode).get_value()
-    const length = process.context.popOSNode(IntegerNode).get_value()
+    const end = process.context.popOSNode(IntegerNode).get_value()
     const start = process.context.popOSNode(IntegerNode).get_value()
     const array = process.context.popOS()
-    const sliceNode = SliceNode.create(
-      array,
-      start,
-      length,
-      capacity,
-      process.heap,
-    )
+    const sliceNode = SliceNode.create(array, start, end, process.heap)
     process.context.pushOS(sliceNode.addr)
   }
 }
@@ -154,44 +146,5 @@ export class LoadVariableInstruction extends Instruction {
     process.context.pushOS(
       process.context.E().get_var(this.frame_idx, this.var_idx),
     )
-  }
-}
-
-/** Takes an array address from the OS, and pushes the length of the array onto OS.  */
-export class LoadArrayLengthInstruction extends Instruction {
-  constructor() {
-    super('LDAL')
-  }
-
-  override execute(process: Process): void {
-    const array = process.context.popOSNode(ArrayNode)
-    const length = array.get_length()
-    process.context.pushOS(IntegerNode.create(length, process.heap).addr)
-  }
-}
-
-/** Takes a slice address from the OS, and pushes the length of the slice onto OS.  */
-export class LoadSliceLengthInstruction extends Instruction {
-  constructor() {
-    super('LDSL')
-  }
-
-  override execute(process: Process): void {
-    const slice = process.context.popOSNode(SliceNode)
-    const length = slice.get_length()
-    process.context.pushOS(IntegerNode.create(length, process.heap).addr)
-  }
-}
-
-/** Takes a slice address from the OS, and pushes the capacity of the slice onto OS.  */
-export class LoadSliceCapacityInstruction extends Instruction {
-  constructor() {
-    super('LDSC')
-  }
-
-  override execute(process: Process): void {
-    const slice = process.context.popOSNode(SliceNode)
-    const capacity = slice.get_capacity()
-    process.context.pushOS(IntegerNode.create(capacity, process.heap).addr)
   }
 }
