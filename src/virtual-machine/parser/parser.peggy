@@ -472,9 +472,12 @@ CommClause = predicate:CommCase _ ":" _ body:StatementList
              { return new CommunicationClauseToken(predicate, body) }
 CommCase   = "case" _ @(RecvStmt / SendStmt) / @"default"
 // For simplicity, we disallow an ExpressionList with assignment here.
-RecvStmt   = identifiers:(@IdentifierList _ ":=")? _ expr:RecvExpr
+RecvStmt   = identifiers:IdentifierList _ ":=" _ expr:RecvExpr
              &{ return ReceiveStatementToken.isReceiveStatement(identifiers) }
-             { return new ReceiveStatementToken(identifiers, expr) }
+             { return new ReceiveStatementToken(true, identifiers, expr) } 
+           / identifiers:(@IdentifierList _ "=")? _ expr:RecvExpr
+             &{ return ReceiveStatementToken.isReceiveStatement(identifiers) }
+             { return new ReceiveStatementToken(false, identifiers, expr) } 
 RecvExpr   = expr:Expression &{ return expr instanceof UnaryOperator && expr.name === 'receive' } { return expr }
 
 //* Return Statements

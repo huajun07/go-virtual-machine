@@ -395,6 +395,8 @@ export class SendStatementToken extends Token {
 /** Receive and assign the results to one or two variables. Note that RecvStmt is NOT a SimpleStmt. */
 export class ReceiveStatementToken extends Token {
   constructor(
+    /** Whether this is a shorthand variable declaration (else it is an assignment). */
+    public declaration: boolean,
     public identifiers: IdentifierToken[] | null,
     /** expression is guarenteed to be a receive operator. */
     public expression: UnaryOperator,
