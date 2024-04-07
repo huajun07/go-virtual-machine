@@ -1,22 +1,32 @@
 import { Heap, TAG } from '..'
 
+import { ArrayNode } from './array'
 import { BaseNode } from './base'
 import { EnvironmentNode } from './environment'
 import { PrimitiveNode } from './primitives'
-import { StackNode } from './structures'
+import { StackNode } from './stack'
 
 export class ContextNode extends BaseNode {
-  // [metadata] [PC] [OS] [E] [RTS]
+  // [metadata | blocked?] [PC] [OS] [E] [RTS] [WaitLists]
   static create(heap: Heap) {
-    const addr = heap.allocate(5)
+    const addr = heap.allocate(6)
     heap.set_tag(addr, TAG.CONTEXT)
     heap.memory.set_number(0, addr + 1)
     heap.temp_roots.push(addr)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 2)
     heap.memory.set_number(-1, addr + 3)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 4)
+    heap.memory.set_number(-1, addr + 5)
     heap.temp_roots.pop()
     return new ContextNode(heap, addr)
+  }
+
+  is_blocked() {
+    return this.heap.memory.get_bits(this.addr, 1, 16) === 1
+  }
+
+  set_blocked(val: boolean) {
+    this.heap.memory.set_bits(val ? 1 : 0, this.addr, 1, 16)
   }
 
   set_PC(PC: number) {
@@ -114,6 +124,14 @@ export class ContextNode extends BaseNode {
     newContext.set_PC(this.PC())
     newContext.set_E(this.E().addr)
     return newContext
+  }
+
+  set_waitlist(addr: number) {
+    this.heap.memory.set_number(addr, this.addr + 5)
+  }
+
+  waitlist() {
+    return new ArrayNode(this.heap, this.heap.memory.get_number(this.addr + 5))
   }
 
   override get_children(): number[] {

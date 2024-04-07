@@ -5,9 +5,11 @@ import {
   DoneInstruction,
   ExitBlockInstruction,
   ForkInstruction,
+  LoadChannelReqInstruction,
   LoadConstantInstruction,
   PopInstruction,
   ReturnInstruction,
+  SelectInstruction,
   StoreInstruction,
 } from '../../compiler/instructions'
 import {
@@ -313,7 +315,10 @@ export class ForStatementToken extends Token {
     // Predicate
     const predicate_false = new JumpIfFalseInstruction()
     if (this.condition) {
-      this.condition.compile(compiler)
+      const predicateType = this.condition.compile(compiler)
+      if (!(predicateType instanceof BoolType)) {
+        throw new Error(`Non-boolean condition in for statement condition.`)
+      }
       compiler.instructions.push(predicate_false)
     }
 
@@ -378,8 +383,10 @@ export class SendStatementToken extends Token {
     super('send')
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    this.value.compile(compiler)
+    this.channel.compile(compiler)
+    compiler.instructions.push(new LoadChannelReqInstruction(false))
     return new NoType()
   }
 }
@@ -401,8 +408,10 @@ export class ReceiveStatementToken extends Token {
     )
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    this.channel.compile(compiler)
+    // !TODO: Figure out whats happening here
+    compiler.instructions.push(new LoadChannelReqInstruction(true))
     return new NoType()
   }
 }
@@ -412,8 +421,39 @@ export class SelectStatementToken extends Token {
     super('select')
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    let default_case = false
+    const end_jumps = []
+    for (const clause of this.clauses) {
+      if (clause.predicate === 'default') {
+        if (default_case) throw Error('Multiple Default cases!')
+        default_case = true
+        continue
+      }
+      clause.compile(compiler)
+      const jump_instr = new JumpInstruction()
+      compiler.instructions.push(jump_instr)
+      end_jumps.push(jump_instr)
+    }
+    if (default_case) {
+      for (const clause of this.clauses) {
+        if (clause.predicate === 'default') {
+          clause.compile(compiler)
+          const jump_instr = new JumpInstruction()
+          compiler.instructions.push(jump_instr)
+          end_jumps.push(jump_instr)
+        }
+      }
+    }
+    compiler.instructions.push(
+      new SelectInstruction(
+        this.clauses.length - (default_case ? 1 : 0),
+        default_case,
+      ),
+    )
+    for (const jump_instr of end_jumps)
+      jump_instr.set_addr(compiler.instructions.length)
+
     return new NoType()
   }
 }
@@ -425,8 +465,20 @@ export class CommunicationClauseToken extends Token {
     super('communication_clause')
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    if (this.predicate === 'default') {
+      const load_instr = new LoadConstantInstruction(
+        compiler.instructions.length + 2,
+        new Int64Type(),
+      )
+      compiler.instructions.push(load_instr)
+      const jump_instr = new JumpInstruction()
+      compiler.instructions.push(jump_instr)
+      new BlockToken(this.body).compile(compiler)
+      jump_instr.set_addr(compiler.instructions.length + 1)
+    } else {
+      // !TODO: Settle non-default cases
+    }
     return new NoType()
   }
 }

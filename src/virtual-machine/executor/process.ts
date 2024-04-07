@@ -2,7 +2,7 @@ import { DoneInstruction, Instruction } from '../compiler/instructions'
 import { Heap } from '../heap'
 import { ContextNode } from '../heap/types/context'
 import { EnvironmentNode, FrameNode } from '../heap/types/environment'
-import { QueueNode } from '../heap/types/structures'
+import { QueueNode } from '../heap/types/queue'
 
 export class Process {
   instructions: Instruction[]
@@ -25,6 +25,7 @@ export class Process {
     const time_quantum = 30
     let runtime_count = 0
     while (this.contexts.sz()) {
+      // !TODO: Detect Deadlocks
       this.context = new ContextNode(this.heap, this.contexts.peek())
       let cur_time = 0
       while (!DoneInstruction.is(this.instructions[this.context.PC()])) {
@@ -41,6 +42,7 @@ export class Process {
         // console.log(this.heap.mem_left)
         runtime_count += 1
         cur_time += 1
+        if (this.context.is_blocked()) break
       }
       this.contexts.pop()
       // console.log('%c SWITCH!', 'background: #F7FF00; color: #FF0000')

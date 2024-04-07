@@ -1,6 +1,8 @@
+import { ArrayNode, SliceNode } from './types/array'
 import { ContextNode } from './types/context'
 import { EnvironmentNode, FrameNode } from './types/environment'
 import { CallRefNode, FuncNode } from './types/func'
+import { LinkedListEntryNode, LinkedListNode } from './types/linkedlist'
 import {
   BoolNode,
   FloatNode,
@@ -9,14 +11,8 @@ import {
   StringNode,
   UnassignedNode,
 } from './types/primitives'
-import {
-  ArrayNode,
-  QueueListNode,
-  QueueNode,
-  SliceNode,
-  StackListNode,
-  StackNode,
-} from './types/structures'
+import { QueueListNode, QueueNode } from './types/queue'
+import { StackListNode, StackNode } from './types/stack'
 import { Memory } from './memory'
 
 export enum TAG {
@@ -37,6 +33,11 @@ export enum TAG {
   SLICE = 14,
   QUEUE = 14,
   QUEUE_LIST = 15,
+  LINKED_LIST = 16,
+  LINKED_LIST_ENTRY = 17,
+  CHANNEL = 18,
+  CHANNEL_REQ = 19,
+  SELECT_CASE = 20,
 }
 
 export const word_size = 4
@@ -111,6 +112,10 @@ export class Heap {
         return new QueueNode(this, addr)
       case TAG.QUEUE_LIST:
         return new QueueListNode(this, addr)
+      case TAG.LINKED_LIST:
+        return new LinkedListNode(this, addr)
+      case TAG.LINKED_LIST_ENTRY:
+        return new LinkedListEntryNode(this, addr)
       default:
         throw Error('Unknown Data Type')
     }
@@ -333,6 +338,7 @@ export class Heap {
   }
 
   copy(dst: number, src: number) {
+    if (dst === -1) return
     const sz = this.get_size(src)
     for (let i = 0; i < sz; i++) {
       this.memory.set_word(this.memory.get_word(src + i), dst + i)

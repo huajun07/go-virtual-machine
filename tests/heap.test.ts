@@ -37,7 +37,7 @@ describe('Heap Tests', () => {
   })
   test('Mark And Sweep 2', () => {
     const heap = new Heap(42)
-    const context = new ContextNode(heap, heap.contexts.get_idx(0))
+    const context = new ContextNode(heap, heap.contexts.peek())
     const base_frame = FrameNode.create(0, heap)
     const base_env = EnvironmentNode.create([base_frame.addr], false, heap)
     context.set_E(base_env.addr)

@@ -3,6 +3,7 @@ import {
   BuiltinCapInstruction,
   BuiltinLenInstruction,
   LoadArrayElementInstruction,
+  LoadChannelInstruction,
   LoadConstantInstruction,
   LoadSliceElementInstruction,
   SliceOperationInstruction,
@@ -261,7 +262,20 @@ export class BuiltinCallToken extends Token {
         `Invalid argument: cannot make ${typeArg}; type must be slice, map, or channel`,
       )
     }
-    //! TODO: Construct based on the args.
+    if (typeArg instanceof ChannelType) {
+      if (this.args.length === 0)
+        compiler.instructions.push(
+          new LoadConstantInstruction(0, new Int64Type()),
+        )
+      else {
+        const buffer_sz = this.args[0].compile(compiler)
+        if (!(buffer_sz instanceof Int64Type)) {
+          throw new Error(`Non-integer condition in channel buffer size`)
+        }
+      }
+    }
+    // !TODO Make for slice
+    compiler.instructions.push(new LoadChannelInstruction())
     return typeArg
   }
 
