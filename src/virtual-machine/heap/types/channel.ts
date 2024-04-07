@@ -2,7 +2,6 @@ import { Heap, TAG } from '..'
 
 import { BaseNode } from './base'
 import { ContextNode } from './context'
-import { EnvironmentNode } from './environment'
 import { LinkedListEntryNode, LinkedListNode } from './linkedlist'
 import { QueueNode } from './queue'
 
@@ -13,7 +12,7 @@ export class ChannelNode extends BaseNode {
     heap.memory.set_number(buffer, addr + 1)
     heap.temp_roots.push(addr)
     const buffer_queue = QueueNode.create(heap)
-    heap.memory.set_number(buffer_queue.addr, addr + 2)
+    heap.memory.set_word(buffer_queue.addr, addr + 2)
     const wait_queue = LinkedListNode.create(heap)
     heap.memory.set_number(wait_queue.addr, addr + 3)
     heap.temp_roots.pop()
@@ -46,13 +45,10 @@ export class ChannelNode extends BaseNode {
     return this.heap.memory.get_number(this.addr + 1)
   }
 
-  try_send(send_req: ChannelReqNode) {
+  try_send(send_req: ReqInfoNode) {
     if (this.is_recv() && !this.wait_queue().is_empty()) {
       // Exist matching recv request (Note assumes wait queue contains no recv req)
-      const recv_req = new ChannelReqNode(
-        this.heap,
-        this.wait_queue().pop_front(),
-      )
+      const recv_req = new ReqInfoNode(this.heap, this.wait_queue().pop_front())
       this.heap.copy(recv_req.io(), send_req.io())
       recv_req.unblock()
       return true
@@ -64,14 +60,14 @@ export class ChannelNode extends BaseNode {
     return false
   }
 
-  try_recv(recv_req: ChannelReqNode) {
+  try_recv(recv_req: ReqInfoNode) {
     if (this.buffer().sz()) {
       // Buffer have entries
       const src = this.buffer().pop()
       this.heap.copy(recv_req.io(), src)
       if (!this.is_recv() && !this.wait_queue().is_empty()) {
         // If wait queue contain send reqs should unblock since there is space
-        const send_req = new ChannelReqNode(
+        const send_req = new ReqInfoNode(
           this.heap,
           this.wait_queue().pop_front(),
         )
@@ -82,10 +78,7 @@ export class ChannelNode extends BaseNode {
     }
     if (!this.is_recv() && !this.wait_queue().is_empty()) {
       // Case where buffer size is 0 and send reqs in wait queue
-      const send_req = new ChannelReqNode(
-        this.heap,
-        this.wait_queue().pop_front(),
-      )
+      const send_req = new ReqInfoNode(this.heap, this.wait_queue().pop_front())
       this.heap.copy(recv_req.io(), send_req.io())
       send_req.unblock()
       return true
@@ -93,14 +86,14 @@ export class ChannelNode extends BaseNode {
     return false
   }
 
-  recv_wait(recv_req: ChannelReqNode) {
+  recv_wait(recv_req: ReqInfoNode) {
     if (!this.is_recv() && !this.wait_queue().is_empty())
       throw Error('Exist matching send request!')
     this.set_recv(true)
     return this.wait_queue().push_back(recv_req.addr)
   }
 
-  send_wait(send_req: ChannelReqNode) {
+  send_wait(send_req: ReqInfoNode) {
     if (this.is_recv() && !this.wait_queue().is_empty())
       throw Error('Exist matching recv request!')
     if (this.get_buffer_sz() > this.buffer().sz())
@@ -114,23 +107,21 @@ export class ChannelNode extends BaseNode {
   }
 }
 
-export class ChannelReqNode extends BaseNode {
+export class ReqInfoNode extends BaseNode {
   static create(
     io_addr: number,
     context: number,
     pc: number,
-    env: number,
     recv: boolean,
     heap: Heap,
   ) {
-    const addr = heap.allocate(5)
-    heap.set_tag(addr, TAG.CHANNEL_REQ)
+    const addr = heap.allocate(4)
+    heap.set_tag(addr, TAG.REQ_INFO)
     heap.memory.set_bits(recv ? 1 : 0, addr, 1, 16)
     heap.memory.set_number(io_addr, addr + 1)
     heap.memory.set_number(context, addr + 2)
     heap.memory.set_number(pc, addr + 3)
-    heap.memory.set_number(env, addr + 4)
-    return new ChannelReqNode(heap, addr)
+    return new ReqInfoNode(heap, addr)
   }
 
   is_recv() {
@@ -152,17 +143,10 @@ export class ChannelReqNode extends BaseNode {
     )
   }
 
-  env() {
-    return new EnvironmentNode(
-      this.heap,
-      this.heap.memory.get_number(this.addr + 4),
-    )
-  }
-
   unblock() {
     const context = this.context()
-    if (this.env().addr !== -1) context.pushRTS(this.env().addr)
     context.set_PC(this.PC())
+    if (this.is_recv()) context.pushOS(this.io())
     const wait_nodes = context.waitlist().get_children()
     for (const wait_node of wait_nodes) {
       const node = new LinkedListEntryNode(this.heap, wait_node)
@@ -173,17 +157,17 @@ export class ChannelReqNode extends BaseNode {
   }
 
   override get_children(): number[] {
-    return [this.context().addr, this.env().addr]
+    return [this.context().addr, this.io()]
   }
 }
 
-export class SelectCaseNode extends BaseNode {
+export class ChannelReqNode extends BaseNode {
   static create(channel: number, req: number, heap: Heap) {
     const addr = heap.allocate(3)
-    heap.set_tag(addr, TAG.SELECT_CASE)
+    heap.set_tag(addr, TAG.CHANNEL_REQ)
     heap.memory.set_number(channel, addr + 1)
     heap.memory.set_number(req, addr + 2)
-    return new SelectCaseNode(heap, addr)
+    return new ChannelReqNode(heap, addr)
   }
 
   channel() {
@@ -194,7 +178,7 @@ export class SelectCaseNode extends BaseNode {
   }
 
   req() {
-    return new ChannelReqNode(
+    return new ReqInfoNode(
       this.heap,
       this.heap.memory.get_number(this.addr + 2),
     )

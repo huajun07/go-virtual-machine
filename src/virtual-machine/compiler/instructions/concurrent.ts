@@ -3,11 +3,9 @@ import { ArrayNode } from '../../heap/types/array'
 import {
   ChannelNode,
   ChannelReqNode,
-  SelectCaseNode,
+  ReqInfoNode,
 } from '../../heap/types/channel'
-import { FrameNode } from '../../heap/types/environment'
 import { IntegerNode } from '../../heap/types/primitives'
-import { Type } from '../typing'
 
 import { Instruction } from './base'
 
@@ -46,75 +44,52 @@ export class LoadChannelInstruction extends Instruction {
 }
 
 export class LoadChannelReqInstruction extends Instruction {
-  constructor(public recv: boolean) {
+  constructor(public recv: boolean, public PC: number) {
     super('LDCR')
   }
   override execute(process: Process): void {
-    const req = ChannelReqNode.create(
+    const req = ReqInfoNode.create(
       process.context.peekOS(),
       process.context.addr,
-      process.context.PC() + 1,
-      -1,
+      this.PC,
       this.recv,
       process.heap,
     )
     process.context.popOS()
-    const chan = new ChannelNode(process.heap, process.context.popOS())
     process.heap.temp_roots.push(req.addr)
-    if (this.recv) {
+    const chan = new ChannelNode(process.heap, process.context.popOS())
+    const chan_req = ChannelReqNode.create(chan.addr, req.addr, process.heap)
+    process.heap.temp_roots.pop()
+    process.context.pushOS(chan_req.addr)
+  }
+}
+
+export class TryChannelReqInstruction extends Instruction {
+  constructor() {
+    super('TRY_CHAN_REQ')
+  }
+  override execute(process: Process): void {
+    const chan_req = new ChannelReqNode(process.heap, process.context.popOS())
+    process.heap.temp_roots.push(chan_req.addr)
+    const chan = chan_req.channel()
+    const req = chan_req.req()
+    if (req.is_recv()) {
       if (!chan.try_recv(req)) {
         process.context.set_waitlist(ArrayNode.create(1, process.heap).addr)
         process.context.waitlist().set_child(0, chan.recv_wait(req))
         process.context.set_blocked(true)
+      } else {
+        process.context.set_PC(req.PC())
+        process.context.pushOS(req.io())
       }
     } else {
       if (!chan.try_send(req)) {
         process.context.set_waitlist(ArrayNode.create(1, process.heap).addr)
         process.context.waitlist().set_child(0, chan.send_wait(req))
         process.context.set_blocked(true)
-      }
+      } else process.context.set_PC(req.PC())
     }
     process.heap.temp_roots.pop()
-  }
-}
-
-export class LoadChannelCaseReqInstruction extends Instruction {
-  constructor(public frame: Type[], public PC: number, public recv: boolean) {
-    super('LDCCR')
-  }
-  override execute(process: Process): void {
-    // Create new environment for the case
-    const new_frame = FrameNode.create(this.frame.length, process.heap)
-    process.heap.temp_roots.push(new_frame.addr)
-    for (let i = 0; i < this.frame.length; i++) {
-      const T = this.frame[i]
-      new_frame.set_idx(T.defaultNodeCreator()(process.heap), i)
-    }
-    const env = process.context.E().extend_env(new_frame.addr)
-    process.heap.temp_roots.pop()
-
-    // Create channel request
-    process.heap.temp_roots.push(env.addr)
-    const req = ChannelReqNode.create(
-      process.context.peekOS(),
-      process.context.addr,
-      this.PC,
-      env.addr,
-      this.recv,
-      process.heap,
-    )
-    process.context.popOS()
-    process.heap.temp_roots.pop()
-
-    // Create select case
-    process.heap.temp_roots.push(req.addr)
-    const selectcase = SelectCaseNode.create(
-      process.context.popOS(),
-      req.addr,
-      process.heap,
-    )
-    process.heap.temp_roots.pop()
-    process.context.pushOS(selectcase.addr)
   }
 }
 
@@ -123,14 +98,14 @@ export class SelectInstruction extends Instruction {
     super('SELECT')
   }
   override execute(process: Process): void {
-    let cases = []
-    for (let i = 0; i < this.cases; i++) {
-      cases.push(new SelectCaseNode(process.heap, process.context.peekOS()))
-      process.heap.temp_roots.push(process.context.popOS())
-    }
     let pc = -1
     if (this.defualt_case) {
       pc = new IntegerNode(process.heap, process.context.popOS()).get_value()
+    }
+    let cases = []
+    for (let i = 0; i < this.cases; i++) {
+      cases.push(new ChannelReqNode(process.heap, process.context.peekOS()))
+      process.heap.temp_roots.push(process.context.popOS())
     }
     cases = cases
       .map((a) => ({ sort: Math.random(), value: a }))
@@ -143,18 +118,17 @@ export class SelectInstruction extends Instruction {
       if (req.is_recv() && chan.try_recv(req)) {
         done = true
         process.context.set_PC(req.PC())
-        process.context.pushRTS(req.env().addr)
+        process.context.pushOS(req.io())
         break
       } else if (!req.is_recv() && chan.try_send(req)) {
         done = true
         process.context.set_PC(req.PC())
-        process.context.pushRTS(req.env().addr)
         break
       }
     }
     if (!done) {
       if (pc !== -1) {
-        process.context.set_E(pc)
+        process.context.set_PC(pc)
       } else {
         process.context.set_blocked(true)
         process.context.set_waitlist(

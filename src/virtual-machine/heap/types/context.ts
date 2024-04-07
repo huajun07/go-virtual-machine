@@ -63,7 +63,9 @@ export class ContextNode extends BaseNode {
   }
 
   pushOS(addr: number) {
+    this.heap.temp_roots.push(addr)
     this.OS().push(addr)
+    this.heap.temp_roots.pop()
   }
 
   peekOS() {

@@ -1,4 +1,5 @@
 import { ArrayNode, SliceNode } from './types/array'
+import { ChannelNode, ChannelReqNode, ReqInfoNode } from './types/channel'
 import { ContextNode } from './types/context'
 import { EnvironmentNode, FrameNode } from './types/environment'
 import { CallRefNode, FuncNode } from './types/func'
@@ -37,7 +38,7 @@ export enum TAG {
   LINKED_LIST_ENTRY = 17,
   CHANNEL = 18,
   CHANNEL_REQ = 19,
-  SELECT_CASE = 20,
+  REQ_INFO = 20,
 }
 
 export const word_size = 4
@@ -116,6 +117,12 @@ export class Heap {
         return new LinkedListNode(this, addr)
       case TAG.LINKED_LIST_ENTRY:
         return new LinkedListEntryNode(this, addr)
+      case TAG.CHANNEL:
+        return new ChannelNode(this, addr)
+      case TAG.CHANNEL_REQ:
+        return new ChannelReqNode(this, addr)
+      case TAG.REQ_INFO:
+        return new ReqInfoNode(this, addr)
       default:
         throw Error('Unknown Data Type')
     }

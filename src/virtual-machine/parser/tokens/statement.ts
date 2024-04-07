@@ -11,6 +11,7 @@ import {
   ReturnInstruction,
   SelectInstruction,
   StoreInstruction,
+  TryChannelReqInstruction,
 } from '../../compiler/instructions'
 import {
   ExitLoopInstruction,
@@ -30,6 +31,7 @@ import { BlockToken } from './block'
 import { DeclarationToken, ShortVariableDeclarationToken } from './declaration'
 import {
   CallToken,
+  EmptyExpressionToken,
   ExpressionToken,
   PrimaryExpressionToken,
 } from './expressions'
@@ -385,9 +387,12 @@ export class SendStatementToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    this.value.compile(compiler)
     this.channel.compile(compiler)
-    compiler.instructions.push(new LoadChannelReqInstruction(false))
+    this.value.compile(compiler)
+    compiler.instructions.push(
+      new LoadChannelReqInstruction(false, compiler.instructions.length + 2),
+    )
+    compiler.instructions.push(new TryChannelReqInstruction())
     return new NoType()
   }
 }
@@ -413,10 +418,8 @@ export class ReceiveStatementToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    this.expression.compile(compiler)
-    // !TODO: Figure out whats happening here
-    compiler.instructions.push(new LoadChannelReqInstruction(true))
-    return new NoType()
+    const chanType = this.expression.compile(compiler)
+    return chanType
   }
 }
 
@@ -446,6 +449,7 @@ export class SelectStatementToken extends Token {
           const jump_instr = new JumpInstruction()
           compiler.instructions.push(jump_instr)
           end_jumps.push(jump_instr)
+          break
         }
       }
     }
@@ -470,18 +474,48 @@ export class CommunicationClauseToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    if (this.predicate === 'default') {
-      const load_instr = new LoadConstantInstruction(
-        compiler.instructions.length + 2,
-        new Int64Type(),
-      )
-      compiler.instructions.push(load_instr)
+    if (!(this.predicate instanceof ReceiveStatementToken)) {
+      if (this.predicate === 'default') {
+        const load_instr = new LoadConstantInstruction(
+          compiler.instructions.length + 2,
+          new Int64Type(),
+        )
+        compiler.instructions.push(load_instr)
+      } else {
+        // Is send statement
+        this.predicate.compile(compiler)
+        compiler.instructions.pop() // Removing blocking op
+      }
       const jump_instr = new JumpInstruction()
       compiler.instructions.push(jump_instr)
       new BlockToken(this.body).compile(compiler)
       jump_instr.set_addr(compiler.instructions.length + 1)
     } else {
-      // !TODO: Settle non-default cases
+      // This is recv statement
+      const chanType = this.predicate.expression.compile(compiler)
+      compiler.instructions.pop()
+      const jump_instr = new JumpInstruction()
+      compiler.instructions.push(jump_instr)
+      if (this.predicate.identifiers) {
+        if (this.predicate.declaration) {
+          this.body.unshift(
+            new ShortVariableDeclarationToken(this.predicate.identifiers, [
+              new EmptyExpressionToken(chanType),
+            ]),
+          )
+        } else {
+          // !TODO: Hacky see if better way to implement this
+          this.body.unshift(
+            new AssignmentStatementToken(
+              [new PrimaryExpressionToken(this.predicate.identifiers[0], null)],
+              '=',
+              [new EmptyExpressionToken(chanType)],
+            ),
+          )
+        }
+      }
+      new BlockToken(this.body).compile(compiler)
+      jump_instr.set_addr(compiler.instructions.length + 1)
     }
     return new NoType()
   }

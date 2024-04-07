@@ -36,9 +36,20 @@ export type ExpressionToken =
   | BinaryOperator
   | PrimaryExpressionToken
   | BuiltinCallToken
+  | EmptyExpressionToken
 
 export type OperandToken = IdentifierToken | ExpressionToken
 
+export class EmptyExpressionToken extends Token {
+  constructor(public argType: Type) {
+    super('empty_expression')
+  }
+
+  override compile(_compiler: Compiler): Type {
+    // Does nothing - Intended
+    return this.argType
+  }
+}
 export class PrimaryExpressionToken extends Token {
   constructor(
     public operand: OperandToken,

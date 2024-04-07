@@ -35,17 +35,17 @@ export class Process {
           break
         }
         const instr = this.instructions[this.context.incr_PC()]
-        // console.log('Instr:', instr, this.context.PC() - 1)
+        console.log('Instr:', instr, this.context.PC() - 1)
         instr.execute(this)
-        // this.context.printOS()
+        this.context.printOS()
         // this.context.printRTS()
-        // console.log(this.heap.mem_left)
+        console.log(this.heap.mem_left)
         runtime_count += 1
         cur_time += 1
         if (this.context.is_blocked()) break
       }
       this.contexts.pop()
-      // console.log('%c SWITCH!', 'background: #F7FF00; color: #FF0000')
+      console.log('%c SWITCH!', 'background: #F7FF00; color: #FF0000')
       if (runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
       // console.log('PC', this.contexts.get_vals())
     }

@@ -1,9 +1,12 @@
 import { Compiler } from '../../compiler'
 import {
   BinaryInstruction,
+  LoadChannelReqInstruction,
+  LoadDefaultInstruction,
+  TryChannelReqInstruction,
   UnaryInstruction,
 } from '../../compiler/instructions'
-import { BoolType, Type } from '../../compiler/typing'
+import { BoolType, ChannelType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 
@@ -32,8 +35,20 @@ export class UnaryOperator extends Operator {
 
   override compile(compiler: Compiler): Type {
     const expressionType = this.children[0].compile(compiler)
-    compiler.instructions.push(new UnaryInstruction(this.name))
-    return expressionType
+    if (this.name === 'receive') {
+      if (!(expressionType instanceof ChannelType))
+        throw Error('Receive Expression not chan')
+      const recvType = expressionType.element
+      compiler.instructions.push(new LoadDefaultInstruction(recvType))
+      compiler.instructions.push(
+        new LoadChannelReqInstruction(true, compiler.instructions.length + 2),
+      )
+      compiler.instructions.push(new TryChannelReqInstruction())
+      return recvType
+    } else {
+      compiler.instructions.push(new UnaryInstruction(this.name))
+      return expressionType
+    }
   }
 }
 
