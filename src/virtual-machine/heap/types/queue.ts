@@ -6,9 +6,9 @@ export class QueueNode extends BaseNode {
   static create(heap: Heap) {
     const addr = heap.allocate(2)
     heap.set_tag(addr, TAG.QUEUE)
-    if (heap.temp_roots) heap.temp_roots.push(addr)
+    heap.temp_push(addr)
     const list = QueueListNode.create(heap)
-    if (heap.temp_roots) heap.temp_roots.pop()
+    heap.temp_pop()
     heap.memory.set_word(list.addr, addr + 1)
     return new QueueNode(heap, addr)
   }

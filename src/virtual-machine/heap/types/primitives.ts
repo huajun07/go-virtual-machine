@@ -135,11 +135,11 @@ export class StringNode extends PrimitiveNode {
   static create(str: string, heap: Heap) {
     const addr = heap.allocate(2)
     heap.set_tag(addr, TAG.STRING)
-    heap.temp_roots.push(addr)
+    heap.temp_push(addr)
     const list_addr = heap.allocate(Math.ceil((str.length + 1) / word_size) + 1)
     heap.set_tag(list_addr, TAG.STRING_LIST)
     heap.memory.set_word(list_addr, addr + 1)
-    heap.temp_roots.pop()
+    heap.temp_pop()
     for (let i = 0; i <= str.length; i++) {
       let val = 0
       if (i < str.length) val = str.charCodeAt(i)

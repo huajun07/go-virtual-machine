@@ -53,13 +53,14 @@ export class Heap {
   temp_roots: StackNode
   contexts: QueueNode
   mem_left: number
+  temp = -1
   constructor(size: number) {
     this.size = size
     this.mem_left = size
     if (this.size % 2 === 1) this.size -= 1
     if (this.size < 34) throw Error('Insufficient Memory')
     this.memory = new Memory(size, word_size)
-    this.max_level = Math.floor(Math.log2(size))
+    this.max_level = Math.floor(Math.log2(size)) + 1
     this.freelist = []
     for (let i = 0; i < this.max_level; i++) this.freelist.push(-1)
     let cur_addr = 0
@@ -124,6 +125,7 @@ export class Heap {
       case TAG.REQ_INFO:
         return new ReqInfoNode(this, addr)
       default:
+        // return new UnassignedNode(this, addr)
         throw Error('Unknown Data Type')
     }
   }
@@ -155,7 +157,10 @@ export class Heap {
     this.set_prev(addr, addr)
     if (this.freelist[lvl] === -1) {
       this.set_next(addr, addr)
-    } else this.set_next(addr, this.freelist[lvl])
+    } else {
+      this.set_next(addr, this.freelist[lvl])
+      this.set_prev(this.freelist[lvl], addr)
+    }
     this.freelist[lvl] = addr
   }
 
@@ -240,6 +245,7 @@ export class Heap {
       addr = try_allocate()
     }
     if (addr === -1) throw Error('Ran out of memory!')
+    size = this.get_size(addr)
     this.mem_left -= size
     return addr
   }
@@ -255,6 +261,7 @@ export class Heap {
         this.get_level(sibling) !== lvl
       )
         break
+      this.set_free(sibling, false)
       this.pop_list(sibling)
       addr = Math.min(addr, sibling)
       lvl++
@@ -265,6 +272,16 @@ export class Heap {
   }
   calc_level(x: number) {
     return Math.ceil(Math.log2(x))
+  }
+
+  temp_push(addr: number) {
+    this.temp = addr
+    this.temp_roots.push(addr)
+    this.temp = -1
+  }
+
+  temp_pop() {
+    this.temp_roots.pop()
   }
 
   // [********** Garbage Collection: Mark and Sweep ****************]
@@ -325,10 +342,12 @@ export class Heap {
   }
 
   mark_and_sweep() {
+    console.log('CLEAN')
     const roots: number[] = [
       this.contexts.addr,
       this.temp_roots.addr,
       this.UNASSIGNED.addr,
+      this.temp,
     ]
     for (const root of roots) {
       this.mark(root)

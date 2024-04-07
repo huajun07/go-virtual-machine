@@ -28,11 +28,11 @@ export class ArrayNode extends BaseNode {
     const addr = heap.allocate(2 + length)
     heap.set_tag(addr, TAG.ARRAY)
     heap.memory.set_number(length, addr + 1)
-    heap.temp_roots.push(addr)
+    heap.temp_push(addr)
     for (let i = 0; i < length; i++) {
       heap.memory.set_word(defaultCreator(heap), addr + 2 + i)
     }
-    heap.temp_roots.pop()
+    heap.temp_pop()
     return new ArrayNode(heap, addr)
   }
 

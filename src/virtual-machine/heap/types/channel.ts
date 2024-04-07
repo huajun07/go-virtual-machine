@@ -7,37 +7,31 @@ import { QueueNode } from './queue'
 
 export class ChannelNode extends BaseNode {
   static create(buffer: number, heap: Heap) {
-    const addr = heap.allocate(4)
+    const addr = heap.allocate(5)
     heap.set_tag(addr, TAG.CHANNEL)
     heap.memory.set_number(buffer, addr + 1)
-    heap.temp_roots.push(addr)
+    heap.temp_push(addr)
     const buffer_queue = QueueNode.create(heap)
     heap.memory.set_word(buffer_queue.addr, addr + 2)
-    const wait_queue = LinkedListNode.create(heap)
-    heap.memory.set_number(wait_queue.addr, addr + 3)
-    heap.temp_roots.pop()
+    const recv_wait_queue = LinkedListNode.create(heap)
+    heap.memory.set_number(recv_wait_queue.addr, addr + 3)
+    const send_wait_queue = LinkedListNode.create(heap)
+    heap.memory.set_number(send_wait_queue.addr, addr + 4)
+    heap.temp_pop()
     return new ChannelNode(heap, addr)
   }
   static default(heap: Heap) {
     return ChannelNode.create(0, heap)
   }
 
-  is_recv() {
-    return this.heap.memory.get_bits(this.addr, 1, 16) === 1
-  }
-
-  set_recv(val: boolean) {
-    this.heap.memory.set_bits(val ? 1 : 0, this.addr, 1, 16)
-  }
-
   buffer() {
     return new QueueNode(this.heap, this.heap.memory.get_number(this.addr + 2))
   }
 
-  wait_queue() {
+  wait_queue(recv: boolean) {
     return new LinkedListNode(
       this.heap,
-      this.heap.memory.get_number(this.addr + 3),
+      this.heap.memory.get_number(this.addr + 3 + (recv ? 0 : 1)),
     )
   }
 
@@ -45,65 +39,61 @@ export class ChannelNode extends BaseNode {
     return this.heap.memory.get_number(this.addr + 1)
   }
 
-  try_send(send_req: ReqInfoNode) {
-    if (this.is_recv() && !this.wait_queue().is_empty()) {
-      // Exist matching recv request (Note assumes wait queue contains no recv req)
-      const recv_req = new ReqInfoNode(this.heap, this.wait_queue().pop_front())
-      this.heap.copy(recv_req.io(), send_req.io())
-      recv_req.unblock()
-      return true
-    }
-    if (this.buffer().sz() < this.get_buffer_sz()) {
-      this.buffer().push(send_req.addr)
-      return true
-    }
-    return false
-  }
-
-  try_recv(recv_req: ReqInfoNode) {
-    if (this.buffer().sz()) {
-      // Buffer have entries
-      const src = this.buffer().pop()
-      this.heap.copy(recv_req.io(), src)
-      if (!this.is_recv() && !this.wait_queue().is_empty()) {
-        // If wait queue contain send reqs should unblock since there is space
+  try(req: ReqInfoNode) {
+    if (req.is_recv()) {
+      if (this.buffer().sz()) {
+        // Buffer have entries
+        const src = this.buffer().pop()
+        this.heap.copy(req.io(), src)
+        if (this.wait_queue(false).is_empty()) {
+          // If wait queue contain send reqs should unblock since there is space
+          const send_req = new ReqInfoNode(
+            this.heap,
+            this.wait_queue(false).pop_front(),
+          )
+          this.buffer().push(send_req.io())
+          send_req.unblock()
+        }
+        return true
+      }
+      if (!this.wait_queue(false).is_empty()) {
+        // Case where buffer size is 0 and send reqs in wait queue
         const send_req = new ReqInfoNode(
           this.heap,
-          this.wait_queue().pop_front(),
+          this.wait_queue(false).pop_front(),
         )
-        this.buffer().push(send_req.io())
+        this.heap.copy(req.io(), send_req.io())
         send_req.unblock()
+        return true
       }
-      return true
-    }
-    if (!this.is_recv() && !this.wait_queue().is_empty()) {
-      // Case where buffer size is 0 and send reqs in wait queue
-      const send_req = new ReqInfoNode(this.heap, this.wait_queue().pop_front())
-      this.heap.copy(recv_req.io(), send_req.io())
-      send_req.unblock()
-      return true
+    } else {
+      if (!this.wait_queue(true).is_empty()) {
+        // Exist matching recv request (Note assumes wait queue contains no recv req)
+        const recv_req = new ReqInfoNode(
+          this.heap,
+          this.wait_queue(true).pop_front(),
+        )
+        this.heap.copy(recv_req.io(), req.io())
+        recv_req.unblock()
+        return true
+      }
+      if (this.buffer().sz() < this.get_buffer_sz()) {
+        this.buffer().push(req.io())
+        return true
+      }
     }
     return false
   }
-
-  recv_wait(recv_req: ReqInfoNode) {
-    if (!this.is_recv() && !this.wait_queue().is_empty())
-      throw Error('Exist matching send request!')
-    this.set_recv(true)
-    return this.wait_queue().push_back(recv_req.addr)
-  }
-
-  send_wait(send_req: ReqInfoNode) {
-    if (this.is_recv() && !this.wait_queue().is_empty())
-      throw Error('Exist matching recv request!')
-    if (this.get_buffer_sz() > this.buffer().sz())
-      throw Error('Send buffer is not full')
-    this.set_recv(false)
-    return this.wait_queue().push_back(send_req.addr)
+  wait(req: ReqInfoNode) {
+    return this.wait_queue(req.is_recv()).push_back(req.addr)
   }
 
   override get_children(): number[] {
-    return [this.buffer().addr, this.wait_queue().addr]
+    return [
+      this.buffer().addr,
+      this.wait_queue(true).addr,
+      this.wait_queue(false).addr,
+    ]
   }
 }
 

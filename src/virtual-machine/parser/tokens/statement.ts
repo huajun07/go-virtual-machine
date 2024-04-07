@@ -513,7 +513,7 @@ export class CommunicationClauseToken extends Token {
             ),
           )
         }
-      }
+      } else compiler.instructions.push(new PopInstruction())
       new BlockToken(this.body).compile(compiler)
       jump_instr.set_addr(compiler.instructions.length + 1)
     }

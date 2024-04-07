@@ -6,12 +6,12 @@ export class LinkedListNode extends BaseNode {
   static create(heap: Heap) {
     const addr = heap.allocate(3)
     heap.set_tag(addr, TAG.LINKED_LIST)
-    heap.temp_roots.push(addr)
+    heap.temp_push(addr)
     const head = LinkedListEntryNode.create(-1, heap)
     heap.memory.set_number(head.addr, addr + 1)
     const tail = LinkedListEntryNode.create(-1, heap)
     heap.memory.set_number(tail.addr, addr + 2)
-    heap.temp_roots.pop()
+    heap.temp_pop()
     head.set_next(tail.addr)
     tail.set_prev(head.addr)
     return new LinkedListNode(heap, addr)
@@ -40,6 +40,8 @@ export class LinkedListNode extends BaseNode {
     const pre = tail.prev()
     pre.set_next(newNode.addr)
     tail.set_prev(newNode.addr)
+    newNode.set_next(tail.addr)
+    newNode.set_prev(pre.addr)
     return newNode.addr
   }
 
@@ -49,6 +51,8 @@ export class LinkedListNode extends BaseNode {
     const nex = head.next()
     head.set_next(newNode.addr)
     nex.set_prev(newNode.addr)
+    newNode.set_next(nex.addr)
+    newNode.set_prev(head.addr)
     return newNode.addr
   }
 
@@ -68,6 +72,10 @@ export class LinkedListNode extends BaseNode {
 
   override get_children(): number[] {
     return [this.head().addr, this.tail().addr]
+  }
+
+  print() {
+    this.head().next().print()
   }
 }
 
@@ -116,5 +124,12 @@ export class LinkedListEntryNode extends BaseNode {
 
   override get_children(): number[] {
     return [this.prev().addr, this.next().addr, this.get_val()]
+  }
+
+  print() {
+    if (this.get_val() === -1) return
+    const val = this.heap.get_value(this.get_val())
+    console.log(val)
+    this.next().print()
   }
 }

@@ -12,12 +12,12 @@ export class ContextNode extends BaseNode {
     const addr = heap.allocate(6)
     heap.set_tag(addr, TAG.CONTEXT)
     heap.memory.set_number(0, addr + 1)
-    heap.temp_roots.push(addr)
+    heap.temp_push(addr)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 2)
     heap.memory.set_number(-1, addr + 3)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 4)
     heap.memory.set_number(-1, addr + 5)
-    heap.temp_roots.pop()
+    heap.temp_pop()
     return new ContextNode(heap, addr)
   }
 
@@ -63,9 +63,9 @@ export class ContextNode extends BaseNode {
   }
 
   pushOS(addr: number) {
-    this.heap.temp_roots.push(addr)
+    this.heap.temp_push(addr)
     this.OS().push(addr)
-    this.heap.temp_roots.pop()
+    this.heap.temp_pop()
   }
 
   peekOS() {
@@ -117,8 +117,10 @@ export class ContextNode extends BaseNode {
       const addr = this.RTS().get_idx(i)
       const val = addr === -1 ? -1 : this.heap.get_value(addr)
       //   console.log(val)
-      console.log(val)
+      console.log(val, val === -1 ? -1 : val.get_children())
     }
+    const val = this.E()
+    console.log('E:', val, val.get_children())
   }
 
   fork() {
@@ -137,7 +139,7 @@ export class ContextNode extends BaseNode {
   }
 
   override get_children(): number[] {
-    const children = [this.RTS().addr, this.OS().addr]
+    const children = [this.RTS().addr, this.OS().addr, this.waitlist().addr]
     const E_addr = this.heap.memory.get_word(this.addr + 3)
     if (E_addr !== -1) children.push(E_addr)
     return children

@@ -6,9 +6,9 @@ export class StackNode extends BaseNode {
   static create(heap: Heap) {
     const addr = heap.allocate(2)
     heap.set_tag(addr, TAG.STACK)
-    if (heap.temp_roots) heap.temp_roots.push(addr)
+    if (heap.temp_roots) heap.temp_push(addr)
     const list = StackListNode.create(heap)
-    if (heap.temp_roots) heap.temp_roots.pop()
+    if (heap.temp_roots) heap.temp_pop()
     heap.memory.set_word(list.addr, addr + 1)
     return new StackNode(heap, addr)
   }
