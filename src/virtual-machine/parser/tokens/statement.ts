@@ -34,6 +34,7 @@ import {
   PrimaryExpressionToken,
 } from './expressions'
 import { IdentifierToken } from './identifier'
+import { UnaryOperator } from './operator'
 
 export type StatementToken =
   | DeclarationToken
@@ -395,7 +396,8 @@ export class SendStatementToken extends Token {
 export class ReceiveStatementToken extends Token {
   constructor(
     public identifiers: IdentifierToken[] | null,
-    public channel: ExpressionToken,
+    /** expression is guarenteed to be a receive operator. */
+    public expression: UnaryOperator,
   ) {
     super('receive')
   }
@@ -409,7 +411,7 @@ export class ReceiveStatementToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    this.channel.compile(compiler)
+    this.expression.compile(compiler)
     // !TODO: Figure out whats happening here
     compiler.instructions.push(new LoadChannelReqInstruction(true))
     return new NoType()
