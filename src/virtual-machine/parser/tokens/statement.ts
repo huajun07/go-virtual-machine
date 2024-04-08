@@ -20,6 +20,7 @@ import {
 } from '../../compiler/instructions/control'
 import {
   BoolType,
+  ChannelType,
   Int64Type,
   NoType,
   ReturnType,
@@ -387,8 +388,15 @@ export class SendStatementToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    this.channel.compile(compiler)
-    this.value.compile(compiler)
+    const chanType = this.channel.compile(compiler)
+    if (!(chanType instanceof ChannelType))
+      throw Error('Not instance of channel type')
+    const argType = chanType.element
+    const exprType = this.value.compile(compiler)
+    if (!argType.assignableBy(exprType)) {
+      throw Error(`Cannot use ${exprType} as ${argType} in assignment`)
+    }
+    if (!argType.equals(exprType)) throw Error('')
     compiler.instructions.push(
       new LoadChannelReqInstruction(false, compiler.instructions.length + 2),
     )

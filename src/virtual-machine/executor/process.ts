@@ -37,11 +37,11 @@ export class Process {
         const instr = this.instructions[this.context.incr_PC()]
         // console.log('ctx:', this.context.addr)
         // console.log('Instr:', instr, this.context.PC() - 1)
+        // console.log(this.heap.mem_left)
         instr.execute(this)
         // this.context.printOS()
         // this.context.printRTS()
         // this.context.heap.print_freelist()
-        // console.log(this.heap.mem_left)
         runtime_count += 1
         cur_time += 1
         if (this.context.is_blocked()) break

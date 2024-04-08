@@ -26,17 +26,17 @@ describe('Heap Tests', () => {
     expect(heap.memory.get_bits(1, 29, 6)).toEqual(1)
   })
   test('Get Set Bits 4', () => {
-    const heap = new Heap(100)
+    const heap = new Heap(38)
     heap.memory.set_bits(2, 3, 5, 1)
     heap.memory.set_bits(3, 3, 29, 6)
     expect(heap.memory.get_bits(3, 5, 1)).toEqual(2)
   })
   test('Mark And Sweep', () => {
-    const heap = new Heap(34)
+    const heap = new Heap(38)
     expect(() => FrameNode.create(0, heap)).toThrow(Error)
   })
   test('Mark And Sweep 2', () => {
-    const heap = new Heap(42)
+    const heap = new Heap(46)
     const context = new ContextNode(heap, heap.contexts.peek())
     const base_frame = FrameNode.create(0, heap)
     const base_env = EnvironmentNode.create([base_frame.addr], false, heap)
