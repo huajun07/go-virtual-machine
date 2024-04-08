@@ -24,8 +24,8 @@ export class Process {
   start() {
     const time_quantum = 30
     let runtime_count = 0
+    const main_context = new ContextNode(this.heap, this.contexts.peek())
     while (this.contexts.sz()) {
-      // !TODO: Detect Deadlocks
       this.context = new ContextNode(this.heap, this.contexts.peek())
       let cur_time = 0
       while (!DoneInstruction.is(this.instructions[this.context.PC()])) {
@@ -51,6 +51,8 @@ export class Process {
       if (runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
       // console.log('PC', this.contexts.get_vals())
     }
+    if (main_context.is_blocked())
+      throw Error('Execution error: all threads are blocked!')
 
     return this.stdout
   }
