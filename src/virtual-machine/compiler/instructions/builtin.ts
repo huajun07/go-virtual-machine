@@ -12,7 +12,6 @@ export class BuiltinLenInstruction extends Instruction {
 
   override execute(process: Process): void {
     const node = process.heap.get_value(process.context.popOS())
-    console.log(node)
     if (node instanceof ArrayNode || node instanceof SliceNode) {
       const length = node.length()
       process.context.pushOS(IntegerNode.create(length, process.heap).addr)
