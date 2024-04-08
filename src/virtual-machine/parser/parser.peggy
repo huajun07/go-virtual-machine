@@ -366,16 +366,16 @@ rel_op      = "==" { return BinaryOperator.fromSource("equal") } /
               "<=" { return BinaryOperator.fromSource("less_or_equal") } /
               ">" { return BinaryOperator.fromSource("greater") } /
               ">=" { return BinaryOperator.fromSource("greater_or_equal") }
-add_op      = "+" { return BinaryOperator.fromSource("sum") } /
-              "-" { return BinaryOperator.fromSource("difference") } /
-              "|" { return BinaryOperator.fromSource("bitwise_or") } /
-              "^" { return BinaryOperator.fromSource("bitwise_xor") }
-mul_op      = "*" { return BinaryOperator.fromSource("product") } /
-              "/" { return BinaryOperator.fromSource("quotient") } /
+add_op      = "+" !"+" { return BinaryOperator.fromSource("sum") } /
+              "-" !"-" { return BinaryOperator.fromSource("difference") } /
+              "|" !"|" { return BinaryOperator.fromSource("bitwise_or") } /
+              "^" !"^" { return BinaryOperator.fromSource("bitwise_xor") }
+mul_op      = "*" !"*" { return BinaryOperator.fromSource("product") } /
+              "/" !"/" { return BinaryOperator.fromSource("quotient") } /
               "%" { return BinaryOperator.fromSource("remainder") } /
               "<<" { return BinaryOperator.fromSource("left_shift") } /
               ">>" { return BinaryOperator.fromSource("right_shift") } /
-              "&" { return BinaryOperator.fromSource("bitwise_and") } /
+              "&" !"&" { return BinaryOperator.fromSource("bitwise_and") } /
               "&^" { return BinaryOperator.fromSource("bit_clear") }
 disjunct_op = "||" { return BinaryOperator.fromSource("conditional_or") }
 conjunct_op = "&&" { return BinaryOperator.fromSource("conditional_and") }
