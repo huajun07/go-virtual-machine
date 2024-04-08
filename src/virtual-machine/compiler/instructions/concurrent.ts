@@ -101,7 +101,7 @@ export class SelectInstruction extends Instruction {
       process.heap.temp_push(process.context.popOS())
     }
     cases = cases
-      .map((a) => ({ sort: Math.random(), value: a }))
+      .map((a) => ({ sort: process.generator(), value: a }))
       .sort((a, b) => a.sort - b.sort)
       .map((a) => a.value)
     let done = false

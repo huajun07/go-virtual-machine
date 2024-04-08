@@ -42,6 +42,7 @@
     "react-scripts": "^5.0.1",
     "react-selecto": "^1.26.0",
     "react-use-error-boundary": "^3.0.0",
+    "seedrandom": "^3.0.5",
     "util": "^0.12.5",
     "uuid": "^9.0.0",
     "zustand": "^4.5.2"
@@ -50,6 +51,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/react-cytoscapejs": "^1.2.2",
     "@types/react-dom": "^18.2.4",
+    "@types/seedrandom": "^3.0.8",
     "@types/uuid": "^9.0.2",
     "babel-plugin-named-exports-order": "^0.0.2",
     "chromatic": "^6.19.9",
