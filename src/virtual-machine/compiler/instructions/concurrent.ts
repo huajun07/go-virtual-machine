@@ -84,12 +84,12 @@ export class TryChannelReqInstruction extends Instruction {
 }
 
 export class SelectInstruction extends Instruction {
-  constructor(public cases: number, public defualt_case: boolean) {
+  constructor(public cases: number, public default_case: boolean) {
     super('SELECT')
   }
   override execute(process: Process): void {
     let pc = -1
-    if (this.defualt_case) {
+    if (this.default_case) {
       pc = new IntegerNode(process.heap, process.context.popOS()).get_value()
     }
     let cases = []
