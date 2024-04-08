@@ -351,9 +351,22 @@ export class DeferStatementToken extends Token {
     super('defer')
   }
 
-  override compile(_compiler: Compiler): Type {
-    // TODO: Implement
+  override compile(compiler: Compiler): Type {
+    if (!this.isFunctionCall()) {
+      throw new Error('Expression in defer must be function call.')
+    }
+
+    this.expression.compile(compiler)
+
     return new NoType()
+  }
+
+  private isFunctionCall(): boolean {
+    if (!(this.expression instanceof PrimaryExpressionToken)) return false
+    const modifiers = this.expression.rest ?? []
+    if (modifiers.length === 0) return false
+    if (!(modifiers[modifiers.length - 1] instanceof CallToken)) return false
+    return true
   }
 }
 

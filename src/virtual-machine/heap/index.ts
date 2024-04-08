@@ -2,7 +2,13 @@ import { ArrayNode, SliceNode } from './types/array'
 import { ChannelNode, ChannelReqNode, ReqInfoNode } from './types/channel'
 import { ContextNode } from './types/context'
 import { EnvironmentNode, FrameNode } from './types/environment'
-import { CallRefNode, FuncNode, MethodNode } from './types/func'
+import {
+  CallRefNode,
+  DeferFuncNode,
+  DeferMethodNode,
+  FuncNode,
+  MethodNode,
+} from './types/func'
 import { LinkedListEntryNode, LinkedListNode } from './types/linkedlist'
 import {
   BoolNode,
@@ -42,6 +48,8 @@ export enum TAG {
   SLICE = 21,
   WAIT_GROUP = 22,
   METHOD = 23,
+  DEFER_FUNC = 24,
+  DEFER_METHOD = 25,
 }
 
 export const word_size = 4
@@ -131,6 +139,10 @@ export class Heap {
         return new WaitGroupNode(this, addr)
       case TAG.METHOD:
         return new MethodNode(this, addr)
+      case TAG.DEFER_FUNC:
+        return new DeferFuncNode(this, addr)
+      case TAG.DEFER_METHOD:
+        return new DeferMethodNode(this, addr)
       default:
         // return new UnassignedNode(this, addr)
         throw Error('Unknown Data Type')

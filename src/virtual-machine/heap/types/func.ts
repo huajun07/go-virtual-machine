@@ -1,7 +1,9 @@
+import { Process } from '../../executor/process'
 import { Heap, TAG } from '..'
 
 import { BaseNode } from './base'
 import { StringNode } from './primitives'
+import { StackNode } from './stack'
 
 export class FuncNode extends BaseNode {
   static create(PC: number, env: number, heap: Heap) {
@@ -53,9 +55,9 @@ export class MethodNode extends BaseNode {
   static create(receiver: number, identifier: string, heap: Heap): MethodNode {
     const addr = heap.allocate(3)
     heap.set_tag(addr, TAG.METHOD)
+    heap.temp_push(addr)
     heap.memory.set_word(receiver, addr + 1)
     heap.memory.set_word(StringNode.create(identifier, heap).addr, addr + 2)
-    heap.temp_push(addr)
     heap.temp_pop()
     return new MethodNode(heap, addr)
   }
@@ -64,7 +66,7 @@ export class MethodNode extends BaseNode {
     return this.heap.memory.get_word(this.addr + 1)
   }
 
-  receiver() {
+  receiver(): BaseNode {
     return this.heap.get_value(this.receiverAddr())
   }
 
@@ -78,5 +80,110 @@ export class MethodNode extends BaseNode {
 
   override get_children(): number[] {
     return [this.receiverAddr(), this.identifierAddr()]
+  }
+}
+
+/**
+ * Stores the function literal and arguments of a deferred function call.
+ * Word 0: DeferFuncNode tag.
+ * Word 1: Function literal address.
+ * Word 2: Address of a stack containing all the arguments (first argument at the top).
+ */
+export class DeferFuncNode extends BaseNode {
+  static create(argCount: number, process: Process): DeferFuncNode {
+    const addr = process.heap.allocate(3)
+    process.heap.temp_push(addr)
+    process.heap.set_tag(addr, TAG.DEFER_FUNC)
+
+    const stack = StackNode.create(process.heap)
+    process.heap.memory.set_word(stack.addr, addr + 2)
+    for (let i = 0; i < argCount; i++) stack.push(process.context.popOS())
+
+    process.heap.memory.set_word(process.context.popOS(), addr + 1)
+
+    process.heap.temp_pop()
+    return new DeferFuncNode(process.heap, addr)
+  }
+
+  funcAddr(): number {
+    return this.heap.memory.get_word(this.addr + 1)
+  }
+
+  func(): FuncNode {
+    return new FuncNode(this.heap, this.funcAddr())
+  }
+
+  argCount(): number {
+    return this.heap.memory.get_number(this.addr + 2)
+  }
+
+  stackAddr(): number {
+    return this.heap.memory.get_word(this.addr + 3)
+  }
+
+  stack(): StackNode {
+    return new StackNode(this.heap, this.stackAddr())
+  }
+
+  override get_children(): number[] {
+    return [this.funcAddr(), this.stackAddr()]
+  }
+}
+
+/**
+ * Stores the receiver, identifier and arguments of a deferred method call.
+ * Word 0: DeferMethodNode tag.
+ * Word 1: Receiver address.
+ * Word 2: String literal address, representing the method name.
+ * Word 3: Address of a stack containing all the arguments (first argument at the top).
+ */
+export class DeferMethodNode extends BaseNode {
+  static create(
+    receiver: number,
+    identifier: string,
+    argCount: number,
+    process: Process,
+  ): MethodNode {
+    const addr = process.heap.allocate(4)
+    process.heap.set_tag(addr, TAG.DEFER_METHOD)
+    process.heap.temp_push(addr)
+    process.heap.memory.set_word(receiver, addr + 1)
+    process.heap.memory.set_word(
+      StringNode.create(identifier, process.heap).addr,
+      addr + 2,
+    )
+    const stack = StackNode.create(process.heap)
+    process.heap.memory.set_word(stack.addr, addr + 3)
+    for (let i = 0; i < argCount; i++) stack.push(process.context.popOS())
+    process.heap.temp_pop()
+    return new MethodNode(process.heap, addr)
+  }
+
+  receiverAddr(): number {
+    return this.heap.memory.get_word(this.addr + 1)
+  }
+
+  receiver(): BaseNode {
+    return this.heap.get_value(this.receiverAddr())
+  }
+
+  identifierAddr(): number {
+    return this.heap.memory.get_word(this.addr + 2)
+  }
+
+  identifier(): string {
+    return new StringNode(this.heap, this.identifierAddr()).get_value()
+  }
+
+  stackAddr(): number {
+    return this.heap.memory.get_word(this.addr + 3)
+  }
+
+  stack(): StackNode {
+    return this.heap.get_value(this.stackAddr()) as StackNode
+  }
+
+  override get_children(): number[] {
+    return [this.receiverAddr(), this.identifierAddr(), this.stackAddr()]
   }
 }

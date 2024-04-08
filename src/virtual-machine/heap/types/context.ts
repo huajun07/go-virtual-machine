@@ -7,7 +7,7 @@ import { PrimitiveNode } from './primitives'
 import { StackNode } from './stack'
 
 export class ContextNode extends BaseNode {
-  // [metadata | blocked?] [PC] [OS] [E] [RTS] [WaitLists]
+  // [metadata | blocked?] [PC] [OS] [E] [RTS] [WaitLists] [DeferStack]
   static create(heap: Heap) {
     const addr = heap.allocate(6)
     heap.set_tag(addr, TAG.CONTEXT)
@@ -17,6 +17,8 @@ export class ContextNode extends BaseNode {
     heap.memory.set_number(-1, addr + 3)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 4)
     heap.memory.set_number(-1, addr + 5)
+    heap.memory.set_word(StackNode.create(heap).addr, addr + 6)
+    heap.memory.set_word(StackNode.create(heap).addr, addr + 7)
     heap.temp_pop()
     return new ContextNode(heap, addr)
   }
@@ -138,8 +140,32 @@ export class ContextNode extends BaseNode {
     return new ArrayNode(this.heap, this.heap.memory.get_number(this.addr + 5))
   }
 
+  deferStack(): StackNode {
+    return this.heap.get_value(
+      this.heap.memory.get_number(this.addr + 7),
+    ) as StackNode
+  }
+
+  pushDeferStack(): void {
+    const stack = StackNode.create(this.heap)
+    this.deferStack().push(stack.addr)
+  }
+
+  peekDeferStack(): StackNode {
+    return new StackNode(this.heap, this.deferStack().peek())
+  }
+
+  popDeferStack(): StackNode {
+    return new StackNode(this.heap, this.deferStack().pop())
+  }
+
   override get_children(): number[] {
-    const children = [this.RTS().addr, this.OS().addr, this.waitlist().addr]
+    const children = [
+      this.RTS().addr,
+      this.OS().addr,
+      this.waitlist().addr,
+      this.deferStack().addr,
+    ]
     const E_addr = this.heap.memory.get_word(this.addr + 3)
     if (E_addr !== -1) children.push(E_addr)
     return children
