@@ -1,6 +1,6 @@
 import { Process } from '../../executor/process'
+import { ArrayNode, SliceNode } from '../../heap/types/array'
 import { IntegerNode } from '../../heap/types/primitives'
-import { ArrayNode, SliceNode } from '../../heap/types/structures'
 
 import { Instruction } from './base'
 
@@ -12,6 +12,7 @@ export class BuiltinLenInstruction extends Instruction {
 
   override execute(process: Process): void {
     const node = process.heap.get_value(process.context.popOS())
+    console.log(node)
     if (node instanceof ArrayNode || node instanceof SliceNode) {
       const length = node.length()
       process.context.pushOS(IntegerNode.create(length, process.heap).addr)

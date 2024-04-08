@@ -31,7 +31,6 @@ export enum TAG {
   FUNC = 11,
   CALLREF = 12,
   ARRAY = 13,
-  SLICE = 14,
   QUEUE = 14,
   QUEUE_LIST = 15,
   LINKED_LIST = 16,
@@ -39,6 +38,7 @@ export enum TAG {
   CHANNEL = 18,
   CHANNEL_REQ = 19,
   REQ_INFO = 20,
+  SLICE = 21,
 }
 
 export const word_size = 4
