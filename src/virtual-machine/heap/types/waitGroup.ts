@@ -73,6 +73,7 @@ export class WaitGroupNode extends BaseNode {
       while (this.queue().sz()) {
         const context = new ContextNode(this.heap, this.queue().pop())
         context.set_blocked(false)
+        this.heap.contexts.push(context.addr)
       }
     }
   }
