@@ -33,6 +33,9 @@ export class WaitGroupNode extends BaseNode {
   }
 
   set_count(new_count: number): void {
+    if (new_count < 0) {
+      throw new Error('sync: negative WaitGroup counter.')
+    }
     this.heap.memory.set_number(new_count, this.addr + 1)
   }
 
@@ -65,9 +68,6 @@ export class WaitGroupNode extends BaseNode {
 
   handleDone(process: Process): void {
     process.context.popOS()
-    if (this.count() === 0) {
-      throw new Error('sync: negative WaitGroup counter')
-    }
     this.set_count(this.count() - 1)
     if (this.count() === 0) {
       while (this.queue().sz()) {
