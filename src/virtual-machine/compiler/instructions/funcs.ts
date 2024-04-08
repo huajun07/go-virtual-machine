@@ -1,5 +1,5 @@
 import { Process } from '../../executor/process'
-import { CallRefNode, FuncNode } from '../../heap/types/func'
+import { CallRefNode, FuncNode, MethodNode } from '../../heap/types/func'
 import { IntegerNode } from '../../heap/types/primitives'
 
 import { Instruction } from './base'
@@ -35,13 +35,19 @@ export class CallInstruction extends Instruction {
 
   override execute(process: Process): void {
     const func = process.heap.get_value(process.context.peekOSIdx(this.args))
-    if (!(func instanceof FuncNode))
+    if (!(func instanceof FuncNode) && !(func instanceof MethodNode))
       throw Error('Stack does not contain closure')
-    process.context.pushRTS(
-      CallRefNode.create(process.context.PC(), process.heap).addr,
-    )
-    process.context.pushRTS(func.E())
-    process.context.set_PC(func.PC())
+
+    if (func instanceof FuncNode) {
+      process.context.pushRTS(
+        CallRefNode.create(process.context.PC(), process.heap).addr,
+      )
+      process.context.pushRTS(func.E())
+      process.context.set_PC(func.PC())
+    } else {
+      const receiver = func.receiver()
+      receiver.handleMethodCall(process, func.identifier())
+    }
   }
 }
 

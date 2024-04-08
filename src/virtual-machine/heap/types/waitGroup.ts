@@ -1,7 +1,10 @@
+import { Process } from '../../executor/process'
 import { Heap, TAG } from '..'
 
 import { BaseNode } from './base'
 import { ContextNode } from './context'
+import { MethodNode } from './func'
+import { IntegerNode } from './primitives'
 import { QueueNode } from './queue'
 
 /**
@@ -17,6 +20,7 @@ export class WaitGroupNode extends BaseNode {
     heap.temp_push(addr)
     heap.memory.set_number(0, addr + 1)
     heap.memory.set_word(QueueNode.create(heap).addr, addr + 2)
+    heap.temp_pop()
     return new WaitGroupNode(heap, addr)
   }
 
@@ -36,25 +40,48 @@ export class WaitGroupNode extends BaseNode {
     return new QueueNode(this.heap, this.heap.memory.get_word(this.addr + 2))
   }
 
-  handleAdd(): void {
-    this.set_count(this.count() + 1)
+  override select(process: Process, identifier: string): void {
+    process.context.pushOS(
+      MethodNode.create(this.addr, identifier, this.heap).addr,
+    )
   }
 
-  handleDone(): void {
+  /** Arguments to builtin methods should be on the OS. Remember to pop the receiver from OS. */
+  override handleMethodCall(process: Process, identifier: string) {
+    if (identifier === 'Add') {
+      this.handleAdd(process)
+    } else if (identifier === 'Done') {
+      this.handleDone(process)
+    } else if (identifier === 'Wait') {
+      this.handleWait(process)
+    }
+  }
+
+  handleAdd(process: Process): void {
+    const amount = process.context.popOSNode(IntegerNode).get_value()
+    process.context.popOS()
+    this.set_count(this.count() + amount)
+  }
+
+  handleDone(process: Process): void {
+    process.context.popOS()
     if (this.count() === 0) {
       throw new Error('sync: negative WaitGroup counter')
     }
     this.set_count(this.count() - 1)
     if (this.count() === 0) {
-      for (const contextAddr of this.queue().get_vals()) {
-        const context = new ContextNode(this.heap, contextAddr)
+      while (this.queue().sz()) {
+        const context = new ContextNode(this.heap, this.queue().pop())
         context.set_blocked(false)
       }
     }
   }
 
-  handleWait(context: number): void {
-    this.queue().push(context)
+  handleWait(process: Process): void {
+    process.context.popOS()
+    if (this.count() === 0) return
+    this.queue().push(process.context.addr)
+    process.context.set_blocked(true)
   }
 
   override get_children(): number[] {

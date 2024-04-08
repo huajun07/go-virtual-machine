@@ -6,6 +6,7 @@ import {
   LoadChannelInstruction,
   LoadConstantInstruction,
   LoadSliceElementInstruction,
+  SelectorOperationInstruction,
   SliceOperationInstruction,
 } from '../../compiler/instructions'
 import {
@@ -18,8 +19,10 @@ import {
   ChannelType,
   FunctionType,
   Int64Type,
+  MethodType,
   NoType,
   SliceType,
+  StringType,
   Type,
   TypeUtility,
 } from '../../compiler/typing'
@@ -83,9 +86,13 @@ export class SelectorToken extends PrimaryExpressionModifierToken {
     super('selector')
   }
 
-  override compile(_compiler: Compiler, _operandType: Type): Type {
-    //! TODO: Implement.
-    return new NoType()
+  override compile(compiler: Compiler, operandType: Type): Type {
+    const resultType = operandType.select(this.identifier)
+    compiler.instructions.push(
+      new LoadConstantInstruction(this.identifier, new StringType()),
+      new SelectorOperationInstruction(),
+    )
+    return resultType
   }
 }
 
@@ -158,7 +165,10 @@ export class CallToken extends PrimaryExpressionModifierToken {
   }
 
   override compile(compiler: Compiler, operandType: Type): Type {
-    if (!(operandType instanceof FunctionType)) {
+    if (
+      !(operandType instanceof FunctionType) &&
+      !(operandType instanceof MethodType)
+    ) {
       throw Error(
         `Invalid operation: cannot call non-function (of type ${operandType})`,
       )

@@ -1,6 +1,7 @@
 import { Heap, TAG } from '..'
 
 import { BaseNode } from './base'
+import { StringNode } from './primitives'
 
 export class FuncNode extends BaseNode {
   static create(PC: number, env: number, heap: Heap) {
@@ -39,5 +40,43 @@ export class CallRefNode extends BaseNode {
   }
   PC() {
     return this.heap.memory.get_word(this.addr + 1)
+  }
+}
+
+/**
+ * Represents a hardcoded method.
+ * Word 0 - MethodNode tag.
+ * Word 1 - Receiver address.
+ * Word 2 - String literal address, representing the method name.
+ * */
+export class MethodNode extends BaseNode {
+  static create(receiver: number, identifier: string, heap: Heap): MethodNode {
+    const addr = heap.allocate(3)
+    heap.set_tag(addr, TAG.METHOD)
+    heap.memory.set_word(receiver, addr + 1)
+    heap.memory.set_word(StringNode.create(identifier, heap).addr, addr + 2)
+    heap.temp_push(addr)
+    heap.temp_pop()
+    return new MethodNode(heap, addr)
+  }
+
+  receiverAddr(): number {
+    return this.heap.memory.get_word(this.addr + 1)
+  }
+
+  receiver() {
+    return this.heap.get_value(this.receiverAddr())
+  }
+
+  identifierAddr(): number {
+    return this.heap.memory.get_word(this.addr + 2)
+  }
+
+  identifier(): string {
+    return new StringNode(this.heap, this.identifierAddr()).get_value()
+  }
+
+  override get_children(): number[] {
+    return [this.receiverAddr(), this.identifierAddr()]
   }
 }

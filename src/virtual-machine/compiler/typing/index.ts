@@ -21,6 +21,13 @@ export abstract class Type {
 
   /** Returns a function that creates a default node of this type on the heap, and returns its address. */
   abstract defaultNodeCreator(): (heap: Heap) => number
+
+  /** Returns the type of selecting an identifier on the given type. */
+  select(identifier: string): Type {
+    throw new Error(
+      `undefined (type ${this} has no field or method ${identifier})`,
+    )
+  }
 }
 
 /** This type represents things that don't have an associated type, like statements. */
@@ -213,6 +220,39 @@ export class FunctionType extends Type {
 
   override defaultNodeCreator(): (heap: Heap) => number {
     return (heap) => FuncNode.default(heap).addr
+  }
+}
+
+export class MethodType extends Type {
+  constructor(
+    public receiver: Type,
+    public parameters: ParameterType[],
+    public results: ReturnType,
+  ) {
+    super()
+  }
+
+  override isPrimitive(): boolean {
+    return false
+  }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    return (heap) => FuncNode.default(heap).addr
+  }
+
+  override toString(): string {
+    const parametersString = TypeUtility.arrayToString(this.parameters)
+    return `func (${this.receiver}) (${parametersString}) ${this.results}`
+  }
+
+  override equals(t: Type): boolean {
+    return (
+      t instanceof MethodType &&
+      this.receiver.equals(t.receiver) &&
+      this.parameters.length === t.parameters.length &&
+      this.parameters.every((p, index) => p.equals(t.parameters[index])) &&
+      this.results.equals(t.results)
+    )
   }
 }
 

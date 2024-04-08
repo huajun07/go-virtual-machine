@@ -1,6 +1,10 @@
 import { Process } from '../../executor/process'
 import { ArrayNode, SliceNode } from '../../heap/types/array'
-import { IntegerNode, PrimitiveNode } from '../../heap/types/primitives'
+import {
+  IntegerNode,
+  PrimitiveNode,
+  StringNode,
+} from '../../heap/types/primitives'
 
 import { Instruction } from './base'
 
@@ -103,5 +107,21 @@ export class SliceOperationInstruction extends Instruction {
     if (low < 0 || low > length || high < 0 || high > length || high < low) {
       throw new Error('Slice bounds out of range')
     }
+  }
+}
+
+/**
+ * Takes its operand and identifier string from the OS,
+ * and selects the given identifier from the operand.
+ */
+export class SelectorOperationInstruction extends Instruction {
+  constructor() {
+    super('SELECTOP')
+  }
+
+  override execute(process: Process): void {
+    const identifier = process.context.popOSNode(StringNode).get_value()
+    const node = process.heap.get_value(process.context.popOS())
+    node.select(process, identifier)
   }
 }
