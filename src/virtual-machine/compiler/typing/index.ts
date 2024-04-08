@@ -299,6 +299,13 @@ export class PackageType extends Type {
     super()
   }
 
+  get(identifier: string): Type {
+    if (!(identifier in this.types)) {
+      throw new Error(`undefined: ${this.name}.${identifier}`)
+    }
+    return this.types[identifier]
+  }
+
   override isPrimitive(): boolean {
     return false
   }
