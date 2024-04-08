@@ -1,11 +1,11 @@
 import { Process } from '../../executor/process'
+import { ArrayNode, SliceNode } from '../../heap/types/array'
 import {
   BoolNode,
   FloatNode,
   IntegerNode,
   StringNode,
 } from '../../heap/types/primitives'
-import { ArrayNode, SliceNode } from '../../heap/types/structures'
 import { BoolType, Float64Type, Int64Type, StringType, Type } from '../typing'
 
 import { Instruction } from './base'

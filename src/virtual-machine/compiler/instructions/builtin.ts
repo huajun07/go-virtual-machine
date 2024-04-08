@@ -1,6 +1,6 @@
 import { Process } from '../../executor/process'
+import { ArrayNode, SliceNode } from '../../heap/types/array'
 import { IntegerNode } from '../../heap/types/primitives'
-import { ArrayNode, SliceNode } from '../../heap/types/structures'
 
 import { Instruction } from './base'
 

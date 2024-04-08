@@ -360,7 +360,7 @@ UnaryExpr  = PrimaryExpr /
 // Operators are parsed into a function, that can be applied on operands to construct a token.
 rel_op      = "==" { return BinaryOperator.fromSource("equal") } /
               "!=" { return BinaryOperator.fromSource("not_equal") } /
-              "<" { return BinaryOperator.fromSource("less") } /
+              "<" !"-" { return BinaryOperator.fromSource("less") } /
               "<=" { return BinaryOperator.fromSource("less_or_equal") } /
               ">" { return BinaryOperator.fromSource("greater") } /
               ">=" { return BinaryOperator.fromSource("greater_or_equal") }
@@ -415,7 +415,7 @@ ExpressionStmt = Expression
 //* Send Statements
 SendStmt = channel:Channel _ "<-" _ value:Expression { return new SendStatementToken(channel, value) }
 // For simplicity, we only allow channels to be identifiers instead of Expression
-Channel  = Expression
+Channel  = identifier
 
 //* IncDec Statements
 IncDecStmt = expression:Expression _ op:("++" / "--")
@@ -472,9 +472,12 @@ CommClause = predicate:CommCase _ ":" _ body:StatementList
              { return new CommunicationClauseToken(predicate, body) }
 CommCase   = "case" _ @(RecvStmt / SendStmt) / @"default"
 // For simplicity, we disallow an ExpressionList with assignment here.
-RecvStmt   = identifiers:(@IdentifierList _ ":=")? _ channel:RecvExpr
+RecvStmt   = identifiers:IdentifierList _ ":=" _ expr:RecvExpr
              &{ return ReceiveStatementToken.isReceiveStatement(identifiers) }
-             { return new ReceiveStatementToken(identifiers, channel) }
+             { return new ReceiveStatementToken(true, identifiers, expr) } 
+           / identifiers:(@IdentifierList _ "=")? _ expr:RecvExpr
+             &{ return ReceiveStatementToken.isReceiveStatement(identifiers) }
+             { return new ReceiveStatementToken(false, identifiers, expr) } 
 RecvExpr   = expr:Expression &{ return expr instanceof UnaryOperator && expr.name === 'receive' } { return expr }
 
 //* Return Statements

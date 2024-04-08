@@ -1,4 +1,6 @@
 import { Heap } from '../../heap'
+import { ArrayNode, SliceNode } from '../../heap/types/array'
+import { ChannelNode } from '../../heap/types/channel'
 import { FuncNode } from '../../heap/types/func'
 import {
   BoolNode,
@@ -6,7 +8,6 @@ import {
   IntegerNode,
   StringNode,
 } from '../../heap/types/primitives'
-import { ArrayNode, SliceNode } from '../../heap/types/structures'
 
 export abstract class Type {
   abstract isPrimitive(): boolean
@@ -258,8 +259,7 @@ export class ChannelType extends Type {
   }
 
   override defaultNodeCreator(): (heap: Heap) => number {
-    //! TODO: Implement.
-    throw new Error('Channels are not supported yet.')
+    return (heap) => ChannelNode.default(heap).addr
   }
 }
 

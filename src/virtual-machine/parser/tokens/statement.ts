@@ -2,11 +2,16 @@ import { Compiler } from '../../compiler'
 import {
   BinaryInstruction,
   BlockInstruction,
+  DoneInstruction,
   ExitBlockInstruction,
+  ForkInstruction,
+  LoadChannelReqInstruction,
   LoadConstantInstruction,
   PopInstruction,
   ReturnInstruction,
+  SelectInstruction,
   StoreInstruction,
+  TryChannelReqInstruction,
 } from '../../compiler/instructions'
 import {
   ExitLoopInstruction,
@@ -15,6 +20,7 @@ import {
 } from '../../compiler/instructions/control'
 import {
   BoolType,
+  ChannelType,
   Int64Type,
   NoType,
   ReturnType,
@@ -26,10 +32,12 @@ import { BlockToken } from './block'
 import { DeclarationToken, ShortVariableDeclarationToken } from './declaration'
 import {
   CallToken,
+  EmptyExpressionToken,
   ExpressionToken,
   PrimaryExpressionToken,
 } from './expressions'
 import { IdentifierToken } from './identifier'
+import { UnaryOperator } from './operator'
 
 export type StatementToken =
   | DeclarationToken
@@ -311,7 +319,10 @@ export class ForStatementToken extends Token {
     // Predicate
     const predicate_false = new JumpIfFalseInstruction()
     if (this.condition) {
-      this.condition.compile(compiler)
+      const predicateType = this.condition.compile(compiler)
+      if (!(predicateType instanceof BoolType)) {
+        throw new Error(`Non-boolean condition in for statement condition.`)
+      }
       compiler.instructions.push(predicate_false)
     }
 
@@ -360,8 +371,12 @@ export class GoStatementToken extends Token {
     )
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    const fork_instr = new ForkInstruction()
+    compiler.instructions.push(fork_instr)
+    this.call.compile(compiler)
+    compiler.instructions.push(new DoneInstruction())
+    fork_instr.set_addr(compiler.instructions.length)
     return new NoType()
   }
 }
@@ -372,8 +387,20 @@ export class SendStatementToken extends Token {
     super('send')
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    const chanType = this.channel.compile(compiler)
+    if (!(chanType instanceof ChannelType))
+      throw Error('Not instance of channel type')
+    const argType = chanType.element
+    const exprType = this.value.compile(compiler)
+    if (!argType.assignableBy(exprType)) {
+      throw Error(`Cannot use ${exprType} as ${argType} in assignment`)
+    }
+    if (!argType.equals(exprType)) throw Error('')
+    compiler.instructions.push(
+      new LoadChannelReqInstruction(false, compiler.instructions.length + 2),
+    )
+    compiler.instructions.push(new TryChannelReqInstruction())
     return new NoType()
   }
 }
@@ -381,8 +408,11 @@ export class SendStatementToken extends Token {
 /** Receive and assign the results to one or two variables. Note that RecvStmt is NOT a SimpleStmt. */
 export class ReceiveStatementToken extends Token {
   constructor(
+    /** Whether this is a shorthand variable declaration (else it is an assignment). */
+    public declaration: boolean,
     public identifiers: IdentifierToken[] | null,
-    public channel: ExpressionToken,
+    /** expression is guarenteed to be a receive operator. */
+    public expression: UnaryOperator,
   ) {
     super('receive')
   }
@@ -395,9 +425,9 @@ export class ReceiveStatementToken extends Token {
     )
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
-    return new NoType()
+  override compile(compiler: Compiler): Type {
+    const chanType = this.expression.compile(compiler)
+    return chanType
   }
 }
 
@@ -406,8 +436,40 @@ export class SelectStatementToken extends Token {
     super('select')
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    let default_case = false
+    const end_jumps = []
+    for (const clause of this.clauses) {
+      if (clause.predicate === 'default') {
+        if (default_case) throw Error('Multiple Default cases!')
+        default_case = true
+        continue
+      }
+      clause.compile(compiler)
+      const jump_instr = new JumpInstruction()
+      compiler.instructions.push(jump_instr)
+      end_jumps.push(jump_instr)
+    }
+    if (default_case) {
+      for (const clause of this.clauses) {
+        if (clause.predicate === 'default') {
+          clause.compile(compiler)
+          const jump_instr = new JumpInstruction()
+          compiler.instructions.push(jump_instr)
+          end_jumps.push(jump_instr)
+          break
+        }
+      }
+    }
+    compiler.instructions.push(
+      new SelectInstruction(
+        this.clauses.length - (default_case ? 1 : 0),
+        default_case,
+      ),
+    )
+    for (const jump_instr of end_jumps)
+      jump_instr.set_addr(compiler.instructions.length)
+
     return new NoType()
   }
 }
@@ -419,8 +481,50 @@ export class CommunicationClauseToken extends Token {
     super('communication_clause')
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    if (!(this.predicate instanceof ReceiveStatementToken)) {
+      if (this.predicate === 'default') {
+        const load_instr = new LoadConstantInstruction(
+          compiler.instructions.length + 2,
+          new Int64Type(),
+        )
+        compiler.instructions.push(load_instr)
+      } else {
+        // Is send statement
+        this.predicate.compile(compiler)
+        compiler.instructions.pop() // Removing blocking op
+      }
+      const jump_instr = new JumpInstruction()
+      compiler.instructions.push(jump_instr)
+      new BlockToken(this.body).compile(compiler)
+      jump_instr.set_addr(compiler.instructions.length + 1)
+    } else {
+      // This is recv statement
+      const chanType = this.predicate.expression.compile(compiler)
+      compiler.instructions.pop()
+      const jump_instr = new JumpInstruction()
+      compiler.instructions.push(jump_instr)
+      if (this.predicate.identifiers) {
+        if (this.predicate.declaration) {
+          this.body.unshift(
+            new ShortVariableDeclarationToken(this.predicate.identifiers, [
+              new EmptyExpressionToken(chanType),
+            ]),
+          )
+        } else {
+          // !TODO: Hacky see if better way to implement this
+          this.body.unshift(
+            new AssignmentStatementToken(
+              [new PrimaryExpressionToken(this.predicate.identifiers[0], null)],
+              '=',
+              [new EmptyExpressionToken(chanType)],
+            ),
+          )
+        }
+      } else compiler.instructions.push(new PopInstruction())
+      new BlockToken(this.body).compile(compiler)
+      jump_instr.set_addr(compiler.instructions.length + 1)
+    }
     return new NoType()
   }
 }

@@ -1,6 +1,9 @@
+import { ArrayNode, SliceNode } from './types/array'
+import { ChannelNode, ChannelReqNode, ReqInfoNode } from './types/channel'
 import { ContextNode } from './types/context'
 import { EnvironmentNode, FrameNode } from './types/environment'
 import { CallRefNode, FuncNode } from './types/func'
+import { LinkedListEntryNode, LinkedListNode } from './types/linkedlist'
 import {
   BoolNode,
   FloatNode,
@@ -9,7 +12,8 @@ import {
   StringNode,
   UnassignedNode,
 } from './types/primitives'
-import { ArrayNode, ListNode, SliceNode, StackNode } from './types/structures'
+import { QueueListNode, QueueNode } from './types/queue'
+import { StackListNode, StackNode } from './types/stack'
 import { Memory } from './memory'
 
 export enum TAG {
@@ -23,11 +27,18 @@ export enum TAG {
   STRING = 7,
   STRING_LIST = 8,
   STACK = 9,
-  LIST = 10,
+  STACK_LIST = 10,
   FUNC = 11,
   CALLREF = 12,
   ARRAY = 13,
-  SLICE = 14,
+  QUEUE = 14,
+  QUEUE_LIST = 15,
+  LINKED_LIST = 16,
+  LINKED_LIST_ENTRY = 17,
+  CHANNEL = 18,
+  CHANNEL_REQ = 19,
+  REQ_INFO = 20,
+  SLICE = 21,
 }
 
 export const word_size = 4
@@ -40,13 +51,16 @@ export class Heap {
   freelist: number[]
   max_level: number
   temp_roots: StackNode
-  contexts: StackNode
+  contexts: QueueNode
+  mem_left: number
+  temp = -1
   constructor(size: number) {
     this.size = size
+    this.mem_left = size
     if (this.size % 2 === 1) this.size -= 1
     if (this.size < 34) throw Error('Insufficient Memory')
     this.memory = new Memory(size, word_size)
-    this.max_level = Math.floor(Math.log2(size))
+    this.max_level = Math.floor(Math.log2(size)) + 1
     this.freelist = []
     for (let i = 0; i < this.max_level; i++) this.freelist.push(-1)
     let cur_addr = 0
@@ -58,7 +72,7 @@ export class Heap {
     }
     this.UNASSIGNED = UnassignedNode.create(this)
     this.temp_roots = StackNode.create(this)
-    this.contexts = StackNode.create(this)
+    this.contexts = QueueNode.create(this)
     const context = ContextNode.create(this)
     this.contexts.push(context.addr)
   }
@@ -84,8 +98,8 @@ export class Heap {
         return new FrameNode(this, addr)
       case TAG.ENVIRONMENT:
         return new EnvironmentNode(this, addr)
-      case TAG.LIST:
-        return new ListNode(this, addr)
+      case TAG.STACK_LIST:
+        return new StackListNode(this, addr)
       case TAG.STACK:
         return new StackNode(this, addr)
       case TAG.FUNC:
@@ -96,7 +110,22 @@ export class Heap {
         return new ArrayNode(this, addr)
       case TAG.SLICE:
         return new SliceNode(this, addr)
+      case TAG.QUEUE:
+        return new QueueNode(this, addr)
+      case TAG.QUEUE_LIST:
+        return new QueueListNode(this, addr)
+      case TAG.LINKED_LIST:
+        return new LinkedListNode(this, addr)
+      case TAG.LINKED_LIST_ENTRY:
+        return new LinkedListEntryNode(this, addr)
+      case TAG.CHANNEL:
+        return new ChannelNode(this, addr)
+      case TAG.CHANNEL_REQ:
+        return new ChannelReqNode(this, addr)
+      case TAG.REQ_INFO:
+        return new ReqInfoNode(this, addr)
       default:
+        // return new UnassignedNode(this, addr)
         throw Error('Unknown Data Type')
     }
   }
@@ -128,7 +157,10 @@ export class Heap {
     this.set_prev(addr, addr)
     if (this.freelist[lvl] === -1) {
       this.set_next(addr, addr)
-    } else this.set_next(addr, this.freelist[lvl])
+    } else {
+      this.set_next(addr, this.freelist[lvl])
+      this.set_prev(this.freelist[lvl], addr)
+    }
     this.freelist[lvl] = addr
   }
 
@@ -213,11 +245,14 @@ export class Heap {
       addr = try_allocate()
     }
     if (addr === -1) throw Error('Ran out of memory!')
+    size = this.get_size(addr)
+    this.mem_left -= size
     return addr
   }
 
   free(addr: number) {
     let lvl = this.get_level(addr)
+    this.mem_left += 2 ** lvl
     while (lvl < this.freelist.length) {
       const sibling = addr ^ (1 << lvl)
       if (
@@ -226,6 +261,7 @@ export class Heap {
         this.get_level(sibling) !== lvl
       )
         break
+      this.set_free(sibling, false)
       this.pop_list(sibling)
       addr = Math.min(addr, sibling)
       lvl++
@@ -236,6 +272,16 @@ export class Heap {
   }
   calc_level(x: number) {
     return Math.ceil(Math.log2(x))
+  }
+
+  temp_push(addr: number) {
+    this.temp = addr
+    this.temp_roots.push(addr)
+    this.temp = -1
+  }
+
+  temp_pop() {
+    this.temp_roots.pop()
   }
 
   // [********** Garbage Collection: Mark and Sweep ****************]
@@ -296,10 +342,12 @@ export class Heap {
   }
 
   mark_and_sweep() {
+    console.log('CLEAN')
     const roots: number[] = [
       this.contexts.addr,
       this.temp_roots.addr,
       this.UNASSIGNED.addr,
+      this.temp,
     ]
     for (const root of roots) {
       this.mark(root)
@@ -316,12 +364,11 @@ export class Heap {
   }
 
   copy(dst: number, src: number) {
-    const sz = Math.min(this.get_size(src), this.get_size(dst))
-    const lvl = this.get_level(dst)
+    if (dst === -1) return
+    const sz = this.get_size(src)
     for (let i = 0; i < sz; i++) {
       this.memory.set_word(this.memory.get_word(src + i), dst + i)
     }
-    this.set_level(dst, lvl)
   }
 
   clone(addr: number) {

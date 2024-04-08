@@ -19,7 +19,7 @@ export class BlockInstruction extends Instruction {
 
   override execute(process: Process): void {
     const new_frame = FrameNode.create(this.frame.length, process.heap)
-    process.heap.temp_roots.push(new_frame.addr)
+    process.heap.temp_push(new_frame.addr)
     for (let i = 0; i < this.frame.length; i++) {
       const T = this.frame[i]
       new_frame.set_idx(T.defaultNodeCreator()(process.heap), i)
@@ -35,7 +35,7 @@ export class BlockInstruction extends Instruction {
         process.context.E().extend_env(new_frame.addr, this.for_block).addr,
       )
     }
-    process.heap.temp_roots.pop()
+    process.heap.temp_pop()
     if (this instanceof FuncBlockInstruction) {
       for (let i = this.args - 1; i >= 0; i--) {
         const src = process.context.popOS()
