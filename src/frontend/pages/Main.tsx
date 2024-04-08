@@ -163,7 +163,12 @@ export const Main = () => {
             heapsize={heapsize}
             setHeapsize={setHeapsize}
           />
-          <CodeIDE code={code} setCode={modifyCode} lineHighlight={0} />
+          <CodeIDE
+            code={code}
+            setCode={modifyCode}
+            lineHighlight={0}
+            run={startRunning}
+          />
         </Box>
         <Flex position="relative" flex={1}>
           <Flex borderRightWidth="1px" flexDirection="column" w="100%">

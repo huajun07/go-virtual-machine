@@ -1,5 +1,7 @@
 import { useColorModeValue } from '@chakra-ui/react'
 import { go } from '@codemirror/lang-go'
+import { Prec } from '@codemirror/state'
+import { keymap } from '@codemirror/view'
 import { zebraStripes } from '@uiw/codemirror-extensions-zebra-stripes'
 import { githubDark, githubLight } from '@uiw/codemirror-theme-github'
 import CodeMirror from '@uiw/react-codemirror'
@@ -8,6 +10,7 @@ interface codeIDEProps {
   code: string
   setCode: (code: string) => void
   lineHighlight?: number
+  run: () => void
 }
 
 export const CodeIDE = (props: codeIDEProps) => {
@@ -27,6 +30,17 @@ export const CodeIDE = (props: codeIDEProps) => {
           darkColor: '#aca2ff40',
         }),
         go(),
+        Prec.high(
+          keymap.of([
+            {
+              key: 'Shift-Enter',
+              run: () => {
+                props.run()
+                return true
+              },
+            },
+          ]),
+        ),
       ]}
       onChange={setCode}
       theme={useColorModeValue(githubLight, githubDark)}
