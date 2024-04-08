@@ -46,13 +46,16 @@ export class LoadChannelReqInstruction extends Instruction {
     super('LDCR')
   }
   override execute(process: Process): void {
+    const clone = process.heap.clone(process.context.peekOS())
+    process.heap.temp_push(clone)
     const req = ReqInfoNode.create(
-      process.heap.clone(process.context.peekOS()),
+      clone,
       process.context.addr,
       this.PC,
       this.recv,
       process.heap,
     )
+    process.heap.temp_pop()
     process.context.popOS()
     process.heap.temp_push(req.addr)
     const chan = new ChannelNode(process.heap, process.context.popOS())
