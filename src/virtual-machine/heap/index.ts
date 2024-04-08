@@ -39,6 +39,7 @@ export enum TAG {
   CHANNEL_REQ = 19,
   REQ_INFO = 20,
   SLICE = 21,
+  WAIT_GROUP = 22,
 }
 
 export const word_size = 4

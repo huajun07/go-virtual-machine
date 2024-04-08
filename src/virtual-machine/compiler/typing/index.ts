@@ -294,6 +294,29 @@ export class ReturnType extends Type {
   }
 }
 
+export class PackageType extends Type {
+  constructor(public name: string, public types: Record<string, Type>) {
+    super()
+  }
+
+  override isPrimitive(): boolean {
+    return false
+  }
+
+  override toString(): string {
+    return `package ${this.name}`
+  }
+
+  override equals(t: Type): boolean {
+    return t instanceof PackageType && t.name === this.name
+  }
+
+  override defaultNodeCreator(): (_heap: Heap) => number {
+    // Do nothing, as our implementation does not support user created packages.
+    throw new Error('Unreachable')
+  }
+}
+
 export const TypeUtility = {
   // Similar to Array.toString(), but adds a space after each comma.
   arrayToString(types: Type[] | null) {

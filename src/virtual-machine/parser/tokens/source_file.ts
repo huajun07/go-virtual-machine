@@ -5,9 +5,11 @@ import {
   LoadVariableInstruction,
 } from '../../compiler/instructions'
 import { NoType, Type } from '../../compiler/typing'
+import { builtinPackages } from '../../compiler/typing/packages'
 
 import { Token } from './base'
 import { TopLevelDeclarationToken } from './declaration'
+import { StringLiteralToken } from './literals'
 
 export class SourceFileToken extends Token {
   constructor(
@@ -23,6 +25,7 @@ export class SourceFileToken extends Token {
     compiler.instructions.push(global_block)
     compiler.context.push_env()
     compiler.type_environment = compiler.type_environment.extend()
+    for (const imp of this.imports ?? []) imp.compile(compiler)
     for (const declaration of this.declarations || []) {
       declaration.compile(compiler)
     }
@@ -38,12 +41,18 @@ export class SourceFileToken extends Token {
 }
 
 export class ImportToken extends Token {
-  constructor(public importPath: string, public pkgName: string | null) {
+  constructor(
+    public importPath: StringLiteralToken,
+    public pkgName: string | null,
+  ) {
     super('import')
   }
 
-  override compile(_compiler: Compiler): Type {
-    //! TODO: Implement.
+  override compile(compiler: Compiler): Type {
+    const pkg = this.importPath.getValue()
+    if (pkg in builtinPackages) {
+      compiler.type_environment.addType(pkg, builtinPackages[pkg])
+    }
     return new NoType()
   }
 }
