@@ -1,6 +1,6 @@
 import { Compiler } from '../../compiler'
 import { LoadVariableInstruction } from '../../compiler/instructions'
-import { Type } from '../../compiler/typing'
+import { PackageType, Type } from '../../compiler/typing'
 
 import { Token } from './base'
 
@@ -16,5 +16,20 @@ export class IdentifierToken extends Token {
   }
 }
 
-//! TODO (P2): QualifiedIdentifier is not supported for now,
-//! because idk how to resolve its parsing ambiguity with selector.
+export class QualifiedIdentifierToken extends Token {
+  constructor(public pkg: string, public identifier: string) {
+    super('qualified_identifier')
+  }
+
+  override compile(compiler: Compiler): Type {
+    const pkg = compiler.type_environment.get(this.pkg)
+    if (!(pkg instanceof PackageType)) {
+      throw new Error(`${this} is not a type`)
+    }
+    return pkg.get(this.identifier)
+  }
+
+  override toString(): string {
+    return `${this.pkg}.${this.identifier}`
+  }
+}

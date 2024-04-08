@@ -2,7 +2,7 @@ import { ArrayNode, SliceNode } from './types/array'
 import { ChannelNode, ChannelReqNode, ReqInfoNode } from './types/channel'
 import { ContextNode } from './types/context'
 import { EnvironmentNode, FrameNode } from './types/environment'
-import { CallRefNode, FuncNode } from './types/func'
+import { CallRefNode, FuncNode, MethodNode } from './types/func'
 import { LinkedListEntryNode, LinkedListNode } from './types/linkedlist'
 import {
   BoolNode,
@@ -14,6 +14,7 @@ import {
 } from './types/primitives'
 import { QueueListNode, QueueNode } from './types/queue'
 import { StackListNode, StackNode } from './types/stack'
+import { WaitGroupNode } from './types/waitGroup'
 import { Memory } from './memory'
 
 export enum TAG {
@@ -39,6 +40,8 @@ export enum TAG {
   CHANNEL_REQ = 19,
   REQ_INFO = 20,
   SLICE = 21,
+  WAIT_GROUP = 22,
+  METHOD = 23,
 }
 
 export const word_size = 4
@@ -124,6 +127,10 @@ export class Heap {
         return new ChannelReqNode(this, addr)
       case TAG.REQ_INFO:
         return new ReqInfoNode(this, addr)
+      case TAG.WAIT_GROUP:
+        return new WaitGroupNode(this, addr)
+      case TAG.METHOD:
+        return new MethodNode(this, addr)
       default:
         // return new UnassignedNode(this, addr)
         throw Error('Unknown Data Type')

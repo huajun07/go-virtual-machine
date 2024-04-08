@@ -46,6 +46,7 @@
     LiteralValueToken,
     ArrayLiteralToken,
     SliceLiteralToken,
+    QualifiedIdentifierToken,
   } from './tokens'
 
   // Checks whether an identifier is valid (not a reserved keyword).
@@ -166,6 +167,7 @@ Type     = @TypeName / TypeLit / "(" _ Type _ ")"
 //! TODO (P1): Support qualified identifiers for TypeName.
 TypeName = iden:identifier &{ return PrimitiveTypeToken.isPrimitive(iden.identifier) }
            { return new PrimitiveTypeToken(iden.identifier) }
+         / @QualifiedIdent
 TypeLit  = ArrayType / StructType / PointerType / FunctionType / InterfaceType / SliceType / MapType / ChannelType
 
 //* Array Types
@@ -302,7 +304,7 @@ BasicLit    = float_lit / int_lit / string_lit
 OperandName = identifier / QualifiedIdent
 
 //* Qualified Identifiers
-QualifiedIdent = PackageName "." identifier
+QualifiedIdent = pkg:PackageName "." iden:identifier { return new QualifiedIdentifierToken(pkg.identifier, iden.identifier) }
 
 //* Composite Literals
 CompositeLit = type:ArrayType _ value:LiteralValue { return new ArrayLiteralToken(type, value) }
@@ -364,16 +366,16 @@ rel_op      = "==" { return BinaryOperator.fromSource("equal") } /
               "<=" { return BinaryOperator.fromSource("less_or_equal") } /
               ">" { return BinaryOperator.fromSource("greater") } /
               ">=" { return BinaryOperator.fromSource("greater_or_equal") }
-add_op      = "+" { return BinaryOperator.fromSource("sum") } /
-              "-" { return BinaryOperator.fromSource("difference") } /
-              "|" { return BinaryOperator.fromSource("bitwise_or") } /
-              "^" { return BinaryOperator.fromSource("bitwise_xor") }
-mul_op      = "*" { return BinaryOperator.fromSource("product") } /
-              "/" { return BinaryOperator.fromSource("quotient") } /
+add_op      = "+" !"+" { return BinaryOperator.fromSource("sum") } /
+              "-" !"-" { return BinaryOperator.fromSource("difference") } /
+              "|" !"|" { return BinaryOperator.fromSource("bitwise_or") } /
+              "^" !"^" { return BinaryOperator.fromSource("bitwise_xor") }
+mul_op      = "*" !"*" { return BinaryOperator.fromSource("product") } /
+              "/" !"/" { return BinaryOperator.fromSource("quotient") } /
               "%" { return BinaryOperator.fromSource("remainder") } /
               "<<" { return BinaryOperator.fromSource("left_shift") } /
               ">>" { return BinaryOperator.fromSource("right_shift") } /
-              "&" { return BinaryOperator.fromSource("bitwise_and") } /
+              "&" !"&" { return BinaryOperator.fromSource("bitwise_and") } /
               "&^" { return BinaryOperator.fromSource("bit_clear") }
 disjunct_op = "||" { return BinaryOperator.fromSource("conditional_or") }
 conjunct_op = "&&" { return BinaryOperator.fromSource("conditional_and") }

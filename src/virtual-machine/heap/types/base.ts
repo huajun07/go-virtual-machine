@@ -1,3 +1,4 @@
+import { Process } from '../../executor/process'
 import { Heap } from '..'
 
 export abstract class BaseNode {
@@ -7,7 +8,18 @@ export abstract class BaseNode {
     this.heap = heap
     this.addr = addr
   }
+
   get_children(): number[] {
     return []
+  }
+
+  // Calls the select operator on this node.
+  select(_process: Process, _identifier: string): void {
+    throw new Error('Unreachable')
+  }
+
+  // Calls the method of this node, with arguments on the OS.
+  handleMethodCall(_process: Process, _identifier: string): void {
+    throw new Error('Unreachable')
   }
 }

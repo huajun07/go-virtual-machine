@@ -21,6 +21,13 @@ export abstract class Type {
 
   /** Returns a function that creates a default node of this type on the heap, and returns its address. */
   abstract defaultNodeCreator(): (heap: Heap) => number
+
+  /** Returns the type of selecting an identifier on the given type. */
+  select(identifier: string): Type {
+    throw new Error(
+      `undefined (type ${this} has no field or method ${identifier})`,
+    )
+  }
 }
 
 /** This type represents things that don't have an associated type, like statements. */
@@ -216,6 +223,39 @@ export class FunctionType extends Type {
   }
 }
 
+export class MethodType extends Type {
+  constructor(
+    public receiver: Type,
+    public parameters: ParameterType[],
+    public results: ReturnType,
+  ) {
+    super()
+  }
+
+  override isPrimitive(): boolean {
+    return false
+  }
+
+  override defaultNodeCreator(): (heap: Heap) => number {
+    return (heap) => FuncNode.default(heap).addr
+  }
+
+  override toString(): string {
+    const parametersString = TypeUtility.arrayToString(this.parameters)
+    return `func (${this.receiver}) (${parametersString}) ${this.results}`
+  }
+
+  override equals(t: Type): boolean {
+    return (
+      t instanceof MethodType &&
+      this.receiver.equals(t.receiver) &&
+      this.parameters.length === t.parameters.length &&
+      this.parameters.every((p, index) => p.equals(t.parameters[index])) &&
+      this.results.equals(t.results)
+    )
+  }
+}
+
 export class ChannelType extends Type {
   constructor(
     public element: Type,
@@ -291,6 +331,36 @@ export class ReturnType extends Type {
 
   isVoid(): boolean {
     return this.types.length === 0
+  }
+}
+
+export class PackageType extends Type {
+  constructor(public name: string, public types: Record<string, Type>) {
+    super()
+  }
+
+  get(identifier: string): Type {
+    if (!(identifier in this.types)) {
+      throw new Error(`undefined: ${this.name}.${identifier}`)
+    }
+    return this.types[identifier]
+  }
+
+  override isPrimitive(): boolean {
+    return false
+  }
+
+  override toString(): string {
+    return `package ${this.name}`
+  }
+
+  override equals(t: Type): boolean {
+    return t instanceof PackageType && t.name === this.name
+  }
+
+  override defaultNodeCreator(): (_heap: Heap) => number {
+    // Do nothing, as our implementation does not support user created packages.
+    throw new Error('Unreachable')
   }
 }
 
