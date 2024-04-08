@@ -6,6 +6,7 @@ import {
   LoadConstantInstruction,
   LoadDefaultInstruction,
   LoadFuncInstruction,
+  LoadSliceInstruction,
   ReturnInstruction,
 } from '../../compiler/instructions'
 import {
@@ -13,6 +14,7 @@ import {
   Float64Type,
   Int64Type,
   ReturnType,
+  SliceType,
   StringType,
   Type,
 } from '../../compiler/typing'
@@ -20,7 +22,7 @@ import {
 import { Token } from './base'
 import { BlockToken } from './block'
 import { ExpressionToken } from './expressions'
-import { ArrayTypeToken, FunctionTypeToken } from './type'
+import { ArrayTypeToken, FunctionTypeToken, SliceTypeToken } from './type'
 
 export abstract class LiteralToken extends Token {
   constructor(public value: number | string) {
@@ -167,16 +169,7 @@ export class LiteralValueToken extends Token {
       }
 
       for (const element of this.elements) {
-        if (element instanceof LiteralValueToken) {
-          element.compileWithType(compiler, type.element)
-        } else {
-          const actualType = element.compile(compiler)
-          if (!type.element.equals(actualType)) {
-            throw new Error(
-              `Cannot use ${actualType} as ${type.element} value in array literal.`,
-            )
-          }
-        }
+        this.compileElement(compiler, type.element, element, 'array literal')
       }
       for (let i = 0; i < type.length - this.elements.length; i++) {
         // Ran out of literal values, use the default values.
@@ -184,8 +177,39 @@ export class LiteralValueToken extends Token {
       }
 
       compiler.instructions.push(new LoadArrayInstruction(type.length))
+    } else if (type instanceof SliceType) {
+      for (const element of this.elements) {
+        this.compileElement(compiler, type.element, element, 'slice literal')
+      }
+      const sliceLength = this.elements.length
+      compiler.instructions.push(
+        new LoadArrayInstruction(sliceLength),
+        new LoadConstantInstruction(0, new Int64Type()),
+        new LoadConstantInstruction(sliceLength, new Int64Type()),
+        new LoadSliceInstruction(),
+      )
     } else {
       throw new Error('Parser Bug: Type of literal value is not supported.')
+    }
+  }
+
+  /** Compile an element and check that it matches the given type.
+   * typeName is the name of the structure (e.g. array literal) for the error message. */
+  private compileElement(
+    compiler: Compiler,
+    type: Type,
+    element: LiteralValueToken | ExpressionToken,
+    typeName: string,
+  ) {
+    if (element instanceof LiteralValueToken) {
+      element.compileWithType(compiler, type)
+    } else {
+      const actualType = element.compile(compiler)
+      if (!type.equals(actualType)) {
+        throw new Error(
+          `Cannot use ${actualType} as ${type} value in ${typeName}.`,
+        )
+      }
     }
   }
 }
@@ -200,6 +224,21 @@ export class ArrayLiteralToken extends Token {
 
   override compile(compiler: Compiler): Type {
     const type = this.arrayType.compile(compiler)
+    this.body.compileWithType(compiler, type)
+    return type
+  }
+}
+
+export class SliceLiteralToken extends Token {
+  constructor(
+    public sliceType: SliceTypeToken,
+    public body: LiteralValueToken,
+  ) {
+    super('slice_literal')
+  }
+
+  override compile(compiler: Compiler): Type {
+    const type = this.sliceType.compile(compiler)
     this.body.compileWithType(compiler, type)
     return type
   }

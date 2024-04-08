@@ -5,7 +5,7 @@ import {
   IntegerNode,
   StringNode,
 } from '../../heap/types/primitives'
-import { ArrayNode } from '../../heap/types/structures'
+import { ArrayNode, SliceNode } from '../../heap/types/structures'
 import { BoolType, Float64Type, Int64Type, StringType, Type } from '../typing'
 
 import { Instruction } from './base'
@@ -83,13 +83,53 @@ export class LoadArrayElementInstruction extends Instruction {
     const indexNode = new IntegerNode(process.heap, process.context.popOS())
     const index = indexNode.get_value()
     const array = new ArrayNode(process.heap, process.context.popOS())
-    if (index < 0 || index >= array.get_length()) {
+    if (index < 0 || index >= array.length()) {
       throw new Error(
-        `Index out of range [${index}] with length ${array.get_length()}`,
+        `Index out of range [${index}] with length ${array.length()}`,
       )
     }
     const element = array.get_child(index)
     process.context.pushOS(element)
+  }
+}
+/** Takes the index, then array from the heap, and loads the element at the index onto the OS.  */
+export class LoadSliceElementInstruction extends Instruction {
+  constructor() {
+    super('LDAE')
+  }
+
+  override execute(process: Process): void {
+    const index = process.context.popOSNode(IntegerNode).get_value()
+    const slice = process.context.popOSNode(SliceNode)
+    const array = slice.arrayNode()
+    if (index < 0 || index >= array.length()) {
+      throw new Error(
+        `Index out of range [${index}] with length ${array.length()}`,
+      )
+    }
+    const element = array.get_child(index)
+    process.context.pushOS(element)
+  }
+}
+
+/**
+ * Creates a slice on the heap, with the following arguments taken from the OS (bottom to top).
+ * - Array address
+ * - Start index of the slice.
+ * - End index of the slice.
+ * Pushes the address of the slice back onto the OS.
+ */
+export class LoadSliceInstruction extends Instruction {
+  constructor() {
+    super('LDS')
+  }
+
+  override execute(process: Process): void {
+    const end = process.context.popOSNode(IntegerNode).get_value()
+    const start = process.context.popOSNode(IntegerNode).get_value()
+    const array = process.context.popOS()
+    const sliceNode = SliceNode.create(array, start, end, process.heap)
+    process.context.pushOS(sliceNode.addr)
   }
 }
 
