@@ -25,6 +25,17 @@ describe('Channel Tests', () => {
     ).toEqual('hi\n1\n')
   })
 
+  test('Channels Operator Test', () => {
+    expect(
+      mainRunner(`
+      c1 := make(chan int)
+      go func() {
+          c1<- 5
+      }()
+      Println(4 + <- c1)`).output,
+    ).toEqual('9\n')
+  })
+
   test('Channels Select Case Test', () => {
     const strs = mainRunner(`
         c1 := make(chan int)
