@@ -360,7 +360,7 @@ UnaryExpr  = PrimaryExpr /
 // Operators are parsed into a function, that can be applied on operands to construct a token.
 rel_op      = "==" { return BinaryOperator.fromSource("equal") } /
               "!=" { return BinaryOperator.fromSource("not_equal") } /
-              "<" { return BinaryOperator.fromSource("less") } /
+              "<" !"-" { return BinaryOperator.fromSource("less") } /
               "<=" { return BinaryOperator.fromSource("less_or_equal") } /
               ">" { return BinaryOperator.fromSource("greater") } /
               ">=" { return BinaryOperator.fromSource("greater_or_equal") }
