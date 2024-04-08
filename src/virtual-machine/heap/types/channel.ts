@@ -45,7 +45,7 @@ export class ChannelNode extends BaseNode {
         // Buffer have entries
         const src = this.buffer().pop()
         this.heap.copy(req.io(), src)
-        if (this.wait_queue(false).is_empty()) {
+        if (!this.wait_queue(false).is_empty()) {
           // If wait queue contain send reqs should unblock since there is space
           const send_req = new ReqInfoNode(
             this.heap,

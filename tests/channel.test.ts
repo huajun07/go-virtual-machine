@@ -131,4 +131,21 @@ describe('Channel Tests', () => {
       expect(arr1[i]).toEqual(arr2[i])
     }
   })
+  test('Channels Buffer Test', () => {
+    expect(
+      mainRunner(`
+      c1 := make(chan int, 3)
+      for i:= 0; i < 3; i++ {
+        c1 <- 1
+      }
+      go func(){
+        c1<- 1
+        Println("done2")
+      }()
+      for i:=0;i < 100;i++ {
+      }
+      Println("done1")
+      <-c1`).output,
+    ).toEqual('done1\ndone2\n')
+  })
 })
