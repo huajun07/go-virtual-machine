@@ -78,14 +78,7 @@ export class DeferredCallInstruction extends Instruction {
     if (func instanceof FuncNode) {
       deferNode = DeferFuncNode.create(this.args, process)
     } else {
-      const receiver = func.receiver().addr
-      const identifier = func.identifier()
-      deferNode = DeferMethodNode.create(
-        receiver,
-        identifier,
-        this.args,
-        process,
-      )
+      deferNode = DeferMethodNode.create(this.args, process)
     }
     process.context.peekDeferStack().push(deferNode.addr)
   }
@@ -130,11 +123,17 @@ export class ReturnInstruction extends Instruction {
         process.context.pushRTS(deferNode.func().E())
         process.context.set_PC(deferNode.func().PC())
       } else {
+        const methodNode = deferNode.methodNode()
+        process.context.pushOS(methodNode.addr)
+        process.context.pushOS(methodNode.receiverAddr())
         while (deferNode.stack().sz()) {
           process.context.pushOS(deferNode.stack().pop())
         }
-        const receiver = deferNode.receiver()
-        receiver.handleMethodCall(process, deferNode.identifier())
+        methodNode.receiver().handleMethodCall(process, methodNode.identifier())
+
+        // Since methods are hardcoded and don't behave like functions, they don't jump back to an address.
+        // Manually decrement PC here so that the next executor step will return to this instruction.
+        process.context.set_PC(process.context.PC() - 1)
       }
 
       // Return here to account for this as one instruction,
