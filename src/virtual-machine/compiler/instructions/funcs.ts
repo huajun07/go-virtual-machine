@@ -74,16 +74,20 @@ export class DeferredCallInstruction extends Instruction {
     if (!(func instanceof FuncNode) && !(func instanceof MethodNode))
       throw Error('Stack does not contain closure')
 
+    let deferNode
     if (func instanceof FuncNode) {
-      process.context.pushRTS(
-        CallRefNode.create(process.context.PC(), process.heap).addr,
-      )
-      process.context.pushRTS(func.E())
-      process.context.set_PC(func.PC())
+      deferNode = DeferFuncNode.create(this.args, process)
     } else {
-      const receiver = func.receiver()
-      receiver.handleMethodCall(process, func.identifier())
+      const receiver = func.receiver().addr
+      const identifier = func.identifier()
+      deferNode = DeferMethodNode.create(
+        receiver,
+        identifier,
+        this.args,
+        process,
+      )
     }
+    process.context.peekDeferStack().push(deferNode.addr)
   }
 }
 
@@ -97,6 +101,11 @@ export class ReturnInstruction extends Instruction {
   }
 
   override execute(process: Process): void {
+    // Clear remnant environment nodes on the RTS (e.g. from blocks).
+    while (!(process.context.peekRTS() instanceof CallRefNode)) {
+      process.context.popRTS()
+    }
+
     const defers = process.context.peekDeferStack()
     if (defers.sz()) {
       // There are still deferred calls to be carried out.
@@ -116,7 +125,7 @@ export class ReturnInstruction extends Instruction {
         }
         process.context.pushDeferStack()
         process.context.pushRTS(
-          CallRefNode.create(process.context.PC(), process.heap).addr,
+          CallRefNode.create(process.context.PC() - 1, process.heap).addr,
         )
         process.context.pushRTS(deferNode.func().E())
         process.context.set_PC(deferNode.func().PC())
@@ -135,11 +144,9 @@ export class ReturnInstruction extends Instruction {
       process.context.popDeferStack()
     }
 
-    let val = null
-    do {
-      val = process.heap.get_value(process.context.popRTS())
-    } while (!(val instanceof CallRefNode))
-    process.context.set_PC(val.PC())
+    const callRef = process.heap.get_value(process.context.popRTS())
+    if (!(callRef instanceof CallRefNode)) throw new Error('Unreachable')
+    process.context.set_PC(callRef.PC())
   }
 }
 

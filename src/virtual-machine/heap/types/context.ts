@@ -3,22 +3,21 @@ import { Heap, TAG } from '..'
 import { ArrayNode } from './array'
 import { BaseNode } from './base'
 import { EnvironmentNode } from './environment'
+import { CallRefNode } from './func'
 import { PrimitiveNode } from './primitives'
 import { StackNode } from './stack'
 
 export class ContextNode extends BaseNode {
-  // [metadata | blocked?] [PC] [OS] [E] [RTS] [WaitLists] [DeferStack]
+  // [metadata | blocked?] [PC] [OS] [RTS] [WaitLists] [DeferStack]
   static create(heap: Heap) {
     const addr = heap.allocate(6)
     heap.set_tag(addr, TAG.CONTEXT)
     heap.memory.set_number(0, addr + 1)
     heap.temp_push(addr)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 2)
-    heap.memory.set_number(-1, addr + 3)
-    heap.memory.set_word(StackNode.create(heap).addr, addr + 4)
-    heap.memory.set_number(-1, addr + 5)
-    heap.memory.set_word(StackNode.create(heap).addr, addr + 6)
-    heap.memory.set_word(StackNode.create(heap).addr, addr + 7)
+    heap.memory.set_word(StackNode.create(heap).addr, addr + 3)
+    heap.memory.set_number(-1, addr + 4)
+    heap.memory.set_word(StackNode.create(heap).addr, addr + 5)
     heap.temp_pop()
     return new ContextNode(heap, addr)
   }
@@ -43,19 +42,16 @@ export class ContextNode extends BaseNode {
     return new StackNode(this.heap, this.heap.memory.get_word(this.addr + 2))
   }
 
-  E() {
-    return new EnvironmentNode(
-      this.heap,
-      this.heap.memory.get_word(this.addr + 3),
-    )
+  E(): EnvironmentNode {
+    return this.heap.get_value(this.RTS().peek()) as EnvironmentNode
   }
 
   set_E(addr: number) {
-    this.heap.memory.set_word(addr, this.addr + 3)
+    this.pushRTS(addr)
   }
 
   RTS() {
-    return new StackNode(this.heap, this.heap.memory.get_word(this.addr + 4))
+    return new StackNode(this.heap, this.heap.memory.get_word(this.addr + 3))
   }
 
   incr_PC() {
@@ -102,15 +98,18 @@ export class ContextNode extends BaseNode {
   }
 
   pushRTS(addr: number) {
-    this.RTS().push(this.heap.memory.get_word(this.addr + 3))
-    this.heap.memory.set_word(addr, this.addr + 3)
+    this.RTS().push(addr)
   }
 
-  popRTS() {
+  popRTS(): number {
     const old_E = this.RTS().pop()
-    if (!old_E) throw Error('RTS Stack Empty')
-    this.heap.memory.set_word(old_E, this.addr + 3)
     return old_E
+  }
+
+  peekRTS(): EnvironmentNode | CallRefNode {
+    return this.heap.get_value(this.RTS().peek()) as
+      | EnvironmentNode
+      | CallRefNode
   }
 
   printRTS() {
@@ -133,16 +132,16 @@ export class ContextNode extends BaseNode {
   }
 
   set_waitlist(addr: number) {
-    this.heap.memory.set_number(addr, this.addr + 5)
+    this.heap.memory.set_number(addr, this.addr + 4)
   }
 
   waitlist() {
-    return new ArrayNode(this.heap, this.heap.memory.get_number(this.addr + 5))
+    return new ArrayNode(this.heap, this.heap.memory.get_number(this.addr + 4))
   }
 
   deferStack(): StackNode {
     return this.heap.get_value(
-      this.heap.memory.get_number(this.addr + 7),
+      this.heap.memory.get_number(this.addr + 5),
     ) as StackNode
   }
 
@@ -166,8 +165,6 @@ export class ContextNode extends BaseNode {
       this.waitlist().addr,
       this.deferStack().addr,
     ]
-    const E_addr = this.heap.memory.get_word(this.addr + 3)
-    if (E_addr !== -1) children.push(E_addr)
     return children
   }
 }

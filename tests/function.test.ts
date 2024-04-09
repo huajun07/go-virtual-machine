@@ -163,4 +163,10 @@ describe('Function Execution tests', () => {
       ).output,
     ).toEqual('10\n')
   })
+
+  test('Calling a function twice.', () => {
+    expect(mainRunner('f := func(){ Println(1) }; f(); f()').output).toEqual(
+      '1\n1\n',
+    )
+  })
 })

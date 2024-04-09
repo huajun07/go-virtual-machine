@@ -2,6 +2,8 @@ import { Compiler } from '../../compiler'
 import {
   BinaryInstruction,
   BlockInstruction,
+  CallInstruction,
+  DeferredCallInstruction,
   DoneInstruction,
   ExitBlockInstruction,
   ForkInstruction,
@@ -357,6 +359,9 @@ export class DeferStatementToken extends Token {
     }
 
     this.expression.compile(compiler)
+    const call = compiler.instructions[compiler.instructions.length - 1]
+    compiler.instructions[compiler.instructions.length - 1] =
+      DeferredCallInstruction.fromCallInstruction(call as CallInstruction)
 
     return new NoType()
   }
