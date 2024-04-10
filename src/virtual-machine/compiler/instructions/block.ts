@@ -24,27 +24,10 @@ export class BlockInstruction extends Instruction {
       const T = this.frame[i]
       new_frame.set_idx(T.defaultNodeCreator()(process.heap), i)
     }
-
-    if (!(this instanceof FuncBlockInstruction)) {
-      process.context.pushRTS(
-        process.context.E().extend_env(new_frame.addr, this.for_block).addr,
-      )
-    } else {
-      // This is to not trigger the exit scope condition of the closure env
-      process.context.set_E(
-        process.context.E().extend_env(new_frame.addr, this.for_block).addr,
-      )
-    }
+    process.context.pushRTS(
+      process.context.E().extend_env(new_frame.addr, this.for_block).addr,
+    )
     process.heap.temp_pop()
-    if (this instanceof FuncBlockInstruction) {
-      for (let i = this.args - 1; i >= 0; i--) {
-        const src = process.context.popOS()
-        const dst = new_frame.get_idx(i)
-        process.heap.copy(dst, src)
-      }
-      // Pop function in stack
-      process.context.popOS()
-    }
   }
 }
 export class FuncBlockInstruction extends BlockInstruction {
@@ -53,6 +36,16 @@ export class FuncBlockInstruction extends BlockInstruction {
     super(false)
     this.tag = 'FUNC_BLOCK'
     this.args = args
+  }
+  override execute(process: Process): void {
+    super.execute(process)
+    for (let i = this.args - 1; i >= 0; i--) {
+      const src = process.context.popOS()
+      const dst = process.context.E().get_frame().get_idx(i)
+      process.heap.copy(dst, src)
+    }
+    // Pop function in stack
+    process.context.popOS()
   }
 }
 
