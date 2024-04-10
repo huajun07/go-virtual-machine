@@ -56,6 +56,7 @@ export class MethodNode extends BaseNode {
     const addr = heap.allocate(3)
     heap.set_tag(addr, TAG.METHOD)
     heap.temp_push(addr)
+    heap.memory.set_number(-1, addr + 2)
     heap.memory.set_word(receiver, addr + 1)
     heap.memory.set_word(StringNode.create(identifier, heap).addr, addr + 2)
     heap.temp_pop()
@@ -94,6 +95,7 @@ export class DeferFuncNode extends BaseNode {
     const addr = process.heap.allocate(3)
     process.heap.temp_push(addr)
     process.heap.set_tag(addr, TAG.DEFER_FUNC)
+    process.heap.memory.set_word(-1, addr + 2)
 
     const stack = StackNode.create(process.heap)
     process.heap.memory.set_word(stack.addr, addr + 2)
@@ -141,6 +143,7 @@ export class DeferMethodNode extends BaseNode {
     const addr = process.heap.allocate(3)
     process.heap.set_tag(addr, TAG.DEFER_METHOD)
     process.heap.temp_push(addr)
+    process.heap.memory.set_word(-1, addr + 2)
 
     const stack = StackNode.create(process.heap)
     process.heap.memory.set_word(stack.addr, addr + 2)

@@ -26,11 +26,10 @@ export class FrameNode extends BaseNode {
 
 export class EnvironmentNode extends BaseNode {
   static create(frames: number[], for_block: boolean, heap: Heap) {
-    const addr = heap.allocate(frames.length + 2)
+    const addr = heap.allocate(frames.length + 1)
     heap.set_tag(addr, TAG.ENVIRONMENT)
     heap.memory.set_bits(for_block ? 1 : 0, addr, 1, 16)
-    // TODO: Add Defer Stuff
-    heap.set_children(addr, frames, 2)
+    heap.set_children(addr, frames, 1)
     return new EnvironmentNode(heap, addr)
   }
 
@@ -41,7 +40,7 @@ export class EnvironmentNode extends BaseNode {
   }
 
   get_frame(index: number) {
-    return new FrameNode(this.heap, this.heap.get_child(this.addr + 2, index))
+    return new FrameNode(this.heap, this.heap.get_child(this.addr + 1, index))
   }
 
   get_var(frame_idx: number, var_idx: number) {
@@ -53,11 +52,10 @@ export class EnvironmentNode extends BaseNode {
   }
 
   get_frames(): number[] {
-    return this.heap.get_children(this.addr, 2)
+    return this.heap.get_children(this.addr, 1)
   }
 
   override get_children(): number[] {
-    // TODO: When defer is added this needs to be 1 instead
-    return this.heap.get_children(this.addr, 2)
+    return this.heap.get_children(this.addr, 1)
   }
 }

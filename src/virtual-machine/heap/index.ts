@@ -354,7 +354,8 @@ export class Heap {
     if (addr === -1) return
     if (this.is_marked(addr)) return
     this.set_mark(addr, true)
-    const children = this.get_value(addr).get_children()
+    const val = this.get_value(addr)
+    const children = val.get_children()
     for (const child of children) {
       this.mark(child)
     }
@@ -362,6 +363,7 @@ export class Heap {
 
   mark_and_sweep() {
     console.log('CLEAN')
+    // console.trace()
     const roots: number[] = [
       this.contexts.addr,
       this.temp_roots.addr,

@@ -98,7 +98,9 @@ export class ContextNode extends BaseNode {
   }
 
   pushRTS(addr: number) {
+    this.heap.temp_push(addr)
     this.RTS().push(addr)
+    this.heap.temp_pop()
   }
 
   popRTS(): number {
@@ -147,7 +149,9 @@ export class ContextNode extends BaseNode {
 
   pushDeferStack(): void {
     const stack = StackNode.create(this.heap)
+    this.heap.temp_push(stack.addr)
     this.deferStack().push(stack.addr)
+    this.heap.temp_pop()
   }
 
   peekDeferStack(): StackNode {

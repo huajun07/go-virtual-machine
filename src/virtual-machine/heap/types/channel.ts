@@ -11,6 +11,7 @@ export class ChannelNode extends BaseNode {
     heap.set_tag(addr, TAG.CHANNEL)
     heap.memory.set_number(buffer, addr + 1)
     heap.temp_push(addr)
+    for (let i = 2; i <= 4; i++) heap.memory.set_number(-1, addr + i)
     const buffer_queue = QueueNode.create(heap)
     heap.memory.set_word(buffer_queue.addr, addr + 2)
     const recv_wait_queue = LinkedListNode.create(heap)

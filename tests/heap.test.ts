@@ -36,7 +36,7 @@ describe('Heap Tests', () => {
     expect(() => FrameNode.create(0, heap)).toThrow(Error)
   })
   test('Mark And Sweep 2', () => {
-    const heap = new Heap(52)
+    const heap = new Heap(50)
     const context = new ContextNode(heap, heap.contexts.peek())
     const base_frame = FrameNode.create(0, heap)
     const base_env = EnvironmentNode.create([base_frame.addr], false, heap)

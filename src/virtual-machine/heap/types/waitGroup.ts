@@ -18,6 +18,7 @@ export class WaitGroupNode extends BaseNode {
     const addr = heap.allocate(3)
     heap.set_tag(addr, TAG.WAIT_GROUP)
     heap.temp_push(addr)
+    heap.memory.set_number(-1, addr + 2)
     heap.memory.set_number(0, addr + 1)
     heap.memory.set_word(QueueNode.create(heap).addr, addr + 2)
     heap.temp_pop()

@@ -19,12 +19,12 @@ export class Process {
     this.contexts = this.heap.contexts
     this.context = new ContextNode(this.heap, this.contexts.peek())
     this.stdout = ''
+    console.log(this.heap.mem_left)
     const base_frame = FrameNode.create(0, this.heap)
     const base_env = EnvironmentNode.create([base_frame.addr], false, this.heap)
     this.context.set_E(base_env.addr)
-    const randomSeed = 'hi'
-    //  Math.random().toString(36).substring(2)
-    // console.log('Random Seed', randomSeed)
+    const randomSeed = Math.random().toString(36).substring(2)
+    console.log('Random Seed', randomSeed)
     this.generator = seedrandom.default(randomSeed)
   }
 
@@ -44,7 +44,6 @@ export class Process {
         const instr = this.instructions[this.context.incr_PC()]
         // console.log('ctx:', this.context.addr)
         // console.log('Instr:', instr, this.context.PC() - 1)
-        // console.log(this.heap.mem_left)
         instr.execute(this)
         // this.context.printOS()
         // this.context.printRTS()
