@@ -96,6 +96,10 @@ export class ChannelNode extends BaseNode {
       this.wait_queue(false).addr,
     ]
   }
+
+  override toString(): string {
+    return 'CHANNEL ' + this.addr.toString()
+  }
 }
 
 export class ReqInfoNode extends BaseNode {
@@ -150,6 +154,15 @@ export class ReqInfoNode extends BaseNode {
   override get_children(): number[] {
     return [this.context().addr, this.io()]
   }
+
+  override toString(): string {
+    return (
+      'CHAN ' +
+      (this.is_recv() ? 'RECV' : 'SEND') +
+      '\n' +
+      this.heap.get_value(this.io()).toString()
+    )
+  }
 }
 
 export class ChannelReqNode extends BaseNode {
@@ -177,5 +190,9 @@ export class ChannelReqNode extends BaseNode {
 
   override get_children(): number[] {
     return [this.channel().addr, this.req().addr]
+  }
+
+  override toString() {
+    return this.channel().toString() + '\n' + this.req().toString()
   }
 }

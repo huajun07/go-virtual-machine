@@ -1,20 +1,23 @@
 import { Process } from '../../executor/process'
 import { FrameNode } from '../../heap/types/environment'
+import { FuncNode } from '../../heap/types/func'
 import { Type } from '../typing'
 
 import { Instruction } from './base'
 
 export class BlockInstruction extends Instruction {
   frame: Type[] = []
-  for_block: boolean
-
-  constructor(for_block = false) {
+  identifiers: string[] = []
+  constructor(public name: string, public for_block = false) {
     super('BLOCK')
-    this.for_block = for_block
   }
 
   set_frame(frame: Type[]) {
     this.frame = [...frame]
+  }
+
+  set_identifiers(identifiers: string[]) {
+    this.identifiers = [...identifiers]
   }
 
   override execute(process: Process): void {
@@ -24,18 +27,21 @@ export class BlockInstruction extends Instruction {
       const T = this.frame[i]
       new_frame.set_idx(T.defaultNodeCreator()(process.heap), i)
     }
-    process.context.pushRTS(
-      process.context.E().extend_env(new_frame.addr, this.for_block).addr,
-    )
+    const new_env = process.context
+      .E()
+      .extend_env(new_frame.addr, this.for_block).addr
+    process.context.pushRTS(new_env)
     process.heap.temp_pop()
+
+    process.debugger.env_alloc_map.set(new_env, process.runtime_count)
+    process.debugger.env_name_map.set(new_env, this.name)
+    process.debugger.identifier_map.set(new_env, this.identifiers)
   }
 }
 export class FuncBlockInstruction extends BlockInstruction {
-  args: number
-  constructor(args: number) {
-    super(false)
+  constructor(public args: number) {
+    super('ANONY FUNC', false)
     this.tag = 'FUNC_BLOCK'
-    this.args = args
   }
   override execute(process: Process): void {
     super.execute(process)
@@ -45,7 +51,15 @@ export class FuncBlockInstruction extends BlockInstruction {
       process.heap.copy(dst, src)
     }
     // Pop function in stack
-    process.context.popOS()
+    const id = new FuncNode(process.heap, process.context.popOS()).id()
+    if (id) {
+      const identifiers = process.debugger.identifier_map.get(id.E())
+      if (identifiers)
+        process.debugger.env_name_map.set(
+          process.context.E().addr,
+          identifiers[id.idx()],
+        )
+    }
   }
 }
 

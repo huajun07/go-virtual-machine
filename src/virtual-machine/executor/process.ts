@@ -6,6 +6,13 @@ import { ContextNode } from '../heap/types/context'
 import { EnvironmentNode, FrameNode } from '../heap/types/environment'
 import { QueueNode } from '../heap/types/queue'
 
+import { ContextInfo, Debugger } from './debugger'
+
+type ProcessOutput = {
+  stdout: string
+  visual_data: ContextInfo[][]
+}
+
 export class Process {
   instructions: Instruction[]
   heap: Heap
@@ -13,8 +20,15 @@ export class Process {
   contexts: QueueNode
   stdout: string
   generator: seedrandom.PRNG
-  constructor(instrs: Instruction[], heapsize: number) {
-    this.instructions = instrs
+  debug_mode: boolean
+  debugger: Debugger
+  runtime_count = 0
+  constructor(
+    instructions: Instruction[],
+    heapsize: number,
+    visualmode = false,
+  ) {
+    this.instructions = instructions
     this.heap = new Heap(heapsize)
     this.contexts = this.heap.contexts
     this.context = new ContextNode(this.heap, this.contexts.peek())
@@ -31,12 +45,20 @@ export class Process {
     const randomSeed = Math.random().toString(36).substring(2)
     console.log('Random Seed', randomSeed)
     this.generator = seedrandom.default(randomSeed)
+
+    this.debug_mode = visualmode
+    this.debugger = new Debugger(this.heap, this.instructions)
+    this.debugger.context_id_map.set(
+      this.context.addr,
+      this.debugger.context_id++,
+    )
   }
 
-  start() {
+  start(): ProcessOutput {
     const time_quantum = 30
-    let runtime_count = 0
+    this.runtime_count = 0
     const main_context = new ContextNode(this.heap, this.contexts.peek())
+    if (this.debug_mode) this.debugger.generate_state()
     while (this.contexts.sz()) {
       this.context = new ContextNode(this.heap, this.contexts.peek())
       let cur_time = 0
@@ -53,19 +75,23 @@ export class Process {
         // this.context.printOS()
         // this.context.printRTS()
         // this.context.heap.print_freelist()
-        runtime_count += 1
+        this.runtime_count += 1
         cur_time += 1
+        if (this.debug_mode) this.debugger.generate_state()
         if (this.context.is_blocked()) break
       }
       this.contexts.pop()
       // console.log('%c SWITCH!', 'background: #F7FF00; color: #FF0000')
-      if (runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
+      if (this.runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
       // console.log('PC', this.contexts.get_vals())
     }
     if (main_context.is_blocked())
       throw Error('Execution error: all threads are blocked!')
 
-    return this.stdout
+    return {
+      stdout: this.stdout,
+      visual_data: this.debug_mode ? this.debugger.data : [],
+    }
   }
 
   print(string: string) {

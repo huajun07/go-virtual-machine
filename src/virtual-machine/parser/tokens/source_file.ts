@@ -21,7 +21,7 @@ export class SourceFileToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    const global_block = new BlockInstruction()
+    const global_block = new BlockInstruction('GLOBAL BLOCK')
     compiler.instructions.push(global_block)
     compiler.context.push_env()
     compiler.type_environment = compiler.type_environment.extend()
@@ -36,6 +36,7 @@ export class SourceFileToken extends Token {
     global_block.set_frame(
       vars.map((name) => compiler.type_environment.get(name)),
     )
+    global_block.set_identifiers(vars)
     return new NoType()
   }
 }

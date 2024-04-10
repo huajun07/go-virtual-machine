@@ -27,13 +27,14 @@ export const LoaderContext = createContext<
 const COOKIE_NAME = 'code_value'
 
 export const Main = () => {
-  const { instructions, setInstructions, currentStep, setStep } =
-    useExecutionStore((state) => ({
-      instructions: state.instructions,
-      setInstructions: state.setInstructions,
+  const { setVisualData, currentStep, setStep, data } = useExecutionStore(
+    (state) => ({
+      data: state.data,
+      setVisualData: state.setVisualData,
       currentStep: state.currentStep,
       setStep: state.setStep,
-    }))
+    }),
+  )
   const [isPlaying, setPlaying] = useState(false)
   const [wasPlaying, setWasPlaying] = useState(false)
   const [speed, setSpeed] = useState<number>(1)
@@ -41,6 +42,7 @@ export const Main = () => {
   const [output, setOutput] = useState<string | null>(null)
   const [code, setCode] = useState('')
   const [heapsize, setHeapsize] = useState(2048)
+  const [visualMode, setVisualMode] = useState(false)
 
   useEffect(() => {
     // Get the value from the cookie
@@ -80,10 +82,10 @@ export const Main = () => {
   useInterval(
     () => {
       // sanity check
-      if (currentStep >= 0 && currentStep < instructions.length) {
+      if (currentStep >= 0 && currentStep < data.length) {
         setStep(currentStep + 1)
       }
-      if (currentStep >= instructions.length - 1) {
+      if (currentStep >= data.length - 1) {
         // End of execution
         setPlaying(false)
       }
@@ -93,11 +95,11 @@ export const Main = () => {
 
   const moveStep = (forward: boolean) => {
     const newStep = Math.min(
-      instructions.length,
+      data.length,
       Math.max(0, (forward ? 1 : -1) * speed + currentStep),
     )
     setStep(newStep)
-    if (newStep >= instructions.length) {
+    if (newStep >= data.length) {
       setPlaying(false)
     }
   }
@@ -113,18 +115,18 @@ export const Main = () => {
     // Retrieve instructions from endpoint
     setOutput('Running your code...')
     const {
-      instructions: newInstructions,
       errorMessage,
       output: newOutput,
-    } = runCode(code, heapsize)
-    if (!newInstructions || errorMessage) {
+      visualData,
+    } = runCode(code, heapsize, visualMode)
+    if (errorMessage) {
       setLoading(false)
       makeToast(errorMessage)
       return
     }
 
     // Set instructions and update components to start playing mode
-    setInstructions(newInstructions)
+    setVisualData(visualData)
     setOutput(newOutput || '')
     setPlaying(true)
     setWasPlaying(false)
@@ -156,12 +158,16 @@ export const Main = () => {
         </Center>
       ) : null}
       <Flex>
-        <Box w="50%" borderRightWidth="1px">
+        <Box w="30%" borderRightWidth="1px">
           <CodeIDEButtons
             toggleMode={startRunning}
             isDisabled={loading}
             heapsize={heapsize}
             setHeapsize={setHeapsize}
+            toggleVisual={() => {
+              setVisualMode(!visualMode)
+            }}
+            visual={visualMode}
           />
           <CodeIDE
             code={code}
@@ -179,15 +185,15 @@ export const Main = () => {
               </Flex>
               <Box>
                 <ControlBar
-                  length={instructions.length}
+                  length={data.length}
                   playing={isPlaying}
                   curSpeed={speed}
                   setSpeed={setSpeed}
                   togglePlaying={() => {
-                    if (isPlaying || currentStep < instructions.length)
+                    if (isPlaying || currentStep < data.length)
                       setPlaying(!isPlaying)
                   }}
-                  disabled={instructions.length === 0}
+                  disabled={data.length === 0}
                   wasPlaying={wasPlaying}
                   setWasPlaying={setWasPlaying}
                   moveStep={moveStep}

@@ -7,6 +7,7 @@ import {
   DeferFuncNode,
   DeferMethodNode,
   FuncNode,
+  IdentifierNode,
   MethodNode,
 } from './types/func'
 import { LinkedListEntryNode, LinkedListNode } from './types/linkedlist'
@@ -50,6 +51,7 @@ export enum TAG {
   METHOD = 23,
   DEFER_FUNC = 24,
   DEFER_METHOD = 25,
+  ID = 26,
 }
 
 export const word_size = 4
@@ -63,6 +65,7 @@ export class Heap {
   max_level: number
   temp_roots: StackNode
   contexts: QueueNode
+  blocked_contexts: LinkedListNode
   mem_left: number
   temp = -1
   constructor(size: number) {
@@ -84,6 +87,7 @@ export class Heap {
     this.UNASSIGNED = UnassignedNode.create(this)
     this.temp_roots = StackNode.create(this)
     this.contexts = QueueNode.create(this)
+    this.blocked_contexts = LinkedListNode.create(this)
     const context = ContextNode.create(this)
     this.contexts.push(context.addr)
   }
@@ -143,6 +147,8 @@ export class Heap {
         return new DeferFuncNode(this, addr)
       case TAG.DEFER_METHOD:
         return new DeferMethodNode(this, addr)
+      case TAG.ID:
+        return new IdentifierNode(this, addr)
       default:
         // return new UnassignedNode(this, addr)
         throw Error('Unknown Data Type')
@@ -366,6 +372,7 @@ export class Heap {
     // console.trace()
     const roots: number[] = [
       this.contexts.addr,
+      this.blocked_contexts.addr,
       this.temp_roots.addr,
       this.UNASSIGNED.addr,
       this.temp,
