@@ -322,7 +322,7 @@ export class Heap {
   }
 
   set_end_child(addr: number, index: number) {
-    this.memory.set_word(-1, addr + index)
+    this.memory.set_number(-1, addr + index)
   }
 
   set_children(addr: number, children: number[], offset = 1) {

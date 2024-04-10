@@ -21,7 +21,12 @@ export class Process {
     this.stdout = ''
     console.log(this.heap.mem_left)
     const base_frame = FrameNode.create(0, this.heap)
-    const base_env = EnvironmentNode.create([base_frame.addr], false, this.heap)
+    const base_env = EnvironmentNode.create(
+      base_frame.addr,
+      [],
+      false,
+      this.heap,
+    )
     this.context.set_E(base_env.addr)
     const randomSeed = Math.random().toString(36).substring(2)
     console.log('Random Seed', randomSeed)
