@@ -12,15 +12,16 @@ class CompileEnvironment {
   }
 
   find_var(name: string) {
-    let frame_idx = this.frames.length - 1
-    while (frame_idx >= 0) {
-      let var_idx = this.frames[frame_idx].length - 1
+    let frame_idx = 0
+    const frame_sz = this.frames.length - 1
+    while (frame_sz >= frame_idx) {
+      let var_idx = this.frames[frame_sz - frame_idx].length - 1
       while (var_idx >= 0) {
-        if (this.frames[frame_idx][var_idx] === name)
+        if (this.frames[frame_sz - frame_idx][var_idx] === name)
           return [frame_idx, var_idx]
         var_idx--
       }
-      frame_idx--
+      frame_idx++
     }
     throw Error('Unable to find variable: ' + name)
   }
@@ -31,7 +32,7 @@ class CompileEnvironment {
       if (var_name === name) throw Error('Variable already declared')
     }
     const new_len = this.frames[frame_idx].push(name)
-    return [frame_idx, new_len - 1]
+    return [0, new_len - 1]
   }
 
   get_frame() {

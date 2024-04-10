@@ -120,10 +120,14 @@ export class ContextNode extends BaseNode {
       const addr = this.RTS().get_idx(i)
       const val = addr === -1 ? -1 : this.heap.get_value(addr)
       //   console.log(val)
-      console.log(val, val === -1 ? -1 : val.get_children())
+      let for_block = false
+      if (val instanceof EnvironmentNode && val.if_for_block()) for_block = true
+      console.log(
+        val,
+        val === -1 ? -1 : val.get_children().slice(1),
+        for_block ? 'for block' : '',
+      )
     }
-    const val = this.E()
-    console.log('E:', val, val.get_children())
   }
 
   fork() {

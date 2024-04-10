@@ -41,8 +41,7 @@ export class ExitLoopInstruction extends JumpInstruction {
   }
 
   override execute(process: Process): void {
-    while (process.context.E().if_for_block()) {
-      // TODO: Implement defer in popRTS
+    while (!process.context.E().if_for_block()) {
       process.context.popRTS()
     }
     process.context.set_PC(this.addr)

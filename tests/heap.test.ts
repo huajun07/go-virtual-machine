@@ -39,7 +39,7 @@ describe('Heap Tests', () => {
     const heap = new Heap(50)
     const context = new ContextNode(heap, heap.contexts.peek())
     const base_frame = FrameNode.create(0, heap)
-    const base_env = EnvironmentNode.create([base_frame.addr], false, heap)
+    const base_env = EnvironmentNode.create(base_frame.addr, [], false, heap)
     context.set_E(base_env.addr)
     heap.allocate(2)
     heap.allocate(2)
