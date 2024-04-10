@@ -7,6 +7,7 @@ export class StackNode extends BaseNode {
     const addr = heap.allocate(2)
     heap.set_tag(addr, TAG.STACK)
     if (heap.temp_roots) heap.temp_push(addr)
+    heap.memory.set_number(-1, addr + 1)
     const list = StackListNode.create(heap)
     if (heap.temp_roots) heap.temp_pop()
     heap.memory.set_word(list.addr, addr + 1)
@@ -41,7 +42,7 @@ export class StackNode extends BaseNode {
     return this.list().get_sz()
   }
   override get_children(): number[] {
-    return [this.heap.memory.get_word(this.addr + 1)]
+    return [this.list().addr]
   }
 }
 

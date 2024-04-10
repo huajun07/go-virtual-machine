@@ -91,6 +91,6 @@ describe('Wait Group Execution', () => {
       Println(count)
     }
     `
-    expect(runCode(code, 65536).output).toEqual('1000\n')
+    expect(runCode(code, 2048).output).toEqual('1000\n')
   })
 })

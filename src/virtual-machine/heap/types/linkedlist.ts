@@ -7,6 +7,7 @@ export class LinkedListNode extends BaseNode {
     const addr = heap.allocate(3)
     heap.set_tag(addr, TAG.LINKED_LIST)
     heap.temp_push(addr)
+    for (let i = 1; i <= 2; i++) heap.memory.set_number(-1, addr + i)
     const head = LinkedListEntryNode.create(-1, heap)
     heap.memory.set_number(head.addr, addr + 1)
     const tail = LinkedListEntryNode.create(-1, heap)

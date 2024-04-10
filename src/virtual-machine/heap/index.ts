@@ -2,7 +2,13 @@ import { ArrayNode, SliceNode } from './types/array'
 import { ChannelNode, ChannelReqNode, ReqInfoNode } from './types/channel'
 import { ContextNode } from './types/context'
 import { EnvironmentNode, FrameNode } from './types/environment'
-import { CallRefNode, FuncNode, MethodNode } from './types/func'
+import {
+  CallRefNode,
+  DeferFuncNode,
+  DeferMethodNode,
+  FuncNode,
+  MethodNode,
+} from './types/func'
 import { LinkedListEntryNode, LinkedListNode } from './types/linkedlist'
 import {
   BoolNode,
@@ -42,6 +48,8 @@ export enum TAG {
   SLICE = 21,
   WAIT_GROUP = 22,
   METHOD = 23,
+  DEFER_FUNC = 24,
+  DEFER_METHOD = 25,
 }
 
 export const word_size = 4
@@ -131,6 +139,10 @@ export class Heap {
         return new WaitGroupNode(this, addr)
       case TAG.METHOD:
         return new MethodNode(this, addr)
+      case TAG.DEFER_FUNC:
+        return new DeferFuncNode(this, addr)
+      case TAG.DEFER_METHOD:
+        return new DeferMethodNode(this, addr)
       default:
         // return new UnassignedNode(this, addr)
         throw Error('Unknown Data Type')
@@ -342,7 +354,8 @@ export class Heap {
     if (addr === -1) return
     if (this.is_marked(addr)) return
     this.set_mark(addr, true)
-    const children = this.get_value(addr).get_children()
+    const val = this.get_value(addr)
+    const children = val.get_children()
     for (const child of children) {
       this.mark(child)
     }
@@ -350,6 +363,7 @@ export class Heap {
 
   mark_and_sweep() {
     console.log('CLEAN')
+    // console.trace()
     const roots: number[] = [
       this.contexts.addr,
       this.temp_roots.addr,
