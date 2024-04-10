@@ -43,6 +43,6 @@ describe('Defer Execution', () => {
       Println(count)
     }
     `
-    expect(runCode(code, 131072).output).toEqual('1000\n')
+    expect(runCode(code, 2048).output).toEqual('1000\n')
   })
 })
