@@ -7,12 +7,11 @@ import { StackNode } from './stack'
 
 export class FuncNode extends BaseNode {
   static create(PC: number, env: number, heap: Heap) {
-    const addr = heap.allocate(4)
+    const addr = heap.allocate(3)
 
     heap.set_tag(addr, TAG.FUNC)
     heap.memory.set_word(PC, addr + 1)
     heap.memory.set_word(env, addr + 2)
-    heap.memory.set_number(-1, addr + 3)
     return new FuncNode(heap, addr)
   }
 
@@ -28,46 +27,12 @@ export class FuncNode extends BaseNode {
     return this.heap.memory.get_word(this.addr + 2)
   }
 
-  id() {
-    if (this.heap.memory.get_number(this.addr + 3) === -1) return undefined
-    return new IdentifierNode(
-      this.heap,
-      this.heap.memory.get_number(this.addr + 3),
-    )
-  }
-
-  set_id(val: number) {
-    this.heap.memory.set_word(val, this.addr + 3)
-  }
-
   override get_children(): number[] {
-    return [this.E(), this.heap.memory.get_number(this.addr + 3)]
+    return [this.E()]
   }
 
   override toString(): string {
     return 'CLOSURE'
-  }
-}
-
-export class IdentifierNode extends BaseNode {
-  static create(env: number, idx: number, heap: Heap) {
-    const addr = heap.allocate(3)
-    heap.set_tag(addr, TAG.ID)
-    heap.memory.set_word(env, addr + 1)
-    heap.memory.set_word(idx, addr + 2)
-    return new IdentifierNode(heap, addr)
-  }
-
-  E() {
-    return this.heap.memory.get_number(this.addr + 1)
-  }
-
-  idx() {
-    return this.heap.memory.get_number(this.addr + 2)
-  }
-
-  override get_children(): number[] {
-    return [this.E()]
   }
 }
 

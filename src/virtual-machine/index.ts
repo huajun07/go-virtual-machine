@@ -33,6 +33,7 @@ const runCode = (
       instructions: [],
       output: result.stdout,
       visualData: result.visual_data,
+      errorMessage: result.errorMessage,
     }
   } catch (err) {
     console.warn(err)

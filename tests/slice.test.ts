@@ -56,14 +56,14 @@ describe('Slice Execution', () => {
     expect(
       mainRunner('var a []string = []string{"a", "b", "c"}\n Println(a[-1])')
         .errorMessage,
-    ).toEqual('Index out of range [-1] with length 3')
+    ).toEqual('Execution Error: Index out of range [-1] with length 3')
   })
 
   test('Slice indexing with out of range index fails.', () => {
     expect(
       mainRunner('var a []string = []string{"a", "b", "c"}\n Println(a[3])')
         .errorMessage,
-    ).toEqual('Index out of range [3] with length 3')
+    ).toEqual('Execution Error: Index out of range [3] with length 3')
   })
 
   test('Nested slices work.', () => {
@@ -104,6 +104,6 @@ describe('Slice Execution', () => {
     expect(
       mainRunner(`a := [4]int{0, 1, 2, 3}
       b := a[4:5]`).errorMessage,
-    ).toEqual('Slice bounds out of range')
+    ).toEqual('Execution Error: Slice bounds out of range')
   })
 })

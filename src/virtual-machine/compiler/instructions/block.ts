@@ -1,6 +1,5 @@
 import { Process } from '../../executor/process'
 import { FrameNode } from '../../heap/types/environment'
-import { FuncNode } from '../../heap/types/func'
 import { Type } from '../typing'
 
 import { Instruction } from './base'
@@ -65,14 +64,12 @@ export class FuncBlockInstruction extends BlockInstruction {
       process.heap.copy(dst, src)
     }
     // Pop function in stack
-    const id = new FuncNode(process.heap, process.context.popOS()).id()
-    if (id) {
-      const identifiers = process.debugger.identifier_map.get(id.E())
-      if (identifiers)
-        process.debugger.env_name_map.set(
-          process.context.E().addr,
-          identifiers[id.idx()],
-        )
+    const id = process.context.popOS()
+    if (process.debug_mode) {
+      const identifier = process.debugger.identifier_map.get(id)
+      if (identifier) {
+        process.debugger.env_name_map.set(process.context.E().addr, identifier)
+      }
     }
   }
 }

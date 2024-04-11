@@ -132,19 +132,19 @@ export const VisualArea = () => {
             h="100%"
           >
             <TabList>
-              {cur_data.map((ctx) => {
+              {cur_data.map((ctx, idx) => {
                 return (
-                  <Tab>
+                  <Tab key={idx}>
                     {ctx.blocked && <LockIcon />} Thread {ctx.id}
                   </Tab>
                 )
               })}
             </TabList>
             <TabPanels h="100%">
-              {cur_data.map((ctx) => {
+              {cur_data.map((ctx, idx) => {
                 const { nodes, edges } = genVisual(ctx)
                 return (
-                  <TabPanel h="100%">
+                  <TabPanel h="100%" key={idx}>
                     <div style={{ height: '100%', width: '100%' }}>
                       <ReactFlow
                         nodeTypes={nodeTypes}

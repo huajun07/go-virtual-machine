@@ -25,8 +25,8 @@ export const EnvNode = (props: NodeProps<EnvironmentInfo>) => {
           <b>{name}</b>
         </Box>
         <Box p="0px 7px">
-          {vars.map((x) => (
-            <Box p={1} color={x.modified ? 'red' : 'black'}>
+          {vars.map((x, idx) => (
+            <Box key={idx} p={1} color={x.modified ? 'red' : 'black'}>
               {x.name} = {x.val}
             </Box>
           ))}

@@ -11,6 +11,7 @@ import { Debugger, StateInfo } from './debugger'
 type ProcessOutput = {
   stdout: string
   visual_data: StateInfo[]
+  errorMessage?: string
 }
 
 export class Process {
@@ -57,41 +58,53 @@ export class Process {
   }
 
   start(): ProcessOutput {
-    const time_quantum = 30
-    this.runtime_count = 0
-    if (this.debug_mode) this.debugger.generate_state('')
-    while (this.contexts.sz()) {
-      this.context = new ContextNode(this.heap, this.contexts.peek())
-      let cur_time = 0
-      while (!DoneInstruction.is(this.instructions[this.context.PC()])) {
-        if (cur_time >= time_quantum) {
-          // Context Switch
-          this.contexts.push(this.context.addr)
-          break
+    try {
+      const time_quantum = 30
+      this.runtime_count = 0
+      if (this.debug_mode) this.debugger.generate_state('')
+      while (this.contexts.sz()) {
+        this.context = new ContextNode(this.heap, this.contexts.peek())
+        let cur_time = 0
+        while (!DoneInstruction.is(this.instructions[this.context.PC()])) {
+          if (cur_time >= time_quantum) {
+            // Context Switch
+            this.contexts.push(this.context.addr)
+            break
+          }
+          const instr = this.instructions[this.context.incr_PC()]
+          // console.log('ctx:', this.context.addr)
+          // console.log('Instr:', instr, this.context.PC() - 1)
+          instr.execute(this)
+          // this.context.printOS()
+          // this.context.printRTS()
+          // this.context.heap.print_freelist()
+          this.runtime_count += 1
+          cur_time += 1
+          if (this.debug_mode) this.debugger.generate_state(this.stdout)
+          if (this.context.is_blocked()) break
         }
-        const instr = this.instructions[this.context.incr_PC()]
-        // console.log('ctx:', this.context.addr)
-        // console.log('Instr:', instr, this.context.PC() - 1)
-        instr.execute(this)
-        // this.context.printOS()
-        // this.context.printRTS()
-        // this.context.heap.print_freelist()
-        this.runtime_count += 1
-        cur_time += 1
-        if (this.debug_mode) this.debugger.generate_state(this.stdout)
-        if (this.context.is_blocked()) break
+        this.contexts.pop()
+        // console.log('%c SWITCH!', 'background: #F7FF00; color: #FF0000')
+        if (this.runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
+        // console.log('PC', this.contexts.get_vals())
       }
-      this.contexts.pop()
-      // console.log('%c SWITCH!', 'background: #F7FF00; color: #FF0000')
-      if (this.runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
-      // console.log('PC', this.contexts.get_vals())
-    }
-    if (!this.heap.blocked_contexts.is_empty())
-      throw Error('Execution error: all threads are blocked!')
+      if (!this.heap.blocked_contexts.is_empty())
+        throw Error('All threads are blocked!')
 
-    return {
-      stdout: this.stdout,
-      visual_data: this.debug_mode ? this.debugger.data : [],
+      return {
+        stdout: this.stdout,
+        visual_data: this.debug_mode ? this.debugger.data : [],
+      }
+    } catch (err) {
+      console.warn(err)
+      let errorMessage: string | undefined = undefined
+      if (err instanceof Error) errorMessage = 'Execution Error: ' + err.message
+
+      return {
+        stdout: 'An Error Occurred!',
+        visual_data: this.debug_mode ? this.debugger.data : [],
+        errorMessage,
+      }
     }
   }
 

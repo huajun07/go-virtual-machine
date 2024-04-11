@@ -9,7 +9,6 @@ import {
   DeferFuncNode,
   DeferMethodNode,
   FuncNode,
-  IdentifierNode,
   MethodNode,
 } from './types/func'
 import { LinkedListEntryNode, LinkedListNode } from './types/linkedlist'
@@ -53,7 +52,6 @@ export enum TAG {
   METHOD = 23,
   DEFER_FUNC = 24,
   DEFER_METHOD = 25,
-  ID = 26,
 }
 
 export const word_size = 4
@@ -150,8 +148,6 @@ export class Heap {
         return new DeferFuncNode(this, addr)
       case TAG.DEFER_METHOD:
         return new DeferMethodNode(this, addr)
-      case TAG.ID:
-        return new IdentifierNode(this, addr)
       default:
         // return new UnassignedNode(this, addr)
         throw Error('Unknown Data Type')

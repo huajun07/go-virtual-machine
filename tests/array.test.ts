@@ -37,14 +37,14 @@ describe('Array Execution', () => {
     expect(
       mainRunner('var a [3]string = [3]string{"a", "b", "c"}\n Println(a[-1])')
         .errorMessage,
-    ).toEqual('Index out of range [-1] with length 3')
+    ).toEqual('Execution Error: Index out of range [-1] with length 3')
   })
 
   test('Array indexing with out of range index fails.', () => {
     expect(
       mainRunner('var a [3]string = [3]string{"a", "b", "c"}\n Println(a[3])')
         .errorMessage,
-    ).toEqual('Index out of range [3] with length 3')
+    ).toEqual('Execution Error: Index out of range [3] with length 3')
   })
 
   test('Nested arrays work.', () => {

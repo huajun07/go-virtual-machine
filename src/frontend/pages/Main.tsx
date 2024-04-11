@@ -121,7 +121,6 @@ export const Main = () => {
     if (errorMessage) {
       setLoading(false)
       makeToast(errorMessage)
-      return
     }
 
     // Set instructions and update components to start playing mode

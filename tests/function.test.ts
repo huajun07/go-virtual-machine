@@ -169,4 +169,36 @@ describe('Function Execution tests', () => {
       '1\n1\n',
     )
   })
+
+  test('Closures', () => {
+    expect(
+      runCode(
+        `package main
+        import "fmt"
+
+        func getAreaFunc() func(int, int) int {
+          a := 0
+          k := func(x, y int) int {
+            a += 1
+            return x*y + a
+          }
+          a += 1
+          return k
+        }
+
+        func main() {
+          f := getAreaFunc()
+          f2 := getAreaFunc()
+          Println(f(3, 2))
+          Println(f(1, 1))
+          Println(f(1, 1))
+          Println(f2(1, 1))
+          Println(f2(2, 3))
+          Println(f2(1, 1))
+        }
+    `,
+        2048,
+      ).output,
+    ).toEqual('8\n4\n5\n3\n9\n5\n')
+  })
 })

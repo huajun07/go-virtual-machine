@@ -1,7 +1,6 @@
 import { Heap, TAG } from '..'
 
 import { BaseNode } from './base'
-import { FuncNode, IdentifierNode } from './func'
 
 export class FrameNode extends BaseNode {
   static create(frame_size: number, heap: Heap) {
@@ -18,18 +17,6 @@ export class FrameNode extends BaseNode {
 
   get_idx(index: number) {
     return this.heap.get_child(this.addr + 1, index)
-  }
-
-  update_func_env(env: number) {
-    const children = this.get_children()
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i]
-      const val = this.heap.get_value(child)
-      if (val instanceof FuncNode) {
-        const id = IdentifierNode.create(env, i, this.heap)
-        val.set_id(id.addr)
-      }
-    }
   }
 
   override get_children(): number[] {
@@ -51,9 +38,6 @@ export class EnvironmentNode extends BaseNode {
     heap.memory.set_bits(for_block ? 1 : 0, addr, 1, 16)
     heap.memory.set_word(frame, addr + 1)
     heap.set_children(addr, parents, 2)
-
-    const frame_val = new FrameNode(heap, frame)
-    frame_val.update_func_env(addr)
     return new EnvironmentNode(heap, addr)
   }
 
