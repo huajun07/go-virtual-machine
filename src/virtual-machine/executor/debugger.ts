@@ -45,7 +45,6 @@ export type StateInfo = {
 }
 
 export class Debugger {
-  thread_cnt = 0
   // Maps addr of variables to identifier
   identifier_map = new Map<number, string>()
   // Maps addr of environments to identifer
@@ -54,7 +53,7 @@ export class Debugger {
   env_alloc_map = new Map<number, number>()
   // Maps context to thread id (starting from 0)
   context_id_map = new Map<number, number>()
-  context_id = 0
+  context_id = 1
   data: StateInfo[] = []
   modified_buffer = new Set<number>()
   constructor(public heap: Heap, public instructions: Instruction[]) {}
@@ -206,7 +205,6 @@ export class Debugger {
       }
 
       const env_info = this.dfs_env(global_env, adj, context.E().addr)
-
       state.push({
         OS,
         id: this.context_id_map.get(context.addr) || -1,
