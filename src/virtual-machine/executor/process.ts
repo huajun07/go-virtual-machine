@@ -6,11 +6,11 @@ import { ContextNode } from '../heap/types/context'
 import { EnvironmentNode, FrameNode } from '../heap/types/environment'
 import { QueueNode } from '../heap/types/queue'
 
-import { ContextInfo, Debugger } from './debugger'
+import { Debugger, StateInfo } from './debugger'
 
 type ProcessOutput = {
   stdout: string
-  visual_data: ContextInfo[][]
+  visual_data: StateInfo[]
 }
 
 export class Process {
@@ -52,13 +52,17 @@ export class Process {
       this.context.addr,
       this.debugger.context_id++,
     )
+    if (this.debug_mode)
+      this.debugger.context_id_map.set(
+        this.context.addr,
+        this.debugger.context_id++,
+      )
   }
 
   start(): ProcessOutput {
     const time_quantum = 30
     this.runtime_count = 0
-    const main_context = new ContextNode(this.heap, this.contexts.peek())
-    if (this.debug_mode) this.debugger.generate_state()
+    if (this.debug_mode) this.debugger.generate_state('')
     while (this.contexts.sz()) {
       this.context = new ContextNode(this.heap, this.contexts.peek())
       let cur_time = 0
@@ -77,7 +81,7 @@ export class Process {
         // this.context.heap.print_freelist()
         this.runtime_count += 1
         cur_time += 1
-        if (this.debug_mode) this.debugger.generate_state()
+        if (this.debug_mode) this.debugger.generate_state(this.stdout)
         if (this.context.is_blocked()) break
       }
       this.contexts.pop()
@@ -85,7 +89,7 @@ export class Process {
       if (this.runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
       // console.log('PC', this.contexts.get_vals())
     }
-    if (main_context.is_blocked())
+    if (!this.heap.blocked_contexts.is_empty())
       throw Error('Execution error: all threads are blocked!')
 
     return {

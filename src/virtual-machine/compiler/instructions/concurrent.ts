@@ -23,12 +23,14 @@ export class ForkInstruction extends Instruction {
 
   override execute(process: Process): void {
     const new_context = process.context.fork().addr
-    process.debugger.context_id_map.set(
-      new_context,
-      process.debugger.context_id++,
-    )
     process.contexts.push(new_context)
     process.context.set_PC(this.addr)
+    if (process.debug_mode) {
+      process.debugger.context_id_map.set(
+        new_context,
+        process.debugger.context_id++,
+      )
+    }
   }
 }
 

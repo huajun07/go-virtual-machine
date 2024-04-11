@@ -27,19 +27,18 @@ export const LoaderContext = createContext<
 const COOKIE_NAME = 'code_value'
 
 export const Main = () => {
-  const { setVisualData, currentStep, setStep, data } = useExecutionStore(
-    (state) => ({
+  const { setVisualData, currentStep, setStep, data, setOutput } =
+    useExecutionStore((state) => ({
       data: state.data,
       setVisualData: state.setVisualData,
       currentStep: state.currentStep,
       setStep: state.setStep,
-    }),
-  )
+      setOutput: state.setOutput,
+    }))
   const [isPlaying, setPlaying] = useState(false)
   const [wasPlaying, setWasPlaying] = useState(false)
   const [speed, setSpeed] = useState<number>(1)
   const [loading, setLoading] = useState(false)
-  const [output, setOutput] = useState<string | null>(null)
   const [code, setCode] = useState('')
   const [heapsize, setHeapsize] = useState(2048)
   const [visualMode, setVisualMode] = useState(false)
@@ -127,7 +126,7 @@ export const Main = () => {
 
     // Set instructions and update components to start playing mode
     setVisualData(visualData)
-    setOutput(newOutput || '')
+    if (visualData.length === 0) setOutput(newOutput || '')
     setPlaying(true)
     setWasPlaying(false)
     setTimeout(function () {
@@ -158,7 +157,7 @@ export const Main = () => {
         </Center>
       ) : null}
       <Flex>
-        <Box w="30%" borderRightWidth="1px">
+        <Box minWidth="500px" w="30%" borderRightWidth="1px">
           <CodeIDEButtons
             toggleMode={startRunning}
             isDisabled={loading}
@@ -178,7 +177,7 @@ export const Main = () => {
         </Box>
         <Flex position="relative" flex={1}>
           <Flex borderRightWidth="1px" flexDirection="column" w="100%">
-            <IO output={output} />
+            <IO />
             <Flex flex={1} flexDirection="column" w="100%">
               <Flex flex={1}>
                 <VisualArea />

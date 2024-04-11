@@ -1,20 +1,17 @@
-import { FaBackward, FaForward, FaPause, FaPlay } from 'react-icons/fa'
+import { useState } from 'react'
+import { FaForward, FaPause, FaPlay } from 'react-icons/fa'
+import { ArrowBackIcon, ArrowForwardIcon } from '@chakra-ui/icons'
 import {
   Box,
   Flex,
   IconButton,
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
   Slider,
   SliderFilledTrack,
   SliderThumb,
   SliderTrack,
   Spacer,
   Stack,
-  Text,
+  Tooltip,
   useColorModeValue,
 } from '@chakra-ui/react'
 import { shallow } from 'zustand/shallow'
@@ -42,6 +39,8 @@ export const ControlBar = (props: ControlBarProps) => {
     shallow,
   )
   const buttonColor = useColorModeValue('#3182ce', '#90cdf4')
+  const [showTooltip, setShowTooltip] = useState(false)
+  const [showTooltipMain, setShowTooltipMain] = useState(false)
   return (
     <>
       <Flex flexDirection="column">
@@ -55,6 +54,8 @@ export const ControlBar = (props: ControlBarProps) => {
             focusThumbOnChange={false}
             isDisabled={props.disabled}
             onChange={setStep}
+            onMouseEnter={() => setShowTooltipMain(true)}
+            onMouseLeave={() => setShowTooltipMain(false)}
             onChangeStart={
               props.playing
                 ? () => {
@@ -76,27 +77,48 @@ export const ControlBar = (props: ControlBarProps) => {
               <Box position="relative" right={10} />
               <SliderFilledTrack />
             </SliderTrack>
+            <Tooltip
+              hasArrow
+              bg="blue.500"
+              color="white"
+              placement="top"
+              isOpen={showTooltipMain}
+              label={`${currentStep}`}
+            >
+              <SliderThumb />
+            </Tooltip>
             <SliderThumb boxSize={4} />
           </Slider>
         </Box>
         <Flex>
-          <Stack direction="row" align="center" px="10px">
-            <Text> Speed</Text>
-            <NumberInput
-              maxW="80px"
-              mr="2rem"
+          <Stack direction="column" align="center" marginLeft="10px" px="10px">
+            <FaForward />
+            <Slider
+              id="slider"
+              defaultValue={1}
               value={props.curSpeed}
-              onChange={(v) => props.setSpeed(Number(v))}
               min={1}
-              max={1000}
+              max={100}
+              onChange={(v) => props.setSpeed(Number(v))}
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
               isDisabled={props.disabled}
+              w="120px"
             >
-              <NumberInputField />
-              <NumberInputStepper>
-                <NumberIncrementStepper />
-                <NumberDecrementStepper />
-              </NumberInputStepper>
-            </NumberInput>
+              <SliderTrack>
+                <SliderFilledTrack />
+              </SliderTrack>
+              <Tooltip
+                hasArrow
+                bg="blue.500"
+                color="white"
+                placement="top"
+                isOpen={showTooltip}
+                label={`x${props.curSpeed}`}
+              >
+                <SliderThumb />
+              </Tooltip>
+            </Slider>
           </Stack>
           <Spacer />
           <Stack direction="row" align="center">
@@ -106,7 +128,7 @@ export const ControlBar = (props: ControlBarProps) => {
               size="lg"
               aria-label="Rewind"
               isDisabled={props.disabled}
-              icon={<FaBackward color={buttonColor} />}
+              icon={<ArrowBackIcon color={buttonColor} />}
               onClick={() => props.moveStep(false)}
             />
             <IconButton
@@ -130,30 +152,11 @@ export const ControlBar = (props: ControlBarProps) => {
               size="lg"
               aria-label="Forward"
               isDisabled={props.disabled}
-              icon={<FaForward color={buttonColor} />}
+              icon={<ArrowForwardIcon color={buttonColor} />}
               onClick={() => props.moveStep(true)}
             />
           </Stack>
           <Spacer />
-          <Stack direction="row" align="center" px="10px">
-            <Text> Step</Text>
-            <NumberInput
-              maxW="80px"
-              mr="2rem"
-              value={currentStep}
-              min={0}
-              max={props.length}
-              isDisabled={props.disabled}
-              onChange={(v) => setStep(Number(v))}
-              aria-label="Step"
-            >
-              <NumberInputField />
-              <NumberInputStepper>
-                <NumberIncrementStepper />
-                <NumberDecrementStepper />
-              </NumberInputStepper>
-            </NumberInput>
-          </Stack>
         </Flex>
       </Flex>
     </>

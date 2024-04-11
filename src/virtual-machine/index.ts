@@ -1,4 +1,4 @@
-import { ContextInfo } from './executor/debugger'
+import { StateInfo } from './executor/debugger'
 import parser from './parser/parser'
 import { SourceFileToken } from './parser/tokens'
 import { compile_tokens } from './compiler'
@@ -12,7 +12,7 @@ interface ProgramData {
   output?: string
   instructions: InstructionData[]
   errorMessage?: string
-  visualData: ContextInfo[][]
+  visualData: StateInfo[]
 }
 
 const runCode = (
@@ -28,7 +28,7 @@ const runCode = (
     console.log(instructions)
     const result = execute_instructions(instructions, heapsize, visualisation)
     // console.log(result)
-    console.log(result.visual_data)
+    // console.log(result.visual_data)
     return {
       instructions: [],
       output: result.stdout,

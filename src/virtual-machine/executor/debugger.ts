@@ -6,6 +6,7 @@ import { EnvironmentNode } from '../heap/types/environment'
 export type OSInfo = {
   val: string
   addr: number
+  modified: boolean
 }
 
 export type VarInfo = {
@@ -16,6 +17,7 @@ export type VarInfo = {
 
 export type EnvironmentInfo = {
   name: string
+  addr: number
   vars: VarInfo[]
   alloc_time: number
   children: EnvironmentInfo[]
@@ -37,6 +39,11 @@ export type ContextInfo = {
   envs: EnvironmentInfo
 }
 
+export type StateInfo = {
+  contexts: ContextInfo[]
+  output: string
+}
+
 export class Debugger {
   thread_cnt = 0
   identifier_map = new Map<number, string[]>()
@@ -44,7 +51,7 @@ export class Debugger {
   env_alloc_map = new Map<number, number>()
   context_id_map = new Map<number, number>()
   context_id = 0
-  data: ContextInfo[][] = []
+  data: StateInfo[] = []
   modified_buffer = new Set<number>()
   constructor(public heap: Heap, public instructions: Instruction[]) {}
 
@@ -84,6 +91,7 @@ export class Debugger {
         } as VarInfo
       })
     return {
+      addr: env,
       name: this.env_name_map.get(env),
       vars: var_info,
       alloc_time: this.env_alloc_map.get(env),
@@ -92,7 +100,7 @@ export class Debugger {
     } as EnvironmentInfo
   }
 
-  generate_state() {
+  generate_state(output: string) {
     const contexts = [
       ...this.heap.contexts.list().get_children(),
       ...this.heap.blocked_contexts.get_items(),
@@ -114,7 +122,7 @@ export class Debugger {
         hi = this.instructions.length - 1
       if (context.PC() < 3) {
         lo = 0
-        hi = 7
+        hi = 6
       } else if (context.PC() + 3 >= this.instructions.length) {
         lo = this.instructions.length - 7
         hi = this.instructions.length - 1
@@ -144,6 +152,24 @@ export class Debugger {
 
       const env_info = this.dfs_env(global_env, adj, context.E().addr)
 
+      if (this.data.length) {
+        const prev = this.data[this.data.length - 1].contexts
+        let prev_state = undefined
+        for (const ctx of prev) {
+          if (ctx.addr === context.addr) prev_state = ctx
+        }
+        if (prev_state) {
+          let same = true
+          for (let i = 0; i < OS.length; i++) {
+            if (i >= prev_state.OS.length) same = false
+            else if (prev_state.OS[i].addr !== OS[i].addr) same = false
+            if (!same) OS[i].modified = true
+          }
+        } else for (const os of OS) os.modified = true
+      } else {
+        for (const os of OS) os.modified = true
+      }
+
       state.push({
         OS,
         id: this.context_id_map.get(context.addr) || -1,
@@ -153,7 +179,10 @@ export class Debugger {
         envs: env_info,
       })
     }
-    this.data.push(state)
+    this.data.push({
+      contexts: state,
+      output,
+    })
     this.modified_buffer.clear()
   }
 }
