@@ -14,9 +14,9 @@ export class ContextNode extends BaseNode {
     heap.set_tag(addr, TAG.CONTEXT)
     heap.memory.set_number(0, addr + 1)
     heap.temp_push(addr)
+    for (let i = 2; i <= 5; i++) heap.memory.set_number(-1, addr + i)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 2)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 3)
-    heap.memory.set_number(-1, addr + 4)
     heap.memory.set_word(StackNode.create(heap).addr, addr + 5)
     heap.temp_pop()
     return new ContextNode(heap, addr)
@@ -146,9 +146,7 @@ export class ContextNode extends BaseNode {
   }
 
   deferStack(): StackNode {
-    return this.heap.get_value(
-      this.heap.memory.get_number(this.addr + 5),
-    ) as StackNode
+    return new StackNode(this.heap, this.heap.memory.get_number(this.addr + 5))
   }
 
   pushDeferStack(): void {

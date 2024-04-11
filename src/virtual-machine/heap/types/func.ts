@@ -190,6 +190,7 @@ export class DeferMethodNode extends BaseNode {
     const addr = process.heap.allocate(3)
     process.heap.set_tag(addr, TAG.DEFER_METHOD)
     process.heap.temp_push(addr)
+    process.heap.memory.set_word(-1, addr + 1)
     process.heap.memory.set_word(-1, addr + 2)
 
     const stack = StackNode.create(process.heap)
