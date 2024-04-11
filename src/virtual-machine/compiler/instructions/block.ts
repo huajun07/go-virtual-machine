@@ -20,6 +20,10 @@ export class BlockInstruction extends Instruction {
     this.identifiers = [...identifiers]
   }
 
+  override toString(): string {
+    return super.toString() + ' ' + this.name
+  }
+
   override execute(process: Process): void {
     const new_frame = FrameNode.create(this.frame.length, process.heap)
     process.heap.temp_push(new_frame.addr)
@@ -43,6 +47,11 @@ export class FuncBlockInstruction extends BlockInstruction {
     super('ANONY FUNC', false)
     this.tag = 'FUNC_BLOCK'
   }
+
+  override toString(): string {
+    return this.tag
+  }
+
   override execute(process: Process): void {
     super.execute(process)
     for (let i = this.args - 1; i >= 0; i--) {
@@ -70,6 +79,5 @@ export class ExitBlockInstruction extends Instruction {
 
   override execute(process: Process): void {
     process.context.popRTS()
-    // TODO: Implement defer in popRTS
   }
 }

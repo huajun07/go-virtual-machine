@@ -132,7 +132,7 @@ export class Debugger {
       }
       for (let i = lo; i <= hi; i++) {
         instrs.push({
-          val: this.instructions[i].tag, // !TODO: More meaningful instruction strings
+          val: this.instructions[i].toString(),
           idx: i,
           cur: i === context.PC(),
         })

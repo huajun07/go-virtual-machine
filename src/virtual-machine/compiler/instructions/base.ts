@@ -8,6 +8,10 @@ export abstract class Instruction {
   }
 
   abstract execute(process: Process): void
+
+  toString(): string {
+    return this.tag
+  }
 }
 
 export class DoneInstruction extends Instruction {

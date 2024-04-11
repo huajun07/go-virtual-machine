@@ -63,7 +63,7 @@ export const addEnvs = (
       markerEnd: {
         type: MarkerType.ArrowClosed,
         width: 30,
-        height: 30,
+        height: 20,
       },
     })
     if (sibling) leftOffset = nodes[nodes.length - 1].position.x + 220

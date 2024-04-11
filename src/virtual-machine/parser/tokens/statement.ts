@@ -232,6 +232,7 @@ export class IfStatementToken extends Token {
 
     // Consequent Block
     compiler.instructions.push(jumpToAlternative)
+    this.consequent.name = 'IF BODY'
     const consequentType = this.consequent.compile(compiler)
     const jumpToEnd = new JumpInstruction()
     compiler.instructions.push(jumpToEnd)
@@ -241,7 +242,11 @@ export class IfStatementToken extends Token {
     // AlternativeType defaults to the expected return type, so that if there is no alternative,
     // we simply treat the consequent type as the type of the whole if statement.
     let alternativeType: Type = compiler.type_environment.expectedReturn
-    if (this.alternative) alternativeType = this.alternative.compile(compiler)
+    if (this.alternative) {
+      if (this.alternative instanceof BlockInstruction)
+        this.alternative.name = 'IF BODY'
+      alternativeType = this.alternative.compile(compiler)
+    }
     jumpToEnd.set_addr(compiler.instructions.length)
 
     compiler.instructions.push(new ExitBlockInstruction())
@@ -311,7 +316,7 @@ export class ForStatementToken extends Token {
   override compile(compiler: Compiler): Type {
     compiler.context.push_env()
     compiler.type_environment = compiler.type_environment.extend()
-    const block_instr = new BlockInstruction('FOR BLOCK', true)
+    const block_instr = new BlockInstruction('FOR INIT', true)
     compiler.instructions.push(block_instr)
     compiler.context.push_loop()
 
@@ -328,7 +333,7 @@ export class ForStatementToken extends Token {
       }
       compiler.instructions.push(predicate_false)
     }
-
+    this.body.name = 'FOR BODY'
     const bodyType = this.body.compile(compiler)
 
     const pre_post_addr = compiler.instructions.length
@@ -516,7 +521,7 @@ export class CommunicationClauseToken extends Token {
       }
       const jump_instr = new JumpInstruction()
       compiler.instructions.push(jump_instr)
-      new BlockToken(this.body).compile(compiler)
+      new BlockToken(this.body, 'CASE BLOCK').compile(compiler)
       jump_instr.set_addr(compiler.instructions.length + 1)
     } else {
       // This is recv statement
@@ -542,7 +547,7 @@ export class CommunicationClauseToken extends Token {
           )
         }
       } else compiler.instructions.push(new PopInstruction())
-      new BlockToken(this.body).compile(compiler)
+      new BlockToken(this.body, 'CASE BLOCK').compile(compiler)
       jump_instr.set_addr(compiler.instructions.length + 1)
     }
     return new NoType()

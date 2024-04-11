@@ -38,6 +38,11 @@ export class LoadChannelInstruction extends Instruction {
   constructor() {
     super('LDCH')
   }
+
+  override toString(): string {
+    return 'LOAD CHANNEL'
+  }
+
   override execute(process: Process): void {
     const buffer_sz = new IntegerNode(
       process.heap,
@@ -51,6 +56,11 @@ export class LoadChannelReqInstruction extends Instruction {
   constructor(public recv: boolean, public PC: number) {
     super('LDCR')
   }
+
+  override toString(): string {
+    return 'LOAD CHAN ' + (this.recv ? 'RECV' : 'SEND') + ' REQ'
+  }
+
   override execute(process: Process): void {
     const clone = process.heap.clone(process.context.peekOS())
     process.heap.temp_push(clone)
@@ -100,7 +110,7 @@ export class TryChannelReqInstruction extends Instruction {
 
 export class SelectInstruction extends Instruction {
   constructor(public cases: number, public default_case: boolean) {
-    super('SELECT')
+    super('SELECT CASES')
   }
   override execute(process: Process): void {
     let pc = -1

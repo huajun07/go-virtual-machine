@@ -17,6 +17,10 @@ export class LoadFuncInstruction extends Instruction {
     this.PC = PC
   }
 
+  override toString(): string {
+    return 'LOAD FUNC'
+  }
+
   static is(instr: Instruction): instr is LoadFuncInstruction {
     return instr.tag === 'LF'
   }
@@ -31,6 +35,10 @@ export class LoadFuncInstruction extends Instruction {
 export class CallInstruction extends Instruction {
   constructor(public args: number) {
     super('CALL')
+  }
+
+  override toString(): string {
+    return 'CALL ' + this.args.toString() + ' ARGS'
   }
 
   static is(instr: Instruction): instr is CallInstruction {
@@ -59,6 +67,10 @@ export class CallInstruction extends Instruction {
 export class DeferredCallInstruction extends Instruction {
   constructor(public args: number) {
     super('DEFERRED_CALL')
+  }
+
+  override toString(): string {
+    return 'DEFER CALL ' + this.args.toString() + ' ARGS'
   }
 
   static fromCallInstruction(call: CallInstruction): DeferredCallInstruction {
