@@ -1,3 +1,5 @@
+import { Debugger } from '../executor/debugger'
+
 import { ArrayNode, SliceNode } from './types/array'
 import { ChannelNode, ChannelReqNode, ReqInfoNode } from './types/channel'
 import { ContextNode } from './types/context'
@@ -68,6 +70,7 @@ export class Heap {
   blocked_contexts: LinkedListNode
   mem_left: number
   temp = -1
+  debugger: Debugger | undefined
   constructor(size: number) {
     this.size = size
     this.mem_left = size
@@ -293,6 +296,8 @@ export class Heap {
     }
     this.set_free(addr, true)
     this.add_list(addr, lvl)
+
+    this.debugger?.identifier_map.delete(addr)
     return addr + (1 << lvl)
   }
   calc_level(x: number) {

@@ -48,15 +48,12 @@ export class Process {
 
     this.debug_mode = visualmode
     this.debugger = new Debugger(this.heap, this.instructions)
-    this.debugger.context_id_map.set(
-      this.context.addr,
-      this.debugger.context_id++,
-    )
     if (this.debug_mode)
       this.debugger.context_id_map.set(
         this.context.addr,
         this.debugger.context_id++,
       )
+    this.heap.debugger = this.debugger
   }
 
   start(): ProcessOutput {

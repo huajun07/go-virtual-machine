@@ -37,9 +37,14 @@ export class BlockInstruction extends Instruction {
     process.context.pushRTS(new_env)
     process.heap.temp_pop()
 
-    process.debugger.env_alloc_map.set(new_env, process.runtime_count)
-    process.debugger.env_name_map.set(new_env, this.name)
-    process.debugger.identifier_map.set(new_env, this.identifiers)
+    if (process.debug_mode) {
+      process.debugger.env_alloc_map.set(new_env, process.runtime_count)
+      process.debugger.env_name_map.set(new_env, this.name)
+      const children = new_frame.get_children()
+      for (let i = 0; i < children.length; i++) {
+        process.debugger.identifier_map.set(children[i], this.identifiers[i])
+      }
+    }
   }
 }
 export class FuncBlockInstruction extends BlockInstruction {

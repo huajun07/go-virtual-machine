@@ -46,15 +46,26 @@ export type StateInfo = {
 
 export class Debugger {
   thread_cnt = 0
-  identifier_map = new Map<number, string[]>()
+  // Maps addr of variables to identifier
+  identifier_map = new Map<number, string>()
+  // Maps addr of environments to identifer
   env_name_map = new Map<number, string>()
+  // Maps addr of environment to allocation time
   env_alloc_map = new Map<number, number>()
+  // Maps context to thread id (starting from 0)
   context_id_map = new Map<number, number>()
   context_id = 0
   data: StateInfo[] = []
   modified_buffer = new Set<number>()
   constructor(public heap: Heap, public instructions: Instruction[]) {}
 
+  /**
+   * Finds all environments that can be reached from a given addr
+   * @param addr Current Address
+   * @param vis Set of visited addresses
+   * @param envs Output set of environments
+   * @returns
+   */
   get_all_env(addr: number, vis: Set<number>, envs: Set<number>) {
     if (addr === -1) return
     vis.add(addr)
@@ -66,6 +77,13 @@ export class Debugger {
     }
   }
 
+  /**
+   * Traverse through environments constructing a tree-like object structure
+   * @param env Current Env
+   * @param adj Adjacency List of env addr => children env addrs
+   * @param cur Context active environment addr
+   * @returns
+   */
   dfs_env(
     env: number,
     adj: Map<number, number[]>,
@@ -83,9 +101,9 @@ export class Debugger {
     const var_info = env_node
       .get_frame()
       .get_children()
-      .map((val, idx) => {
+      .map((val) => {
         return {
-          name: (this.identifier_map.get(env) || [])[idx],
+          name: this.identifier_map.get(val),
           val: this.heap.get_value(val).toString(),
           modified: this.modified_buffer.has(val),
         } as VarInfo
@@ -107,16 +125,47 @@ export class Debugger {
     ].map((x) => new ContextNode(this.heap, x))
     const state: ContextInfo[] = []
     for (const context of contexts) {
+      /**
+       * Generate OS Info
+       */
       const OS = context
         .OS()
         .list()
         .get_children()
         .map((x) => {
+          const var_name = this.identifier_map.get(x)
           return {
-            val: this.heap.get_value(x).toString(),
+            val:
+              (var_name ? var_name + ': ' : '') +
+              this.heap.get_value(x).toString(),
             addr: x,
           } as OSInfo
         })
+
+      /**
+       * Check if the OS values are newly added
+       * - Iterate through previous os stack values check if addr differ
+       */
+      if (this.data.length) {
+        const prev = this.data[this.data.length - 1].contexts
+        let prev_state = undefined
+        for (const ctx of prev) {
+          if (ctx.addr === context.addr) prev_state = ctx
+        }
+        if (prev_state) {
+          let same = true
+          for (let i = 0; i < OS.length; i++) {
+            if (i >= prev_state.OS.length) same = false
+            else if (prev_state.OS[i].addr !== OS[i].addr) same = false
+            if (!same) OS[i].modified = true
+          }
+        } else for (const os of OS) os.modified = true
+      } else {
+        for (const os of OS) os.modified = true
+      }
+      /**
+       * Generate Instruction Info
+       */
       const instrs = []
       let lo = 0,
         hi = this.instructions.length - 1
@@ -137,6 +186,12 @@ export class Debugger {
           cur: i === context.PC(),
         })
       }
+      /**
+       * Generate Env Info from a traversal
+       * - Get environments reachable from context
+       * - Generate adjacancy list
+       * - Construct tree-like object tree
+       */
       const envs = new Set<number>()
       const vis = new Set<number>()
       this.get_all_env(context.addr, vis, envs)
@@ -151,24 +206,6 @@ export class Debugger {
       }
 
       const env_info = this.dfs_env(global_env, adj, context.E().addr)
-
-      if (this.data.length) {
-        const prev = this.data[this.data.length - 1].contexts
-        let prev_state = undefined
-        for (const ctx of prev) {
-          if (ctx.addr === context.addr) prev_state = ctx
-        }
-        if (prev_state) {
-          let same = true
-          for (let i = 0; i < OS.length; i++) {
-            if (i >= prev_state.OS.length) same = false
-            else if (prev_state.OS[i].addr !== OS[i].addr) same = false
-            if (!same) OS[i].modified = true
-          }
-        } else for (const os of OS) os.modified = true
-      } else {
-        for (const os of OS) os.modified = true
-      }
 
       state.push({
         OS,
