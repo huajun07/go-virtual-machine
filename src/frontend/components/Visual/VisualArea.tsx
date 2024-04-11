@@ -1,7 +1,7 @@
 import 'reactflow/dist/style.css'
 import './nodes.css'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ReactFlow, { Background, Controls, Edge } from 'reactflow'
 import { LockIcon } from '@chakra-ui/icons'
 import {
@@ -113,6 +113,9 @@ export const VisualArea = () => {
   }
   const visualBgColor = useColorModeValue('white', 'gray.800')
   const [tabIndex, setTabIndex] = useState(0)
+  useEffect(() => {
+    if (tabIndex >= cur_data.length) setTabIndex(0)
+  }, [tabIndex, cur_data])
   return (
     <>
       <Flex direction="column" w="full">

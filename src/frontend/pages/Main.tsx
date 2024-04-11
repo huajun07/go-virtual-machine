@@ -81,7 +81,7 @@ export const Main = () => {
   useInterval(
     () => {
       // sanity check
-      if (currentStep >= 0 && currentStep < data.length) {
+      if (currentStep >= 0 && currentStep + 1 < data.length) {
         setStep(currentStep + 1)
       }
       if (currentStep >= data.length - 1) {
@@ -180,7 +180,7 @@ export const Main = () => {
               </Flex>
               <Box>
                 <ControlBar
-                  length={data.length}
+                  length={data.length - 1}
                   playing={isPlaying}
                   curSpeed={speed}
                   setSpeed={setSpeed}

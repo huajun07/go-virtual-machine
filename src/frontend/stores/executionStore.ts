@@ -36,11 +36,13 @@ export const createExecutionStore = (initialState: Partial<ExecutionState>) => {
        * @param step
        */
       setStep: (step: number) => {
-        set({
-          currentStep: step,
-          cur_data: get().data[step].contexts,
-          output: get().data[step].output,
-        })
+        if (step < get().data.length) {
+          set({
+            currentStep: step,
+            cur_data: get().data[step].contexts,
+            output: get().data[step].output,
+          })
+        }
       },
       /**
        * Resets the execution from the start with new instructions.
