@@ -11,6 +11,7 @@ import {
   SliderTrack,
   Spacer,
   Stack,
+  Switch,
   Tooltip,
   useColorModeValue,
 } from '@chakra-ui/react'
@@ -28,6 +29,8 @@ interface ControlBarProps {
   togglePlaying: () => void
   setWasPlaying: (newVal: boolean) => void
   moveStep: (forward: boolean) => void
+  toggleVisual: () => void
+  visual: boolean
 }
 
 export const ControlBar = (props: ControlBarProps) => {
@@ -157,6 +160,14 @@ export const ControlBar = (props: ControlBarProps) => {
             />
           </Stack>
           <Spacer />
+          <Flex justify="center" align="center" p={2}>
+            Enable Visuals?
+            <Switch
+              px={2}
+              isChecked={props.visual}
+              onChange={props.toggleVisual}
+            />
+          </Flex>
         </Flex>
       </Flex>
     </>

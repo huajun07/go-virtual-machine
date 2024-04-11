@@ -2,7 +2,6 @@ import { AiFillCaretRight } from 'react-icons/ai'
 import {
   Box,
   Button,
-  Checkbox,
   Flex,
   Icon,
   NumberDecrementStepper,
@@ -18,9 +17,7 @@ import {
 interface CodeIDEButtonProps {
   isDisabled: boolean
   toggleMode: () => void
-  toggleVisual: () => void
   heapsize: number
-  visual: boolean
   setHeapsize: (x: number) => void
 }
 
@@ -48,16 +45,6 @@ export const CodeIDEButtons = (props: CodeIDEButtonProps) => {
           </NumberInputStepper>
         </NumberInput>
         <Spacer />
-        <Checkbox
-          marginRight="10px"
-          size="sm"
-          colorScheme="blue"
-          onChange={props.toggleVisual}
-          isChecked={props.visual}
-          isDisabled={props.isDisabled}
-        >
-          {'Visualisation'}
-        </Checkbox>
         <Tooltip label={'Paste the code below and run it!'}>
           <Button
             marginRight="10px"

@@ -163,10 +163,6 @@ export const Main = () => {
             isDisabled={loading}
             heapsize={heapsize}
             setHeapsize={setHeapsize}
-            toggleVisual={() => {
-              setVisualMode(!visualMode)
-            }}
-            visual={visualMode}
           />
           <CodeIDE
             code={code}
@@ -196,6 +192,10 @@ export const Main = () => {
                   wasPlaying={wasPlaying}
                   setWasPlaying={setWasPlaying}
                   moveStep={moveStep}
+                  toggleVisual={() => {
+                    setVisualMode(!visualMode)
+                  }}
+                  visual={visualMode}
                 />
               </Box>
             </Flex>

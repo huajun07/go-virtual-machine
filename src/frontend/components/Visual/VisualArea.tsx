@@ -2,7 +2,7 @@ import 'reactflow/dist/style.css'
 import './nodes.css'
 
 import { useMemo, useState } from 'react'
-import ReactFlow, { Background, Controls, Edge, Node } from 'reactflow'
+import ReactFlow, { Background, Controls, Edge } from 'reactflow'
 import { LockIcon } from '@chakra-ui/icons'
 import {
   Box,
@@ -18,7 +18,7 @@ import {
 import { ContextInfo } from '../../../virtual-machine/executor/debugger'
 import { useExecutionStore } from '../../stores'
 
-import { addEnvs, EnvNode } from './EnvNode'
+import { addEnvs, EnvNode, Nodes } from './EnvNode'
 
 // import { useExecutionStore } from '../../stores'
 
@@ -85,13 +85,13 @@ export const VisualArea = () => {
       ]
     }
 
-    const envNodes: Node<any, string | undefined>[] = []
-    const envEdges: Edge<any>[] = []
+    const envNodes: Nodes = []
+    const envEdges: Edge[] = []
     if (info.envs.children.length) {
       addEnvs(info.envs.children[0], 10, 250, envNodes, envEdges)
     }
 
-    const nodes: Node<any, string | undefined>[] = [
+    const nodes: Nodes = [
       {
         id: 'instr',
         data: { label: 'Instructions' },
@@ -112,7 +112,7 @@ export const VisualArea = () => {
     return { nodes, edges }
   }
   const visualBgColor = useColorModeValue('white', 'gray.800')
-  const [_tabIndex, setTabIndex] = useState(0)
+  const [tabIndex, setTabIndex] = useState(0)
   return (
     <>
       <Flex direction="column" w="full">
@@ -123,7 +123,11 @@ export const VisualArea = () => {
           id="visual-area-container"
           bgColor={visualBgColor}
         >
-          <Tabs onChange={(index) => setTabIndex(index)} h="100%">
+          <Tabs
+            index={tabIndex}
+            onChange={(index) => setTabIndex(index)}
+            h="100%"
+          >
             <TabList>
               {cur_data.map((ctx) => {
                 return (

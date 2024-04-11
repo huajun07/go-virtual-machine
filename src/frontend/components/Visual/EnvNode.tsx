@@ -3,6 +3,9 @@ import { Box } from '@chakra-ui/react'
 
 import { EnvironmentInfo } from '../../../virtual-machine/executor/debugger'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Nodes = Node<any, string | undefined>[]
+
 export const EnvNode = (props: NodeProps<EnvironmentInfo>) => {
   const { cur, vars, name } = props.data
   return (
@@ -38,8 +41,8 @@ export const addEnvs = (
   env: EnvironmentInfo,
   topOffset: number,
   leftOffset: number,
-  nodes: Node<any, string | undefined>[],
-  edges: Edge<any>[],
+  nodes: Nodes,
+  edges: Edge[],
 ) => {
   nodes.push({
     id: 'env ' + env.addr.toString(),
