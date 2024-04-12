@@ -1,162 +1,165 @@
-import './Moveable.css'
+import 'reactflow/dist/style.css'
+import './nodes.css'
 
-import { useRef, useState } from 'react'
-import Moveable from 'react-moveable'
-import Selecto from 'react-selecto'
-import { Box, Flex, useColorModeValue } from '@chakra-ui/react'
+import { useEffect, useMemo, useState } from 'react'
+import ReactFlow, { Background, Controls, Edge } from 'reactflow'
+import { LockIcon } from '@chakra-ui/icons'
+import {
+  Box,
+  Flex,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+  useColorModeValue,
+} from '@chakra-ui/react'
 
-import styles from './VisualArea.module.css'
+import { ContextInfo } from '../../../virtual-machine/executor/debugger'
+import { useExecutionStore } from '../../stores'
+
+import { addEnvs, EnvNode, Nodes } from './EnvNode'
+
+// import { useExecutionStore } from '../../stores'
 
 export const VisualArea = () => {
-  const moveableRef = useRef<Moveable>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [selectedTargets, setSelectedTargets] = useState<
-    (HTMLElement | SVGElement)[]
-  >([])
-
-  enum VisualizationType {
-    Graph = 'graph',
-    Array = 'array',
-  }
-  const [visualizations] = useState<
-    {
-      key: string
-      type: VisualizationType
-    }[]
-  >([])
-
-  // const eraseVisualization = (key: string) => {
-  //   setVisualizations(visualizations.filter((x) => x.key !== key))
-  //   setSelectedTargets(selectedTargets.filter((x) => x.dataset.key !== key))
-  // }
-
-  // const addVisualization = (type: VisualizationType) => {
-  //   setVisualizations([
-  //     ...visualizations,
-  //     {
-  //       key: uuidv4(),
-  //       type,
-  //     },
-  //   ])
-  // }
-
-  const boundTranslate = (target: HTMLElement, transform: string) => {
-    let [x, y] = transform
-      .slice('translate('.length + 1, -2)
-      .split(',')
-      .map((s) => Number.parseInt(s.trim().slice(0, -2)))
-    x = Math.max(x, 0)
-    y = Math.max(y, 0)
-    if (containerRef.current !== null) {
-      x = Math.min(x, containerRef.current.offsetWidth - target.offsetWidth)
-      y = Math.min(y, containerRef.current.offsetHeight - target.offsetHeight)
+  const { cur_data } = useExecutionStore((state) => ({
+    cur_data: state.cur_data,
+  }))
+  const nodeTypes = useMemo(
+    () => ({
+      EnvNode: EnvNode,
+    }),
+    [],
+  )
+  const genVisual = (info: ContextInfo) => {
+    const instrNodes = () => {
+      return info.instrs.map((instr, idx) => {
+        const bgColor = instr.cur ? '#Caf7cb' : 'white'
+        return {
+          id: 'instr ' + instr.idx.toString(),
+          data: { label: instr.idx.toString() + ': ' + instr.val },
+          position: { x: 12.5, y: 30 * (idx + 1) },
+          parentId: 'instr',
+          style: {
+            width: 200,
+            height: 30,
+            padding: '5px',
+            backgroundColor: bgColor,
+          },
+        }
+      })
     }
-    return `translate(${x}px, ${y}px)`
+
+    const osNodes = () => {
+      const valNodes = info.OS.map((os, idx) => {
+        return {
+          id: 'os ' + os.addr.toString(),
+          data: { label: os.val },
+          position: { x: 12.5, y: 30 * (idx + 1) },
+          parentId: 'OS',
+          style: {
+            width: 200,
+            height: 30,
+            padding: '5px',
+            borderColor: os.modified ? 'red' : 'black',
+            color: os.modified ? 'red' : 'black',
+            fontWeight: os.modified ? 'bold' : 'normal',
+          },
+        }
+      })
+      return [
+        {
+          id: 'OS',
+          data: { label: 'Operand Stack' },
+          position: { x: 10, y: 275 },
+          className: 'light',
+          style: {
+            backgroundColor: '#Cadbf7',
+            width: 225,
+            height: 40 + info.OS.length * 30,
+            padding: '5px',
+          },
+        },
+        ...valNodes,
+      ]
+    }
+
+    const envNodes: Nodes = []
+    const envEdges: Edge[] = []
+    if (info.envs.children.length) {
+      addEnvs(info.envs.children[0], 10, 250, envNodes, envEdges)
+    }
+
+    const nodes: Nodes = [
+      {
+        id: 'instr',
+        data: { label: 'Instructions' },
+        position: { x: 10, y: 10 },
+        className: 'light',
+        style: {
+          backgroundColor: '#Cadbf7',
+          width: 225,
+          height: 250,
+          padding: '5px',
+        },
+      },
+      ...(cur_data.length ? instrNodes() : []),
+      ...(cur_data.length ? osNodes() : []),
+      ...envNodes,
+    ]
+    const edges = [...envEdges]
+    return { nodes, edges }
   }
-
   const visualBgColor = useColorModeValue('white', 'gray.800')
-
+  const [tabIndex, setTabIndex] = useState(0)
+  useEffect(() => {
+    if (tabIndex >= cur_data.length) setTabIndex(0)
+  }, [tabIndex, cur_data])
   return (
     <>
       <Flex direction="column" w="full">
         <Box
-          ref={containerRef}
           flexGrow={1}
           position="relative"
           overflow="hidden"
           id="visual-area-container"
           bgColor={visualBgColor}
         >
-          {visualizations.map(({ key, type }) => {
-            const isSelected = selectedTargets.some(
-              (x) => x.dataset.key === key,
-            )
-            return (
-              <Box
-                className={
-                  'visual-component ' +
-                  styles['visual-component'] +
-                  ` ${styles['visual-component-' + type]} ` +
-                  (isSelected ? ` ${styles['visual-component-selected']}` : '')
-                }
-                height={300}
-                width={400}
-                bgColor={visualBgColor}
-                border="2px solid"
-                padding={1}
-                borderColor="black.100"
-                borderRadius={8}
-                key={key}
-                data-key={key}
-              >
-                {
-                  // TODO: Visual Stuff
-                  <></>
-                }
-              </Box>
-            )
-          })}
-          <Moveable
-            ref={moveableRef}
-            target={selectedTargets}
-            individualGroupable
-            draggable
-            onDrag={({ target, transform }) => {
-              target.style.transform = boundTranslate(
-                target as HTMLElement,
-                transform,
-              )
-            }}
-            resizable
-            onResize={({ target, width, height, delta, drag }) => {
-              target.style.transform = boundTranslate(
-                drag.target as HTMLElement,
-                drag.transform,
-              )
-              delta[0] && (target.style.width = `${width}px`)
-              delta[1] && (target.style.height = `${height}px`)
-            }}
-          />
-          <Selecto
-            dragContainer={'#visual-area-container'}
-            selectFromInside={false}
-            selectByClick={true}
-            selectableTargets={['.visual-component']}
-            onDragStart={(event) => {
-              event.preventDrag()
-              const moveable = moveableRef.current
-              if (moveable === null) return
-              const target = event.inputEvent.target as HTMLElement
-              if (target.tagName.toLowerCase() === 'input') {
-                target.focus()
-              }
-              if (
-                moveable.isMoveableElement(target) ||
-                selectedTargets.some((t) => t === target || t.contains(target))
-              ) {
-                event.stop()
-              }
-              const isChildOfSelectable = (
-                element: HTMLElement | null,
-              ): boolean => {
-                if (element === document.body || element === null) return false
-                if (element.classList.contains('visual-component')) return true
-                return isChildOfSelectable(element.parentElement)
-              }
-              if (isChildOfSelectable(target.parentElement)) event.stop()
-            }}
-            onSelectEnd={(event) => {
-              const moveable = moveableRef.current
-              if (moveable === null) return
-              if (event.isDragStartEnd) {
-                event.inputEvent.preventDefault()
-                moveable.waitToChangeTarget().then(() => {
-                  moveable.dragStart(event.inputEvent)
-                })
-              }
-              setSelectedTargets(event.selected)
-            }}
-          />
+          <Tabs
+            index={tabIndex}
+            onChange={(index) => setTabIndex(index)}
+            h="100%"
+          >
+            <TabList>
+              {cur_data.map((ctx, idx) => {
+                return (
+                  <Tab key={idx}>
+                    {ctx.blocked && <LockIcon />} Thread {ctx.id}
+                  </Tab>
+                )
+              })}
+            </TabList>
+            <TabPanels h="100%">
+              {cur_data.map((ctx, idx) => {
+                const { nodes, edges } = genVisual(ctx)
+                return (
+                  <TabPanel h="100%" key={idx}>
+                    <div style={{ height: '100%', width: '100%' }}>
+                      <ReactFlow
+                        nodeTypes={nodeTypes}
+                        nodes={nodes}
+                        edges={edges}
+                      >
+                        <Background />
+                        <Controls />
+                      </ReactFlow>
+                    </div>
+                  </TabPanel>
+                )
+              })}
+            </TabPanels>
+          </Tabs>
         </Box>
       </Flex>
     </>

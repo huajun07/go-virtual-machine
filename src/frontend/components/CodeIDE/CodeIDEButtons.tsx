@@ -28,7 +28,6 @@ export const CodeIDEButtons = (props: CodeIDEButtonProps) => {
         background={useColorModeValue('gray.100', 'gray.700')}
         minWidth="max-content"
         alignItems="center"
-        gap="2"
         h="60px"
       >
         <Box p="10px">Heap Size:</Box>

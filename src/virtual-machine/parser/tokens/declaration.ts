@@ -32,7 +32,9 @@ export class FunctionDeclarationToken extends Token {
       this.func.signature.compile(compiler),
     )
     this.func.compile(compiler)
-    compiler.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
+    compiler.instructions.push(
+      new LoadVariableInstruction(frame_idx, var_idx, this.name.identifier),
+    )
     compiler.instructions.push(new StoreInstruction())
     return new NoType()
   }
@@ -59,7 +61,7 @@ export class ShortVariableDeclarationToken extends DeclarationToken {
       const expressionType = expr.compile(compiler)
       compiler.type_environment.addType(var_name, expressionType)
       compiler.instructions.push(
-        new LoadVariableInstruction(frame_idx, var_idx),
+        new LoadVariableInstruction(frame_idx, var_idx, var_name),
       )
       compiler.instructions.push(new StoreInstruction())
     }
@@ -113,7 +115,7 @@ export class VariableDeclarationToken extends DeclarationToken {
         }
         compiler.type_environment.addType(identifier, expressionType)
         compiler.instructions.push(
-          new LoadVariableInstruction(frame_idx, var_idx),
+          new LoadVariableInstruction(frame_idx, var_idx, identifier),
         )
         compiler.instructions.push(new StoreInstruction())
       }
@@ -160,7 +162,7 @@ export class ConstantDeclarationToken extends DeclarationToken {
       }
       compiler.type_environment.addType(var_name, expressionType)
       compiler.instructions.push(
-        new LoadVariableInstruction(frame_idx, var_idx),
+        new LoadVariableInstruction(frame_idx, var_idx, var_name),
       )
       compiler.instructions.push(new StoreInstruction())
     }

@@ -1,3 +1,4 @@
+import { StateInfo } from './executor/debugger'
 import parser from './parser/parser'
 import { SourceFileToken } from './parser/tokens'
 import { compile_tokens } from './compiler'
@@ -11,20 +12,28 @@ interface ProgramData {
   output?: string
   instructions: InstructionData[]
   errorMessage?: string
+  visualData: StateInfo[]
 }
 
-const runCode = (source_code: string, heapsize: number): ProgramData => {
+const runCode = (
+  source_code: string,
+  heapsize: number,
+  visualisation = true,
+): ProgramData => {
   let errorMessage = ''
   try {
     const tokens = parser.parse(source_code) as SourceFileToken
     console.log(tokens)
     const instructions = compile_tokens(tokens)
     console.log(instructions)
-    const result = execute_instructions(instructions, heapsize)
+    const result = execute_instructions(instructions, heapsize, visualisation)
     // console.log(result)
+    // console.log(result.visual_data)
     return {
       instructions: [],
-      output: result,
+      output: result.stdout,
+      visualData: result.visual_data,
+      errorMessage: result.errorMessage,
     }
   } catch (err) {
     console.warn(err)
@@ -34,6 +43,7 @@ const runCode = (source_code: string, heapsize: number): ProgramData => {
     instructions: [],
     output: 'An Error Occurred!',
     errorMessage: errorMessage,
+    visualData: [],
   }
 }
 

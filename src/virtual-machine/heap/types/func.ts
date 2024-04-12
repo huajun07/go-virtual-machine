@@ -30,6 +30,10 @@ export class FuncNode extends BaseNode {
   override get_children(): number[] {
     return [this.E()]
   }
+
+  override toString(): string {
+    return 'CLOSURE'
+  }
 }
 
 export class CallRefNode extends BaseNode {
@@ -82,6 +86,10 @@ export class MethodNode extends BaseNode {
   override get_children(): number[] {
     return [this.receiverAddr(), this.identifierAddr()]
   }
+
+  override toString(): string {
+    return this.identifier()
+  }
 }
 
 /**
@@ -130,6 +138,10 @@ export class DeferFuncNode extends BaseNode {
   override get_children(): number[] {
     return [this.funcAddr(), this.stackAddr()]
   }
+
+  override toString(): string {
+    return 'DEFER ' + this.func().toString()
+  }
 }
 
 /**
@@ -139,10 +151,11 @@ export class DeferFuncNode extends BaseNode {
  * Word 2: Address of a stack containing all the arguments (first argument at the top).
  */
 export class DeferMethodNode extends BaseNode {
-  static create(argCount: number, process: Process): MethodNode {
+  static create(argCount: number, process: Process): DeferMethodNode {
     const addr = process.heap.allocate(3)
     process.heap.set_tag(addr, TAG.DEFER_METHOD)
     process.heap.temp_push(addr)
+    process.heap.memory.set_word(-1, addr + 1)
     process.heap.memory.set_word(-1, addr + 2)
 
     const stack = StackNode.create(process.heap)
@@ -153,7 +166,7 @@ export class DeferMethodNode extends BaseNode {
     process.heap.memory.set_word(methodNode, addr + 1)
 
     process.heap.temp_pop()
-    return new MethodNode(process.heap, addr)
+    return new DeferMethodNode(process.heap, addr)
   }
 
   methodAddr(): number {
@@ -174,5 +187,9 @@ export class DeferMethodNode extends BaseNode {
 
   override get_children(): number[] {
     return [this.methodAddr(), this.stackAddr()]
+  }
+
+  override toString(): string {
+    return 'DEFER ' + this.methodNode().toString()
   }
 }

@@ -11,6 +11,10 @@ export class JumpInstruction extends Instruction {
     this.addr = addr
   }
 
+  override toString(): string {
+    return super.toString() + ' ' + this.addr.toString()
+  }
+
   set_addr(addr: number) {
     this.addr = addr
   }

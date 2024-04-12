@@ -25,6 +25,12 @@ export class ForkInstruction extends Instruction {
     const new_context = process.context.fork().addr
     process.contexts.push(new_context)
     process.context.set_PC(this.addr)
+    if (process.debug_mode) {
+      process.debugger.context_id_map.set(
+        new_context,
+        process.debugger.context_id++,
+      )
+    }
   }
 }
 
@@ -32,6 +38,11 @@ export class LoadChannelInstruction extends Instruction {
   constructor() {
     super('LDCH')
   }
+
+  override toString(): string {
+    return 'LOAD CHANNEL'
+  }
+
   override execute(process: Process): void {
     const buffer_sz = new IntegerNode(
       process.heap,
@@ -45,6 +56,11 @@ export class LoadChannelReqInstruction extends Instruction {
   constructor(public recv: boolean, public PC: number) {
     super('LDCR')
   }
+
+  override toString(): string {
+    return 'LOAD CHAN ' + (this.recv ? 'RECV' : 'SEND') + ' REQ'
+  }
+
   override execute(process: Process): void {
     const clone = process.heap.clone(process.context.peekOS())
     process.heap.temp_push(clone)
@@ -75,8 +91,14 @@ export class TryChannelReqInstruction extends Instruction {
     const chan = chan_req.channel()
     const req = chan_req.req()
     if (!chan.try(req)) {
-      process.context.set_waitlist(ArrayNode.create(1, process.heap).addr)
+      process.context.set_waitlist(ArrayNode.create(2, process.heap).addr)
       process.context.waitlist().set_child(0, chan.wait(req))
+      process.context
+        .waitlist()
+        .set_child(
+          1,
+          process.heap.blocked_contexts.push_back(process.context.addr),
+        )
       process.context.set_blocked(true)
     } else {
       process.context.set_PC(req.PC())
@@ -88,7 +110,7 @@ export class TryChannelReqInstruction extends Instruction {
 
 export class SelectInstruction extends Instruction {
   constructor(public cases: number, public default_case: boolean) {
-    super('SELECT')
+    super('SELECT CASES')
   }
   override execute(process: Process): void {
     let pc = -1
@@ -121,13 +143,19 @@ export class SelectInstruction extends Instruction {
       } else {
         process.context.set_blocked(true)
         process.context.set_waitlist(
-          ArrayNode.create(cases.length, process.heap).addr,
+          ArrayNode.create(cases.length + 1, process.heap).addr,
         )
         for (let i = 0; i < cases.length; i++) {
           const chan = cases[i].channel()
           const req = cases[i].req()
           process.context.waitlist().set_child(i, chan.wait(req))
         }
+        process.context
+          .waitlist()
+          .set_child(
+            cases.length,
+            process.heap.blocked_contexts.push_back(process.context.addr),
+          )
       }
     }
     for (let i = 0; i < cases.length; i++) process.heap.temp_pop()

@@ -11,12 +11,16 @@ import { BoolType, Float64Type, Int64Type, StringType, Type } from '../typing'
 import { Instruction } from './base'
 
 export class LoadConstantInstruction extends Instruction {
-  val: unknown
+  val: number | string | boolean
   data_type: Type
-  constructor(val: unknown, data_type: Type) {
+  constructor(val: number | string | boolean, data_type: Type) {
     super('LDC')
     this.val = val
     this.data_type = data_type
+  }
+
+  override toString(): string {
+    return 'LOAD ' + this.val.toString()
   }
 
   static is(instr: Instruction): instr is LoadConstantInstruction {
@@ -49,6 +53,10 @@ export class LoadDefaultInstruction extends Instruction {
     super('LDD')
   }
 
+  override toString(): string {
+    return 'LOAD DEFAULT ' + this.dataType.toString()
+  }
+
   override execute(process: Process): void {
     const defaultNodeAddress = this.dataType.defaultNodeCreator()(process.heap)
     process.context.pushOS(defaultNodeAddress)
@@ -64,6 +72,10 @@ export class LoadArrayInstruction extends Instruction {
     super('LDA')
   }
 
+  override toString(): string {
+    return 'LOAD ARRAY ' + this.length.toString()
+  }
+
   override execute(process: Process): void {
     const arrayNode = ArrayNode.create(this.length, process.heap)
     for (let i = this.length - 1; i >= 0; i--) {
@@ -77,6 +89,10 @@ export class LoadArrayInstruction extends Instruction {
 export class LoadArrayElementInstruction extends Instruction {
   constructor() {
     super('LDAE')
+  }
+
+  override toString(): string {
+    return 'LOAD ARRAY ENTRY'
   }
 
   override execute(process: Process): void {
@@ -134,12 +150,16 @@ export class LoadSliceInstruction extends Instruction {
 }
 
 export class LoadVariableInstruction extends Instruction {
-  frame_idx: number
-  var_idx: number
-  constructor(frame_idx: number, var_idx: number) {
+  constructor(
+    public frame_idx: number,
+    public var_idx: number,
+    public id: string,
+  ) {
     super('LD')
-    this.frame_idx = frame_idx
-    this.var_idx = var_idx
+  }
+
+  override toString() {
+    return 'LOAD VAR ' + this.id
   }
 
   override execute(process: Process): void {

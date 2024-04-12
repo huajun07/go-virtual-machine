@@ -133,6 +133,7 @@ export class FunctionLiteralToken extends Token {
     block_instr.set_frame(
       vars.map((name) => compiler.type_environment.get(name)),
     )
+    block_instr.set_identifiers(vars)
     compiler.type_environment = compiler.type_environment.pop()
     compiler.context.pop_env()
 

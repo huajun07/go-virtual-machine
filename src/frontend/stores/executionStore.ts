@@ -1,18 +1,23 @@
 import { shallow } from 'zustand/shallow'
 import { createWithEqualityFn } from 'zustand/traditional'
 
-import { InstructionData } from '../../virtual-machine'
+import { ContextInfo, StateInfo } from '../../virtual-machine/executor/debugger'
 
 export interface ExecutionState {
   currentStep: number
   setStep: (step: number) => void
-  instructions: InstructionData[]
-  setInstructions: (instructions: InstructionData[]) => void
+  data: StateInfo[]
+  setVisualData: (data: StateInfo[]) => void
+  cur_data: ContextInfo[]
+  output: string
+  setOutput: (output: string) => void
 }
 
 const defaultValues = {
   currentStep: 0,
-  instructions: [],
+  data: [],
+  cur_data: [],
+  output: '',
 }
 
 /**
@@ -23,7 +28,7 @@ const defaultValues = {
  */
 export const createExecutionStore = (initialState: Partial<ExecutionState>) => {
   return createWithEqualityFn<ExecutionState>(
-    (set) => ({
+    (set, get) => ({
       ...defaultValues,
       /**
        * Change the current execution step to given value.
@@ -31,17 +36,26 @@ export const createExecutionStore = (initialState: Partial<ExecutionState>) => {
        * @param step
        */
       setStep: (step: number) => {
-        set({ currentStep: step })
+        if (step < get().data.length) {
+          set({
+            currentStep: step,
+            cur_data: get().data[step].contexts,
+            output: get().data[step].output,
+          })
+        }
       },
       /**
        * Resets the execution from the start with new instructions.
        * @param instructions New instructions
        */
-      setInstructions: (instructions: InstructionData[]) => {
+      setVisualData: (data: StateInfo[]) => {
         set({
           currentStep: 0,
-          instructions,
+          data,
         })
+      },
+      setOutput: (output: string) => {
+        set({ output })
       },
       ...initialState,
     }),

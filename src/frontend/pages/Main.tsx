@@ -27,20 +27,21 @@ export const LoaderContext = createContext<
 const COOKIE_NAME = 'code_value'
 
 export const Main = () => {
-  const { instructions, setInstructions, currentStep, setStep } =
+  const { setVisualData, currentStep, setStep, data, setOutput } =
     useExecutionStore((state) => ({
-      instructions: state.instructions,
-      setInstructions: state.setInstructions,
+      data: state.data,
+      setVisualData: state.setVisualData,
       currentStep: state.currentStep,
       setStep: state.setStep,
+      setOutput: state.setOutput,
     }))
   const [isPlaying, setPlaying] = useState(false)
   const [wasPlaying, setWasPlaying] = useState(false)
   const [speed, setSpeed] = useState<number>(1)
   const [loading, setLoading] = useState(false)
-  const [output, setOutput] = useState<string | null>(null)
   const [code, setCode] = useState('')
   const [heapsize, setHeapsize] = useState(2048)
+  const [visualMode, setVisualMode] = useState(false)
 
   useEffect(() => {
     // Get the value from the cookie
@@ -80,10 +81,10 @@ export const Main = () => {
   useInterval(
     () => {
       // sanity check
-      if (currentStep >= 0 && currentStep < instructions.length) {
+      if (currentStep >= 0 && currentStep + 1 < data.length) {
         setStep(currentStep + 1)
       }
-      if (currentStep >= instructions.length - 1) {
+      if (currentStep >= data.length - 1) {
         // End of execution
         setPlaying(false)
       }
@@ -93,11 +94,11 @@ export const Main = () => {
 
   const moveStep = (forward: boolean) => {
     const newStep = Math.min(
-      instructions.length,
+      data.length,
       Math.max(0, (forward ? 1 : -1) * speed + currentStep),
     )
     setStep(newStep)
-    if (newStep >= instructions.length) {
+    if (newStep >= data.length) {
       setPlaying(false)
     }
   }
@@ -113,19 +114,18 @@ export const Main = () => {
     // Retrieve instructions from endpoint
     setOutput('Running your code...')
     const {
-      instructions: newInstructions,
       errorMessage,
       output: newOutput,
-    } = runCode(code, heapsize)
-    if (!newInstructions || errorMessage) {
+      visualData,
+    } = runCode(code, heapsize, visualMode)
+    if (errorMessage) {
       setLoading(false)
       makeToast(errorMessage)
-      return
     }
 
     // Set instructions and update components to start playing mode
-    setInstructions(newInstructions)
-    setOutput(newOutput || '')
+    setVisualData(visualData)
+    if (visualData.length === 0) setOutput(newOutput || '')
     setPlaying(true)
     setWasPlaying(false)
     setTimeout(function () {
@@ -156,7 +156,7 @@ export const Main = () => {
         </Center>
       ) : null}
       <Flex>
-        <Box w="50%" borderRightWidth="1px">
+        <Box minWidth="500px" w="30%" borderRightWidth="1px">
           <CodeIDEButtons
             toggleMode={startRunning}
             isDisabled={loading}
@@ -172,25 +172,29 @@ export const Main = () => {
         </Box>
         <Flex position="relative" flex={1}>
           <Flex borderRightWidth="1px" flexDirection="column" w="100%">
-            <IO output={output} />
+            <IO />
             <Flex flex={1} flexDirection="column" w="100%">
               <Flex flex={1}>
                 <VisualArea />
               </Flex>
               <Box>
                 <ControlBar
-                  length={instructions.length}
+                  length={data.length - 1}
                   playing={isPlaying}
                   curSpeed={speed}
                   setSpeed={setSpeed}
                   togglePlaying={() => {
-                    if (isPlaying || currentStep < instructions.length)
+                    if (isPlaying || currentStep < data.length)
                       setPlaying(!isPlaying)
                   }}
-                  disabled={instructions.length === 0}
+                  disabled={data.length === 0}
                   wasPlaying={wasPlaying}
                   setWasPlaying={setWasPlaying}
                   moveStep={moveStep}
+                  toggleVisual={() => {
+                    setVisualMode(!visualMode)
+                  }}
+                  visual={visualMode}
                 />
               </Box>
             </Flex>

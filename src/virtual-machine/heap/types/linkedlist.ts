@@ -75,6 +75,16 @@ export class LinkedListNode extends BaseNode {
     return [this.head().addr, this.tail().addr]
   }
 
+  get_items() {
+    const vals = []
+    let cur = this.head().next()
+    while (cur.addr !== this.tail().addr) {
+      vals.push(cur.get_val())
+      cur = cur.next()
+    }
+    return vals
+  }
+
   print() {
     this.head().next().print()
   }

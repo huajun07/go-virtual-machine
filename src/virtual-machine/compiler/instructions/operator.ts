@@ -22,6 +22,10 @@ export class UnaryInstruction extends OpInstruction {
     super('UNARY', op)
   }
 
+  override toString(): string {
+    return 'UNARY ' + this.op
+  }
+
   override execute(process: Process): void {
     const arg1 = process.heap.get_value(
       process.context.popOS(),
@@ -33,6 +37,10 @@ export class UnaryInstruction extends OpInstruction {
 export class BinaryInstruction extends OpInstruction {
   constructor(op: string) {
     super('BINOP', op)
+  }
+
+  override toString(): string {
+    return 'BINOP ' + this.op
   }
 
   override execute(process: Process): void {

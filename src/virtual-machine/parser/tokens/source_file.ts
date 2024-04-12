@@ -21,7 +21,7 @@ export class SourceFileToken extends Token {
   }
 
   override compile(compiler: Compiler): Type {
-    const global_block = new BlockInstruction()
+    const global_block = new BlockInstruction('GLOBAL')
     compiler.instructions.push(global_block)
     compiler.context.push_env()
     compiler.type_environment = compiler.type_environment.extend()
@@ -30,12 +30,15 @@ export class SourceFileToken extends Token {
       declaration.compile(compiler)
     }
     const [frame_idx, var_idx] = compiler.context.env.find_var('main')
-    compiler.instructions.push(new LoadVariableInstruction(frame_idx, var_idx))
+    compiler.instructions.push(
+      new LoadVariableInstruction(frame_idx, var_idx, 'main'),
+    )
     compiler.instructions.push(new CallInstruction(0))
     const vars = compiler.context.env.get_frame()
     global_block.set_frame(
       vars.map((name) => compiler.type_environment.get(name)),
     )
+    global_block.set_identifiers(vars)
     return new NoType()
   }
 }

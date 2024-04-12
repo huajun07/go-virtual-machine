@@ -1,3 +1,5 @@
+import { Debugger } from '../executor/debugger'
+
 import { ArrayNode, SliceNode } from './types/array'
 import { ChannelNode, ChannelReqNode, ReqInfoNode } from './types/channel'
 import { ContextNode } from './types/context'
@@ -63,8 +65,10 @@ export class Heap {
   max_level: number
   temp_roots: StackNode
   contexts: QueueNode
+  blocked_contexts: LinkedListNode
   mem_left: number
   temp = -1
+  debugger: Debugger | undefined
   constructor(size: number) {
     this.size = size
     this.mem_left = size
@@ -84,6 +88,7 @@ export class Heap {
     this.UNASSIGNED = UnassignedNode.create(this)
     this.temp_roots = StackNode.create(this)
     this.contexts = QueueNode.create(this)
+    this.blocked_contexts = LinkedListNode.create(this)
     const context = ContextNode.create(this)
     this.contexts.push(context.addr)
   }
@@ -287,6 +292,8 @@ export class Heap {
     }
     this.set_free(addr, true)
     this.add_list(addr, lvl)
+
+    this.debugger?.identifier_map.delete(addr)
     return addr + (1 << lvl)
   }
   calc_level(x: number) {
@@ -366,6 +373,7 @@ export class Heap {
     // console.trace()
     const roots: number[] = [
       this.contexts.addr,
+      this.blocked_contexts.addr,
       this.temp_roots.addr,
       this.UNASSIGNED.addr,
       this.temp,

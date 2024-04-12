@@ -53,7 +53,7 @@ describe('Wait Group Execution', () => {
     }
     `
     expect(runCode(code, 2048).errorMessage).toEqual(
-      'sync: negative WaitGroup counter.',
+      'Execution Error: sync: negative WaitGroup counter.',
     )
   })
 
@@ -69,7 +69,7 @@ describe('Wait Group Execution', () => {
     }
     `
     expect(runCode(code, 2048).errorMessage).toEqual(
-      'sync: negative WaitGroup counter.',
+      'Execution Error: sync: negative WaitGroup counter.',
     )
   })
 

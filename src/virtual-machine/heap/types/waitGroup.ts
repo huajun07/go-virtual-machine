@@ -91,7 +91,7 @@ export class WaitGroupNode extends BaseNode {
   }
 
   override toString(): string {
-    //! TODO: Figure out what the string format of Golang's WaitGroup is.
-    throw new Error('Unimplemented')
+    return 'WG COUNT ' + this.count().toString()
+    // throw new Error('Unimplemented')
   }
 }

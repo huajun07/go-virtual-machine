@@ -6,15 +6,21 @@ import { Instruction } from './base'
 
 export class BlockInstruction extends Instruction {
   frame: Type[] = []
-  for_block: boolean
-
-  constructor(for_block = false) {
+  identifiers: string[] = []
+  constructor(public name: string, public for_block = false) {
     super('BLOCK')
-    this.for_block = for_block
   }
 
   set_frame(frame: Type[]) {
     this.frame = [...frame]
+  }
+
+  set_identifiers(identifiers: string[]) {
+    this.identifiers = [...identifiers]
+  }
+
+  override toString(): string {
+    return super.toString() + ' ' + this.name
   }
 
   override execute(process: Process): void {
@@ -24,19 +30,32 @@ export class BlockInstruction extends Instruction {
       const T = this.frame[i]
       new_frame.set_idx(T.defaultNodeCreator()(process.heap), i)
     }
-    process.context.pushRTS(
-      process.context.E().extend_env(new_frame.addr, this.for_block).addr,
-    )
+    const new_env = process.context
+      .E()
+      .extend_env(new_frame.addr, this.for_block).addr
+    process.context.pushRTS(new_env)
     process.heap.temp_pop()
+
+    if (process.debug_mode) {
+      process.debugger.env_alloc_map.set(new_env, process.runtime_count)
+      process.debugger.env_name_map.set(new_env, this.name)
+      const children = new_frame.get_children()
+      for (let i = 0; i < children.length; i++) {
+        process.debugger.identifier_map.set(children[i], this.identifiers[i])
+      }
+    }
   }
 }
 export class FuncBlockInstruction extends BlockInstruction {
-  args: number
-  constructor(args: number) {
-    super(false)
+  constructor(public args: number) {
+    super('ANONY FUNC', false)
     this.tag = 'FUNC_BLOCK'
-    this.args = args
   }
+
+  override toString(): string {
+    return this.tag
+  }
+
   override execute(process: Process): void {
     super.execute(process)
     for (let i = this.args - 1; i >= 0; i--) {
@@ -45,7 +64,13 @@ export class FuncBlockInstruction extends BlockInstruction {
       process.heap.copy(dst, src)
     }
     // Pop function in stack
-    process.context.popOS()
+    const id = process.context.popOS()
+    if (process.debug_mode) {
+      const identifier = process.debugger.identifier_map.get(id)
+      if (identifier) {
+        process.debugger.env_name_map.set(process.context.E().addr, identifier)
+      }
+    }
   }
 }
 
@@ -56,6 +81,5 @@ export class ExitBlockInstruction extends Instruction {
 
   override execute(process: Process): void {
     process.context.popRTS()
-    // TODO: Implement defer in popRTS
   }
 }

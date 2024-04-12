@@ -9,13 +9,13 @@ import { Token } from './base'
 import { StatementToken } from './statement'
 
 export class BlockToken extends Token {
-  constructor(public statements: StatementToken[]) {
+  constructor(public statements: StatementToken[], public name = 'BLOCK') {
     super('block')
   }
 
   override compile(compiler: Compiler): Type {
     compiler.context.push_env()
-    const block_instr = new BlockInstruction()
+    const block_instr = new BlockInstruction(this.name)
     compiler.instructions.push(block_instr)
     compiler.type_environment = compiler.type_environment.extend()
     let hasReturn = false
@@ -31,6 +31,7 @@ export class BlockToken extends Token {
     block_instr.set_frame(
       vars.map((name) => compiler.type_environment.get(name)),
     )
+    block_instr.set_identifiers(vars)
     compiler.type_environment = compiler.type_environment.pop()
     compiler.context.pop_env()
 
