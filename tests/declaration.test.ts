@@ -13,6 +13,7 @@ describe('Variable Declaration Tests', () => {
       ).output,
     ).toEqual('13\n')
   })
+
   test('String Variables', () => {
     expect(
       mainRunner(
@@ -21,5 +22,31 @@ describe('Variable Declaration Tests', () => {
         Println(a + b)',
       ).output,
     ).toEqual('hihi2\n')
+  })
+
+  test('Boolean constants true and false are predeclared', () => {
+    const code = `
+    if false {
+      Println("false")
+    }
+    if true {
+      Println("true")
+    }
+    `
+    expect(mainRunner(code).output).toEqual('true\n')
+  })
+
+  test('Boolean constants true and false can be shadowed by local declaration', () => {
+    const code = `
+    true := false
+    false := true
+    if false {
+      Println("false")
+    }
+    if true {
+      Println("true")
+    }
+    `
+    expect(mainRunner(code).output).toEqual('')
   })
 })
