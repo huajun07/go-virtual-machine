@@ -1,4 +1,3 @@
-// Utility functions to help in parsing.
 {{
   import {
     IntegerLiteralToken,
@@ -49,18 +48,7 @@
     QualifiedIdentifierToken,
   } from './tokens'
 
-  // Checks whether an identifier is valid (not a reserved keyword).
-  function checkIdentifier(identifier) {
-    const reserved_keywords = [
-      'break', 'case', 'chan', 'const', 'continue', 'default',
-      'defer', 'else', 'fallthrough', 'for', 'func', 'go', 'goto',
-      'if', 'import', 'interface', 'map', 'package', 'range', 'return',
-      'select', 'struct', 'switch', 'type', 'var'
-    ]
-    return !reserved_keywords.includes(identifier)
-  }
-
-  // Returns a AST with left to right precedence
+  // Returns an AST with left to right precedence
   function leftPrecTree(rest, right) {
     if (!rest.length) return right
     let last = rest.pop()
@@ -69,28 +57,16 @@
 }}
 
 /*
-The parser will return a tree structure, where every operation has a type,
-some (or none) children, and possibly a value.
-
-For example, a binary multiplication operation looks like this:
-{
-    type: 'binary_operator',
-    name: 'binary_multiplication',
-    children: [...]
-}
-
-An integer literal looks like this:
-{
-    type: 'integer_literal',
-    value: 42
-}
+The result of parsing a source file should be a single SourceFileToken.
+A token may be composed of many other tokens.
+The structure of what each token looks like can be found in each Token class.
 */
 
-// =============== Root ===============
+//* =============== Root ===============
 start = _ @SourceFile _
 
 
-// =============== Whitespace ===============
+//* =============== Whitespace ===============
 // By convention, _ is used to eat up whitespace.
 _ = [ \t\r\n]*
 
@@ -120,7 +96,7 @@ hex_digit     = [0-9a-fA-F]
 //! TODO (P4): Support comments.
 
 //* Identifiers
-identifier = iden:$(letter (letter / unicode_digit)*) &{ return checkIdentifier(iden) }
+identifier = iden:$(letter (letter / unicode_digit)*) &{ return IdentifierToken.isValidIdentifier(iden) }
              { return new IdentifierToken(iden) }
 
 //* Integer Literals

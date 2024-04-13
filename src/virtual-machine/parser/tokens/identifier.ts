@@ -9,6 +9,37 @@ export class IdentifierToken extends Token {
     super('identifier')
   }
 
+  static isValidIdentifier(identifier: string): boolean {
+    const reservedKeywords = [
+      'break',
+      'case',
+      'chan',
+      'const',
+      'continue',
+      'default',
+      'defer',
+      'else',
+      'fallthrough',
+      'for',
+      'func',
+      'go',
+      'goto',
+      'if',
+      'import',
+      'interface',
+      'map',
+      'package',
+      'range',
+      'return',
+      'select',
+      'struct',
+      'switch',
+      'type',
+      'var',
+    ]
+    return !reservedKeywords.includes(identifier)
+  }
+
   override compile(compiler: Compiler): Type {
     const [frame_idx, var_idx] = compiler.context.env.find_var(this.identifier)
     compiler.instructions.push(
