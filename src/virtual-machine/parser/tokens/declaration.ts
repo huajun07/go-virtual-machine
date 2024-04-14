@@ -5,7 +5,7 @@ import {
 } from '../../compiler/instructions'
 import { NoType, Type } from '../../compiler/typing'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 import { ExpressionToken } from './expressions'
 import { IdentifierToken } from './identifier'
 import { FunctionLiteralToken } from './literals'
@@ -16,8 +16,12 @@ export type TopLevelDeclarationToken =
   | FunctionDeclarationToken
 
 export class FunctionDeclarationToken extends Token {
-  constructor(public name: IdentifierToken, public func: FunctionLiteralToken) {
-    super('function_declaration')
+  constructor(
+    sourceLocation: TokenLocation,
+    public name: IdentifierToken,
+    public func: FunctionLiteralToken,
+  ) {
+    super('function_declaration', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -43,13 +47,12 @@ export class FunctionDeclarationToken extends Token {
 export abstract class DeclarationToken extends Token {}
 
 export class ShortVariableDeclarationToken extends DeclarationToken {
-  identifiers: IdentifierToken[]
-  expressions: ExpressionToken[]
-
-  constructor(identifiers: IdentifierToken[], expressions: ExpressionToken[]) {
-    super('short_variable_declaration')
-    this.identifiers = identifiers
-    this.expressions = expressions
+  constructor(
+    sourceLocation: TokenLocation,
+    public identifiers: IdentifierToken[],
+    public expressions: ExpressionToken[],
+  ) {
+    super('short_variable_declaration', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -71,12 +74,13 @@ export class ShortVariableDeclarationToken extends DeclarationToken {
 
 export class VariableDeclarationToken extends DeclarationToken {
   constructor(
+    sourceLocation: TokenLocation,
     public identifiers: IdentifierToken[],
     // Note: A variable declaration must have at least one of varType / expressions.
     public varType?: TypeToken,
     public expressions?: ExpressionToken[],
   ) {
-    super('variable_declaration')
+    super('variable_declaration', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -134,11 +138,12 @@ export class VariableDeclarationToken extends DeclarationToken {
 
 export class ConstantDeclarationToken extends DeclarationToken {
   constructor(
+    sourceLocation: TokenLocation,
     public identifiers: IdentifierToken[],
     public expressions: ExpressionToken[],
     public varType?: TypeToken,
   ) {
-    super('const_declaration')
+    super('const_declaration', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {

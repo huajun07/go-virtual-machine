@@ -19,14 +19,14 @@ import {
   Type,
 } from '../../compiler/typing'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 import { BlockToken } from './block'
 import { ExpressionToken } from './expressions'
 import { ArrayTypeToken, FunctionTypeToken, SliceTypeToken } from './type'
 
 export abstract class LiteralToken extends Token {
-  constructor(public value: number | string) {
-    super('literal')
+  constructor(sourceLocation: TokenLocation, public value: number | string) {
+    super('literal', sourceLocation)
   }
 
   static is(token: Token): token is LiteralToken {
@@ -36,10 +36,10 @@ export abstract class LiteralToken extends Token {
 
 export class IntegerLiteralToken extends LiteralToken {
   /** Tokenize an integer literal in the given base. */
-  static fromSource(str: string, base: number) {
+  static fromSource(sourceLocation: TokenLocation, str: string, base: number) {
     // Golang numbers can be underscore delimited.
     const value = parseInt(str.replace('_', ''), base)
-    return new IntegerLiteralToken(value)
+    return new IntegerLiteralToken(sourceLocation, value)
   }
 
   getValue(): number {
@@ -56,9 +56,9 @@ export class IntegerLiteralToken extends LiteralToken {
 
 export class FloatLiteralToken extends LiteralToken {
   /** Tokenize a float literal. */
-  static fromSource(str: string) {
+  static fromSource(sourceLocation: TokenLocation, str: string) {
     const value = parseFloat(str)
-    return new FloatLiteralToken(value)
+    return new FloatLiteralToken(sourceLocation, value)
   }
 
   getValue(): number {
@@ -75,15 +75,15 @@ export class FloatLiteralToken extends LiteralToken {
 
 export class StringLiteralToken extends LiteralToken {
   /** Tokenize a raw string literal. */
-  static fromSourceRaw(str: string) {
+  static fromSourceRaw(sourceLocation: TokenLocation, str: string) {
     // Carriage returns are discarded from raw strings.
     str = str.replaceAll('\r', '')
-    return new StringLiteralToken(str)
+    return new StringLiteralToken(sourceLocation, str)
   }
 
   /** Tokenize an interpreted string literal. */
-  static fromSourceInterpreted(str: string) {
-    return new StringLiteralToken(str)
+  static fromSourceInterpreted(sourceLocation: TokenLocation, str: string) {
+    return new StringLiteralToken(sourceLocation, str)
   }
 
   getValue(): string {
@@ -99,8 +99,12 @@ export class StringLiteralToken extends LiteralToken {
 }
 
 export class FunctionLiteralToken extends Token {
-  constructor(public signature: FunctionTypeToken, public body: BlockToken) {
-    super('function_literal')
+  constructor(
+    sourceLocation: TokenLocation,
+    public signature: FunctionTypeToken,
+    public body: BlockToken,
+  ) {
+    super('function_literal', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -149,8 +153,11 @@ export class FunctionLiteralToken extends Token {
 }
 
 export class LiteralValueToken extends Token {
-  constructor(public elements: (LiteralValueToken | ExpressionToken)[]) {
-    super('literal_value')
+  constructor(
+    sourceLocation: TokenLocation,
+    public elements: (LiteralValueToken | ExpressionToken)[],
+  ) {
+    super('literal_value', sourceLocation)
   }
 
   override compile(_compiler: Compiler): Type {
@@ -217,10 +224,11 @@ export class LiteralValueToken extends Token {
 
 export class ArrayLiteralToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public arrayType: ArrayTypeToken,
     public body: LiteralValueToken,
   ) {
-    super('array_literal')
+    super('array_literal', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -232,10 +240,11 @@ export class ArrayLiteralToken extends Token {
 
 export class SliceLiteralToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public sliceType: SliceTypeToken,
     public body: LiteralValueToken,
   ) {
-    super('slice_literal')
+    super('slice_literal', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {

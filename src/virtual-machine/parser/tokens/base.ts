@@ -1,12 +1,13 @@
 import { Compiler } from '../../compiler'
 import { Type } from '../../compiler/typing'
 
-export abstract class Token {
-  type: string
+export type TokenLocation = {
+  start: { offset: number; line: number; column: number }
+  end: { offset: number; line: number; column: number }
+}
 
-  constructor(type: string) {
-    this.type = type
-  }
+export abstract class Token {
+  constructor(public type: string, public sourceLocation: TokenLocation) {}
 
   abstract compile(compiler: Compiler): Type
 }

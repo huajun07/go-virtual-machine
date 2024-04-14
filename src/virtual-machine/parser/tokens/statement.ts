@@ -29,7 +29,7 @@ import {
   Type,
 } from '../../compiler/typing'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 import { BlockToken } from './block'
 import { DeclarationToken, ShortVariableDeclarationToken } from './declaration'
 import {
@@ -65,11 +65,12 @@ export type SimpleStatementToken =
 
 export class AssignmentStatementToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public left: ExpressionToken[],
     public operation: '=' | '+=' | '*=',
     public right: ExpressionToken[],
   ) {
-    super('assignment')
+    super('assignment', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -115,10 +116,11 @@ export class AssignmentStatementToken extends Token {
 
 export class IncDecStatementToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public expression: ExpressionToken,
     public operation: '++' | '--',
   ) {
-    super('inc_dec')
+    super('inc_dec', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -137,8 +139,11 @@ export class IncDecStatementToken extends Token {
 }
 
 export class ReturnStatementToken extends Token {
-  constructor(public returns?: ExpressionToken[]) {
-    super('return')
+  constructor(
+    sourceLocation: TokenLocation,
+    public returns?: ExpressionToken[],
+  ) {
+    super('return', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -167,8 +172,8 @@ export class ReturnStatementToken extends Token {
 }
 
 export class BreakStatementToken extends Token {
-  constructor() {
-    super('break')
+  constructor(sourceLocation: TokenLocation) {
+    super('break', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -180,8 +185,8 @@ export class BreakStatementToken extends Token {
 }
 
 export class ContinueStatementToken extends Token {
-  constructor() {
-    super('continue')
+  constructor(sourceLocation: TokenLocation) {
+    super('continue', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -193,8 +198,8 @@ export class ContinueStatementToken extends Token {
 }
 
 export class FallthroughStatementToken extends Token {
-  constructor() {
-    super('fallthrough')
+  constructor(sourceLocation: TokenLocation) {
+    super('fallthrough', sourceLocation)
   }
 
   override compile(_compiler: Compiler): Type {
@@ -205,13 +210,14 @@ export class FallthroughStatementToken extends Token {
 
 export class IfStatementToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     /** Executed before the predicate (e.g. if x := 0; x < 1 {} ) */
     public initialization: SimpleStatementToken | null,
     public predicate: ExpressionToken,
     public consequent: BlockToken,
     public alternative: IfStatementToken | BlockToken | null,
   ) {
-    super('if')
+    super('if', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -270,11 +276,12 @@ export class IfStatementToken extends Token {
 
 export class SwitchStatementToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public init: SimpleStatementToken | null,
     public expressions: ExpressionToken | null,
     public cases: SwitchCaseToken[],
   ) {
-    super('switch')
+    super('switch', sourceLocation)
   }
 
   override compile(_compiler: Compiler): Type {
@@ -285,10 +292,11 @@ export class SwitchStatementToken extends Token {
 
 export class SwitchCaseToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public expressions: ExpressionToken[] | null,
     public statements: StatementToken[],
   ) {
-    super('case')
+    super('case', sourceLocation)
   }
 
   override compile(_compiler: Compiler): Type {
@@ -305,12 +313,13 @@ export class ForStatementToken extends Token {
   // 4. For statements with a range clause.
   //! Note that range clauses are not supported for now. They will likely be a seperate class.
   constructor(
+    sourceLocation: TokenLocation,
     public initialization: SimpleStatementToken | null,
     public condition: ExpressionToken | null,
     public post: ExpressionToken | null,
     public body: BlockToken,
   ) {
-    super('for')
+    super('for', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -356,8 +365,11 @@ export class ForStatementToken extends Token {
 }
 
 export class DeferStatementToken extends Token {
-  constructor(public expression: ExpressionToken) {
-    super('defer')
+  constructor(
+    sourceLocation: TokenLocation,
+    public expression: ExpressionToken,
+  ) {
+    super('defer', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -383,8 +395,11 @@ export class DeferStatementToken extends Token {
 }
 
 export class GoStatementToken extends Token {
-  constructor(public call: PrimaryExpressionToken) {
-    super('go')
+  constructor(
+    sourceLocation: TokenLocation,
+    public call: PrimaryExpressionToken,
+  ) {
+    super('go', sourceLocation)
   }
 
   /** Used in the parser to only parse function calls */
@@ -408,8 +423,12 @@ export class GoStatementToken extends Token {
 
 /** Sends a `value` into `channel`. */
 export class SendStatementToken extends Token {
-  constructor(public channel: IdentifierToken, public value: ExpressionToken) {
-    super('send')
+  constructor(
+    sourceLocation: TokenLocation,
+    public channel: IdentifierToken,
+    public value: ExpressionToken,
+  ) {
+    super('send', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -433,13 +452,14 @@ export class SendStatementToken extends Token {
 /** Receive and assign the results to one or two variables. Note that RecvStmt is NOT a SimpleStmt. */
 export class ReceiveStatementToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     /** Whether this is a shorthand variable declaration (else it is an assignment). */
     public declaration: boolean,
     public identifiers: IdentifierToken[] | null,
     /** expression is guarenteed to be a receive operator. */
     public expression: UnaryOperator,
   ) {
-    super('receive')
+    super('receive', sourceLocation)
   }
 
   /** Used in the parser to only parse valid receive statements. */
@@ -457,8 +477,11 @@ export class ReceiveStatementToken extends Token {
 }
 
 export class SelectStatementToken extends Token {
-  constructor(public clauses: CommunicationClauseToken[]) {
-    super('select')
+  constructor(
+    sourceLocation: TokenLocation,
+    public clauses: CommunicationClauseToken[],
+  ) {
+    super('select', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -500,10 +523,11 @@ export class SelectStatementToken extends Token {
 }
 export class CommunicationClauseToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public predicate: 'default' | SendStatementToken | ReceiveStatementToken,
     public body: StatementToken[],
   ) {
-    super('communication_clause')
+    super('communication_clause', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -521,7 +545,9 @@ export class CommunicationClauseToken extends Token {
       }
       const jump_instr = new JumpInstruction()
       compiler.instructions.push(jump_instr)
-      new BlockToken(this.body, 'CASE BLOCK').compile(compiler)
+      new BlockToken(this.sourceLocation, this.body, 'CASE BLOCK').compile(
+        compiler,
+      )
       jump_instr.set_addr(compiler.instructions.length + 1)
     } else {
       // This is recv statement
@@ -532,22 +558,33 @@ export class CommunicationClauseToken extends Token {
       if (this.predicate.identifiers) {
         if (this.predicate.declaration) {
           this.body.unshift(
-            new ShortVariableDeclarationToken(this.predicate.identifiers, [
-              new EmptyExpressionToken(chanType),
-            ]),
+            new ShortVariableDeclarationToken(
+              this.sourceLocation,
+              this.predicate.identifiers,
+              [new EmptyExpressionToken(this.sourceLocation, chanType)],
+            ),
           )
         } else {
           // !TODO: Hacky see if better way to implement this
           this.body.unshift(
             new AssignmentStatementToken(
-              [new PrimaryExpressionToken(this.predicate.identifiers[0], null)],
+              this.sourceLocation,
+              [
+                new PrimaryExpressionToken(
+                  this.sourceLocation,
+                  this.predicate.identifiers[0],
+                  null,
+                ),
+              ],
               '=',
-              [new EmptyExpressionToken(chanType)],
+              [new EmptyExpressionToken(this.sourceLocation, chanType)],
             ),
           )
         }
       } else compiler.instructions.push(new PopInstruction())
-      new BlockToken(this.body, 'CASE BLOCK').compile(compiler)
+      new BlockToken(this.sourceLocation, this.body, 'CASE BLOCK').compile(
+        compiler,
+      )
       jump_instr.set_addr(compiler.instructions.length + 1)
     }
     return new NoType()
@@ -556,8 +593,11 @@ export class CommunicationClauseToken extends Token {
 
 /** An ExpressionStatement differs from an Expression: it should not leave a value on the OS. */
 export class ExpressionStatementToken extends Token {
-  constructor(public expression: ExpressionToken) {
-    super('expression_statement')
+  constructor(
+    sourceLocation: TokenLocation,
+    public expression: ExpressionToken,
+  ) {
+    super('expression_statement', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {

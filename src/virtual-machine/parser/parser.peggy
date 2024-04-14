@@ -97,13 +97,13 @@ hex_digit     = [0-9a-fA-F]
 
 //* Identifiers
 identifier = iden:$(letter (letter / unicode_digit)*) &{ return IdentifierToken.isValidIdentifier(iden) }
-             { return new IdentifierToken(iden) }
+             { return new IdentifierToken(location(), iden) }
 
 //* Integer Literals
-int_lit = number:binary_lit  { return IntegerLiteralToken.fromSource(number, 2) } /
-          number:octal_lit   { return IntegerLiteralToken.fromSource(number, 8) } /
-          number:decimal_lit { return IntegerLiteralToken.fromSource(number, 10) } /
-          number:hex_lit     { return IntegerLiteralToken.fromSource(number, 16) } 
+int_lit = number:binary_lit  { return IntegerLiteralToken.fromSource(location(), number, 2) } /
+          number:octal_lit   { return IntegerLiteralToken.fromSource(location(), number, 8) } /
+          number:decimal_lit { return IntegerLiteralToken.fromSource(location(), number, 10) } /
+          number:hex_lit     { return IntegerLiteralToken.fromSource(location(), number, 16) } 
 binary_lit  = "0" "b" "_"? $binary_digits
 octal_lit   = "0" [oO]? "_"? $octal_digits
 decimal_lit = $([1-9] "_"? decimal_digits?) /
@@ -117,7 +117,7 @@ hex_digits     = hex_digit     ("_"? hex_digit)*
 
 //* Floating-point Literals
 //! TODO (P5): Support hexadecimal floating points.
-float_lit = number:$decimal_float_lit { return FloatLiteralToken.fromSource(number); }
+float_lit = number:$decimal_float_lit { return FloatLiteralToken.fromSource(location(), number); }
 
 decimal_float_lit = decimal_digits "." decimal_digits? decimal_exponent? /
                     decimal_digits decimal_exponent /
@@ -129,8 +129,8 @@ decimal_exponent  = [eE] ("+" / "-")? decimal_digits
 
 //* String Literals
 string_lit             = raw_string_lit / interpreted_string_lit
-raw_string_lit         = "`" str:$[^`]* "`" { return StringLiteralToken.fromSourceRaw(str) }
-interpreted_string_lit = '"' str:$[^\n"]* '"' { return StringLiteralToken.fromSourceInterpreted(str) }
+raw_string_lit         = "`" str:$[^`]* "`" { return StringLiteralToken.fromSourceRaw(location(), str) }
+interpreted_string_lit = '"' str:$[^\n"]* '"' { return StringLiteralToken.fromSourceInterpreted(location(), str) }
 //! TODO (P3): Interpreted string literals should interpret rune literals.
 
 
@@ -142,19 +142,19 @@ interpreted_string_lit = '"' str:$[^\n"]* '"' { return StringLiteralToken.fromSo
 Type     = @TypeName / TypeLit / "(" _ Type _ ")"
 //! TODO (P1): Support qualified identifiers for TypeName.
 TypeName = iden:identifier &{ return PrimitiveTypeToken.isPrimitive(iden.identifier) }
-           { return new PrimitiveTypeToken(iden.identifier) }
+           { return new PrimitiveTypeToken(location(), iden.identifier) }
          / @QualifiedIdent
 TypeLit  = ArrayType / StructType / PointerType / FunctionType / InterfaceType / SliceType / MapType / ChannelType
 
 //* Array Types
-ArrayType   = "[" _ length:ArrayLength _ "]" element:ElementType { return new ArrayTypeToken(element, length) }
+ArrayType   = "[" _ length:ArrayLength _ "]" element:ElementType { return new ArrayTypeToken(location(), element, length) }
 // Note: ArrayLength is actually an Expression in Golang specification, but we didn't want to implement
 // expression evaluation INSIDE the compiler. Hence, we chose to only allow int_lit.
 ArrayLength = int_lit
 ElementType = Type
 
 //* Slice Types
-SliceType = "[" "]" element:ElementType { return new SliceTypeToken(element) }
+SliceType = "[" "]" element:ElementType { return new SliceTypeToken(location(), element) }
 
 //* Struct Types
 StructType    = "struct" _ "{" _ (_ FieldDecl _ ";"?)* _ "}"
@@ -168,7 +168,7 @@ BaseType = Type
 
 //* Function Types
 FunctionType  = "func" _ @Signature
-Signature     = params:Parameters _ result:Result? { return new FunctionTypeToken(params, result) }
+Signature     = params:Parameters _ result:Result? { return new FunctionTypeToken(location(), params, result) }
 Result        = @Parameters / type:Type { return [{ type }] }
 // Parameters is an array of { identifier?: string, type: TypeToken }.
 Parameters    = "(" _ parameters:ParameterList? _ ","? _ ")" { return parameters ?? [] }
@@ -190,20 +190,20 @@ TypeTerm       = Type / UnderlyingType
 UnderlyingType = "~" Type
 
 //* Map Types
-MapType = "map" _ "[" _ key:KeyType _ "]" _ element:ElementType { return new MapTypeToken(key, element) }
+MapType = "map" _ "[" _ key:KeyType _ "]" _ element:ElementType { return new MapTypeToken(location(), key, element) }
 KeyType = Type
 
 //* Channel Types
-ChannelType = "chan" _ "<-" _ element:ElementType { return new ChannelTypeToken(element, false, true) }
-              / "<-" _ "chan" _ element:ElementType { return new ChannelTypeToken(element, true, false) }
-              / "chan" _ element:ElementType { return new ChannelTypeToken(element, true, true) }
+ChannelType = "chan" _ "<-" _ element:ElementType { return new ChannelTypeToken(location(), element, false, true) }
+              / "<-" _ "chan" _ element:ElementType { return new ChannelTypeToken(location(), element, true, false) }
+              / "chan" _ element:ElementType { return new ChannelTypeToken(location(), element, true, true) }
 
 
 
 
 
 //* =============== Blocks ===============
-Block = "{" _ statements:StatementList _ "}" { return new BlockToken(statements) }
+Block = "{" _ statements:StatementList _ "}" { return new BlockToken(location(), statements) }
 StatementList = (_ @Statement _ ";"?)*
 
 
@@ -223,7 +223,7 @@ ConstSpec      = identifiers:IdentifierList _ rest:(
                     varType:Type? _ "=" _ expressions:ExpressionList
                     { return { varType, expressions } }
                  )
-                 { return new ConstantDeclarationToken(identifiers, rest.expressions, rest.varType) }
+                 { return new ConstantDeclarationToken(location(), identifiers, rest.expressions, rest.varType) }
 
 IdentifierList = head:identifier tail:(_ "," _ @identifier _)* { return [head, ...tail] }
 ExpressionList = head:Expression tail:(_ "," _ @Expression _)* { return [head, ...tail] }
@@ -248,16 +248,16 @@ VarSpec = identifiers:IdentifierList _ rest:(
             _ "=" _ expressions:ExpressionList
             { return {varType: undefined, expressions} }
           )
-          { return new VariableDeclarationToken(identifiers, rest.varType, rest.expressions) }
+          { return new VariableDeclarationToken(location(), identifiers, rest.varType, rest.expressions) }
 
 //* Short Variable Declarations
 ShortVarDecl = identifiers:IdentifierList _ ":=" _ expressions:ExpressionList
-               { return new ShortVariableDeclarationToken(identifiers, expressions) }
+               { return new ShortVariableDeclarationToken(location(), identifiers, expressions) }
 
 //* Function Declarations
 // Note: TypeParameters? is omitted from FunctionDecl as we do not support generics.
 FunctionDecl = "func" _ name:FunctionName _ signature:Signature _ body:Block?
-               { return new FunctionDeclarationToken(name, new FunctionLiteralToken(signature, body)) }
+               { return new FunctionDeclarationToken(location(), name, new FunctionLiteralToken(location(), signature, body)) }
 FunctionName = identifier
 FunctionBody = Block
 
@@ -280,42 +280,42 @@ BasicLit    = float_lit / int_lit / string_lit
 OperandName = identifier / QualifiedIdent
 
 //* Qualified Identifiers
-QualifiedIdent = pkg:PackageName "." iden:identifier { return new QualifiedIdentifierToken(pkg.identifier, iden.identifier) }
+QualifiedIdent = pkg:PackageName "." iden:identifier { return new QualifiedIdentifierToken(location(), pkg.identifier, iden.identifier) }
 
 //* Composite Literals
-CompositeLit = type:ArrayType _ value:LiteralValue { return new ArrayLiteralToken(type, value) }
-             / type:SliceType _ value:LiteralValue { return new SliceLiteralToken(type, value) }
-LiteralValue = "{" elements:(@ElementList _ ","? _)? "}" { return new LiteralValueToken(elements ?? []) }
+CompositeLit = type:ArrayType _ value:LiteralValue { return new ArrayLiteralToken(location(), type, value) }
+             / type:SliceType _ value:LiteralValue { return new SliceLiteralToken(location(), type, value) }
+LiteralValue = "{" elements:(@ElementList _ ","? _)? "}" { return new LiteralValueToken(location(), elements ?? []) }
 ElementList  = head:KeyedElement rest:(_ "," _ @KeyedElement)* { return [head, ...rest] }
 // Ironically, KeyedElement will not support having a key for our implementation.
 KeyedElement = Element
 Element      = Expression / LiteralValue
 
 //* Function Literals
-FunctionLit = "func" _ signature:Signature _ body:FunctionBody { return new FunctionLiteralToken(signature, body) }
+FunctionLit = "func" _ signature:Signature _ body:FunctionBody { return new FunctionLiteralToken(location(), signature, body) }
 
 //* Primary Expressions
 //! TODO (P5): MethodExpr and Conversion are not supported.
-PrimaryExpr     = operand:(@BuiltinCall / @Operand) _ rest:PrimaryExprModifier* { return new PrimaryExpressionToken(operand, rest) }
+PrimaryExpr     = operand:(@BuiltinCall / @Operand) _ rest:PrimaryExprModifier* { return new PrimaryExpressionToken(location(), operand, rest) }
 // This PrimaryExprTerm is added to fix left recursion.
 PrimaryExprModifier = Selector / Index / Slice / TypeAssertion / Arguments
-Selector      = "." identifier:identifier { return new SelectorToken(identifier.identifier) }
-Index         = "[" _ expr:Expression (_ ",")? _ "]" { return new IndexToken(expr) }
+Selector      = "." identifier:identifier { return new SelectorToken(location(), identifier.identifier) }
+Index         = "[" _ expr:Expression (_ ",")? _ "]" { return new IndexToken(location(), expr) }
 // Note: Full slice expressions are not supported.
-Slice         = "[" _ from:Expression? _ ":" _ to:Expression? _ "]" { return new SliceToken(from, to) }
+Slice         = "[" _ from:Expression? _ ":" _ to:Expression? _ "]" { return new SliceToken(location(), from, to) }
 TypeAssertion = "." _ "(" _ Type _ ")"
 // Note: Variadic arguments are not supported.
 // Note: Golang specs allow a Type to be the first argument, but it is only used for certain builtin functions.
 // We split BuiltinCall out to a separate token to allow parsing types as first argument.
-Arguments     = "(" _ exprs:ExpressionList? _ ","? _ ")" { return new CallToken(exprs) }
+Arguments     = "(" _ exprs:ExpressionList? _ ","? _ ")" { return new CallToken(location(), exprs) }
 
 //* Builtin Call (This is not in Golang specifications)
 BuiltinCall   = name:$[a-zA-Z]+ _ "(" _ type:Type _ args:("," _ @ExpressionList)? _ ")"
                 &{ return BuiltinCallToken.validNames.includes(name) && BuiltinCallToken.namesThatTakeType.includes(name) }
-                { return new BuiltinCallToken(name, type, args ?? []) }
+                { return new BuiltinCallToken(location(), name, type, args ?? []) }
               / name:$[a-zA-Z]+ _ "(" _ args:ExpressionList? _ ")"
                 &{ return BuiltinCallToken.validNames.includes(name) && !BuiltinCallToken.namesThatTakeType.includes(name) }
-                { return new BuiltinCallToken(name, null, args ?? []) }
+                { return new BuiltinCallToken(location(), name, null, args ?? []) }
 
 //* Method Expressions
 MethodExpr   = ReceiverType "." MethodName
@@ -336,33 +336,33 @@ UnaryExpr  = PrimaryExpr /
              op:unary_op _ expr:UnaryExpr { return op(expr) }
 
 // Operators are parsed into a function, that can be applied on operands to construct a token.
-rel_op      = "==" { return BinaryOperator.fromSource("equal") } /
-              "!=" { return BinaryOperator.fromSource("not_equal") } /
-              "<" !"-" { return BinaryOperator.fromSource("less") } /
-              "<=" { return BinaryOperator.fromSource("less_or_equal") } /
-              ">" { return BinaryOperator.fromSource("greater") } /
-              ">=" { return BinaryOperator.fromSource("greater_or_equal") }
-add_op      = "+" !"+" { return BinaryOperator.fromSource("sum") } /
-              "-" !"-" { return BinaryOperator.fromSource("difference") } /
-              "|" !"|" { return BinaryOperator.fromSource("bitwise_or") } /
-              "^" !"^" { return BinaryOperator.fromSource("bitwise_xor") }
-mul_op      = "*" !"*" { return BinaryOperator.fromSource("product") } /
-              "/" !"/" { return BinaryOperator.fromSource("quotient") } /
-              "%" { return BinaryOperator.fromSource("remainder") } /
-              "<<" { return BinaryOperator.fromSource("left_shift") } /
-              ">>" { return BinaryOperator.fromSource("right_shift") } /
-              "&" !"&" { return BinaryOperator.fromSource("bitwise_and") } /
-              "&^" { return BinaryOperator.fromSource("bit_clear") }
-disjunct_op = "||" { return BinaryOperator.fromSource("conditional_or") }
-conjunct_op = "&&" { return BinaryOperator.fromSource("conditional_and") }
+rel_op      = "==" { return BinaryOperator.fromSource(location(), "equal") } /
+              "!=" { return BinaryOperator.fromSource(location(), "not_equal") } /
+              "<" !"-" { return BinaryOperator.fromSource(location(), "less") } /
+              "<=" { return BinaryOperator.fromSource(location(), "less_or_equal") } /
+              ">" { return BinaryOperator.fromSource(location(), "greater") } /
+              ">=" { return BinaryOperator.fromSource(location(), "greater_or_equal") }
+add_op      = "+" !"+" { return BinaryOperator.fromSource(location(), "sum") } /
+              "-" !"-" { return BinaryOperator.fromSource(location(), "difference") } /
+              "|" !"|" { return BinaryOperator.fromSource(location(), "bitwise_or") } /
+              "^" !"^" { return BinaryOperator.fromSource(location(), "bitwise_xor") }
+mul_op      = "*" !"*" { return BinaryOperator.fromSource(location(), "product") } /
+              "/" !"/" { return BinaryOperator.fromSource(location(), "quotient") } /
+              "%" { return BinaryOperator.fromSource(location(), "remainder") } /
+              "<<" { return BinaryOperator.fromSource(location(), "left_shift") } /
+              ">>" { return BinaryOperator.fromSource(location(), "right_shift") } /
+              "&" !"&" { return BinaryOperator.fromSource(location(), "bitwise_and") } /
+              "&^" { return BinaryOperator.fromSource(location(), "bit_clear") }
+disjunct_op = "||" { return BinaryOperator.fromSource(location(), "conditional_or") }
+conjunct_op = "&&" { return BinaryOperator.fromSource(location(), "conditional_and") }
 
-unary_op   = "+" { return UnaryOperator.fromSource("plus") } / // Note: This operator is unnamed in Golang specs.
-             "-" { return UnaryOperator.fromSource("negation") } /
-             "!" { return UnaryOperator.fromSource("not") } /
-             "^" { return UnaryOperator.fromSource("bitwise_complement") } /
-             "*" { return UnaryOperator.fromSource("indirection") } /
-             "&" { return UnaryOperator.fromSource("address") } /
-             "<-" { return UnaryOperator.fromSource("receive") }
+unary_op   = "+" { return UnaryOperator.fromSource(location(), "plus") } / // Note: This operator is unnamed in Golang specs.
+             "-" { return UnaryOperator.fromSource(location(), "negation") } /
+             "!" { return UnaryOperator.fromSource(location(), "not") } /
+             "^" { return UnaryOperator.fromSource(location(), "bitwise_complement") } /
+             "*" { return UnaryOperator.fromSource(location(), "indirection") } /
+             "&" { return UnaryOperator.fromSource(location(), "address") } /
+             "<-" { return UnaryOperator.fromSource(location(), "receive") }
 
 //* Conversions
 Conversion = Type _ "(" _ Expression _ ")" _ ","? _ ")"
@@ -391,31 +391,31 @@ Label       = identifier
 ExpressionStmt = Expression
 
 //* Send Statements
-SendStmt = channel:Channel _ "<-" _ value:Expression { return new SendStatementToken(channel, value) }
+SendStmt = channel:Channel _ "<-" _ value:Expression { return new SendStatementToken(location(), channel, value) }
 // For simplicity, we only allow channels to be identifiers instead of Expression
 Channel  = identifier
 
 //* IncDec Statements
 IncDecStmt = expression:Expression _ op:("++" / "--")
-             { return new IncDecStatementToken(expression, op) }
+             { return new IncDecStatementToken(location(), expression, op) }
 
 //* Assignment Statements
 Assignment = left:ExpressionList _ op:$assign_op _ right:ExpressionList
-             { return new AssignmentStatementToken(left, op, right) }
+             { return new AssignmentStatementToken(location(), left, op, right) }
 assign_op  = [\*\+]? "="
 
 //* If Statements
 IfStmt = "if" _ init:(@SimpleStmt _ ";")? _ pred:Expression _ cons:Block _
          alt:("else" _ @(IfStmt / Block))?
-         { return new IfStatementToken(init, pred, cons, alt) }
+         { return new IfStatementToken(location(), init, pred, cons, alt) }
 
 //* Switch Statements
 SwitchStmt      = ExprSwitchStmt /** / TypeSwitchStmt */
 
 ExprSwitchStmt  = "switch" _ init:(@SimpleStmt _ ";")? _ expr:Expression? _ "{" _ cases:(_ @ExprCaseClause _)* "}"
-                  { return new SwitchStatementToken(init, expr, cases ) }
-ExprCaseClause = "case" _ "default" _ ":" _ statements:StatementList { return new SwitchCaseToken(null, statements) }
-               / "case" _ exprs:ExpressionList _ ":" _ statements:StatementList { return new SwitchCaseToken(exprs, statements) }
+                  { return new SwitchStatementToken(location(), init, expr, cases ) }
+ExprCaseClause = "case" _ "default" _ ":" _ statements:StatementList { return new SwitchCaseToken(location(), null, statements) }
+               / "case" _ exprs:ExpressionList _ ":" _ statements:StatementList { return new SwitchCaseToken(location(), exprs, statements) }
 
 // Note: TypeSwitchStmt will most likely not be supported.
 // TypeSwitchStmt  = "switch" _ (SimpleStmt _ ";")? _ TypeSwitchGuard _ "{" _ (_ TypeCaseClause _)* _ ")"
@@ -430,7 +430,7 @@ ForStmt   = "for" _
                     cond:Condition { return {init: undefined, cond, post: undefined }}
                     )?
             _ body:Block
-            { return new ForStatementToken(clause?.init, clause?.cond, clause?.post, body)}
+            { return new ForStatementToken(location(), clause?.init, clause?.cond, clause?.post, body)}
 Condition = Expression
 
 ForClause = init:InitStmt? _ ";" _ cond:Condition? _ ";" _ post:PostStmt?
@@ -442,42 +442,42 @@ RangeClause = (ExpressionList _ "=" / IdentifierList _ ":=")? _ "range" _ Expres
 
 //* Go Statements
 GoStmt = "go" _ expr:PrimaryExpr &{ return GoStatementToken.isValidGoroutine(expr) }
-         { return new GoStatementToken(expr) }
+         { return new GoStatementToken(location(), expr) }
 
 //* Select Statements
-SelectStmt = "select" _ "{" _ clauses:(_ @CommClause _)* _ "}" { return new SelectStatementToken(clauses ?? []) }
+SelectStmt = "select" _ "{" _ clauses:(_ @CommClause _)* _ "}" { return new SelectStatementToken(location(), clauses ?? []) }
 CommClause = predicate:CommCase _ ":" _ body:StatementList
-             { return new CommunicationClauseToken(predicate, body) }
+             { return new CommunicationClauseToken(location(), predicate, body) }
 CommCase   = "case" _ @(RecvStmt / SendStmt) / @"default"
 // For simplicity, we disallow an ExpressionList with assignment here.
 RecvStmt   = identifiers:IdentifierList _ ":=" _ expr:RecvExpr
              &{ return ReceiveStatementToken.isReceiveStatement(identifiers) }
-             { return new ReceiveStatementToken(true, identifiers, expr) } 
+             { return new ReceiveStatementToken(location(), true, identifiers, expr) } 
            / identifiers:(@IdentifierList _ "=")? _ expr:RecvExpr
              &{ return ReceiveStatementToken.isReceiveStatement(identifiers) }
-             { return new ReceiveStatementToken(false, identifiers, expr) } 
+             { return new ReceiveStatementToken(location(), false, identifiers, expr) } 
 RecvExpr   = expr:Expression &{ return expr instanceof UnaryOperator && expr.name === 'receive' } { return expr }
 
 //* Return Statements
 ReturnStmt = "return" _ returns:ExpressionList?
-             { return new ReturnStatementToken(returns) }
+             { return new ReturnStatementToken(location(), returns) }
 
 //* Break Statements
 //! TODO (P5): Labels are not tokenized.
-BreakStmt = "break" _ Label? { return new BreakStatementToken() }
+BreakStmt = "break" _ Label? { return new BreakStatementToken(location()) }
 
 //* Continue Statements
 //! TODO (P5): Labels are not tokenized.
-ContinueStmt = "continue" _ Label? { return new ContinueStatementToken() }
+ContinueStmt = "continue" _ Label? { return new ContinueStatementToken(location()) }
 
 //* Goto Statements
 GotoStmt = "goto" _ Label
 
 //* Fallthrough Statements
-FallthroughStmt = "fallthrough" { return new FallthroughStatementToken() }
+FallthroughStmt = "fallthrough" { return new FallthroughStatementToken(location()) }
 
 //* Defer Statements
-DeferStmt = "defer" _ expression:Expression { return new DeferStatementToken(expression) }
+DeferStmt = "defer" _ expression:Expression { return new DeferStatementToken(location(), expression) }
 
 
 
@@ -486,7 +486,7 @@ DeferStmt = "defer" _ expression:Expression { return new DeferStatementToken(exp
 //* =============== Packages ===============
 //* Source File
 SourceFile = pkg:PackageClause _ ";"? _ imports:(_ @ImportDecl _ ";"? _)* declarations:(_ @TopLevelDecl _ ";"?)*
-             { return new SourceFileToken(pkg, imports, declarations) }
+             { return new SourceFileToken(location(), pkg, imports, declarations) }
 
 //* Package Clause
 PackageClause = "package" _ @PackageName
@@ -495,5 +495,5 @@ PackageName = identifier
 //* Import Declarations
 ImportDecl = "import" _ @(ImportSpec / "(" _ (_ ImportSpec _ ";"?)* _ ")")
 ImportSpec = name:("." / PackageName)? _ path:ImportPath
-             { return new ImportToken(path, name) }
+             { return new ImportToken(location(), path, name) }
 ImportPath = string_lit

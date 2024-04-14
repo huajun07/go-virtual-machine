@@ -14,12 +14,12 @@ import {
   Type,
 } from '../../compiler/typing'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 import { IntegerLiteralToken } from './literals'
 
 export abstract class TypeToken extends Token {
-  constructor() {
-    super('type')
+  constructor(sourceLocation: TokenLocation) {
+    super('type', sourceLocation)
   }
 }
 
@@ -48,8 +48,8 @@ export class PrimitiveTypeToken extends TypeToken {
 
   name: (typeof PrimitiveTypeToken.primitiveTypes)[number]
 
-  constructor(name: string) {
-    super()
+  constructor(sourceLocation: TokenLocation, name: string) {
+    super(sourceLocation)
     if (!PrimitiveTypeToken.isPrimitive(name)) {
       throw Error(`Invalid primitive type: ${name}`)
     }
@@ -67,8 +67,12 @@ export class PrimitiveTypeToken extends TypeToken {
 }
 
 export class ArrayTypeToken extends TypeToken {
-  constructor(public element: TypeToken, public length: IntegerLiteralToken) {
-    super()
+  constructor(
+    sourceLocation: TokenLocation,
+    public element: TypeToken,
+    public length: IntegerLiteralToken,
+  ) {
+    super(sourceLocation)
   }
 
   override compile(compiler: Compiler): ArrayType {
@@ -77,8 +81,8 @@ export class ArrayTypeToken extends TypeToken {
 }
 
 export class SliceTypeToken extends TypeToken {
-  constructor(public element: TypeToken) {
-    super()
+  constructor(sourceLocation: TokenLocation, public element: TypeToken) {
+    super(sourceLocation)
   }
 
   override compile(compiler: Compiler): SliceType {
@@ -94,8 +98,12 @@ export class FunctionTypeToken extends TypeToken {
   public parameters: ParameterDecl[]
   public results: ParameterDecl[]
 
-  constructor(parameters: ParameterDecl[], results: ParameterDecl[] | null) {
-    super()
+  constructor(
+    sourceLocation: TokenLocation,
+    parameters: ParameterDecl[],
+    results: ParameterDecl[] | null,
+  ) {
+    super(sourceLocation)
     this.parameters = parameters
     this.results = results ?? []
   }
@@ -112,8 +120,12 @@ export class FunctionTypeToken extends TypeToken {
 }
 
 export class MapTypeToken extends TypeToken {
-  constructor(public key: TypeToken, public element: TypeToken) {
-    super()
+  constructor(
+    sourceLocation: TokenLocation,
+    public key: TypeToken,
+    public element: TypeToken,
+  ) {
+    super(sourceLocation)
   }
 
   override compile(_compiler: Compiler): Type {
@@ -124,11 +136,12 @@ export class MapTypeToken extends TypeToken {
 
 export class ChannelTypeToken extends TypeToken {
   constructor(
+    sourceLocation: TokenLocation,
     public element: TypeToken,
     public readable: boolean,
     public writable: boolean,
   ) {
-    super()
+    super(sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {

@@ -23,7 +23,7 @@ import {
   TypeUtility,
 } from '../../compiler/typing'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 import { IdentifierToken } from './identifier'
 import { LiteralToken } from './literals'
 import { BinaryOperator, UnaryOperator } from './operator'
@@ -40,8 +40,8 @@ export type ExpressionToken =
 export type OperandToken = IdentifierToken | ExpressionToken
 
 export class EmptyExpressionToken extends Token {
-  constructor(public argType: Type) {
-    super('empty_expression')
+  constructor(sourceLocation: TokenLocation, public argType: Type) {
+    super('empty_expression', sourceLocation)
   }
 
   override compile(_compiler: Compiler): Type {
@@ -51,11 +51,12 @@ export class EmptyExpressionToken extends Token {
 }
 export class PrimaryExpressionToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public operand: OperandToken,
     /** The remaining modifier that is applied to the current operand. E.g. selector / index etc. */
     public rest: PrimaryExpressionModifierToken[] | null,
   ) {
-    super('primary_expression')
+    super('primary_expression', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
@@ -73,13 +74,13 @@ export class PrimaryExpressionToken extends Token {
 // Hence, its compilation method must take in an extra argument. Idk if this is the correct way
 // to fix, but it doesn't make sense to force them to follow the structure of Token.
 export abstract class PrimaryExpressionModifierToken {
-  constructor(public type: string) {}
+  constructor(public type: string, public sourceLocation: TokenLocation) {}
   abstract compile(compiler: Compiler, operandType: Type): Type
 }
 
 export class SelectorToken extends PrimaryExpressionModifierToken {
-  constructor(public identifier: string) {
-    super('selector')
+  constructor(sourceLocation: TokenLocation, public identifier: string) {
+    super('selector', sourceLocation)
   }
 
   override compile(compiler: Compiler, operandType: Type): Type {
@@ -93,8 +94,11 @@ export class SelectorToken extends PrimaryExpressionModifierToken {
 }
 
 export class IndexToken extends PrimaryExpressionModifierToken {
-  constructor(public expression: ExpressionToken) {
-    super('index')
+  constructor(
+    sourceLocation: TokenLocation,
+    public expression: ExpressionToken,
+  ) {
+    super('index', sourceLocation)
   }
 
   override compile(compiler: Compiler, operandType: Type): Type {
@@ -125,10 +129,11 @@ export class IndexToken extends PrimaryExpressionModifierToken {
 
 export class SliceToken extends PrimaryExpressionModifierToken {
   constructor(
+    sourceLocation: TokenLocation,
     public from: ExpressionToken | null,
     public to: ExpressionToken | null,
   ) {
-    super('slice')
+    super('slice', sourceLocation)
   }
 
   override compile(compiler: Compiler, operandType: Type): Type {
@@ -155,8 +160,11 @@ export class SliceToken extends PrimaryExpressionModifierToken {
 export class CallToken extends PrimaryExpressionModifierToken {
   expressions: ExpressionToken[]
 
-  constructor(expressions: ExpressionToken[] | null) {
-    super('call')
+  constructor(
+    sourceLocation: TokenLocation,
+    expressions: ExpressionToken[] | null,
+  ) {
+    super('call', sourceLocation)
     this.expressions = expressions ?? []
   }
 
@@ -228,12 +236,13 @@ export class BuiltinCallToken extends Token {
   static namesThatTakeType = ['make'] as const
 
   constructor(
+    sourceLocation: TokenLocation,
     public name: BuiltinFunctionName,
     /** The first argument if it is a type. */
     public firstTypeArg: TypeToken | null,
     public args: ExpressionToken[],
   ) {
-    super('builtin')
+    super('builtin', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {

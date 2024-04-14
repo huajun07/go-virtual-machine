@@ -2,11 +2,11 @@ import { Compiler } from '../../compiler'
 import { LoadVariableInstruction } from '../../compiler/instructions'
 import { PackageType, Type } from '../../compiler/typing'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 
 export class IdentifierToken extends Token {
-  constructor(public identifier: string) {
-    super('identifier')
+  constructor(sourceLocation: TokenLocation, public identifier: string) {
+    super('identifier', sourceLocation)
   }
 
   static isValidIdentifier(identifier: string): boolean {
@@ -55,8 +55,12 @@ export class IdentifierToken extends Token {
  * hence all values (not types) of the form `x.y` are handled by selector operator instead.
  */
 export class QualifiedIdentifierToken extends Token {
-  constructor(public pkg: string, public identifier: string) {
-    super('qualified_identifier')
+  constructor(
+    sourceLocation: TokenLocation,
+    public pkg: string,
+    public identifier: string,
+  ) {
+    super('qualified_identifier', sourceLocation)
   }
 
   override compile(compiler: Compiler): Type {
