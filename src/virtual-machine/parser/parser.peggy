@@ -68,7 +68,7 @@ start = _ @SourceFile _
 
 //* =============== Whitespace ===============
 // By convention, _ is used to eat up whitespace.
-_ = [ \t\r\n]*
+_ = ([ \t\r\n] / comment) *
 
 
 
@@ -93,7 +93,8 @@ hex_digit     = [0-9a-fA-F]
 
 
 //* =============== Lexical Elements ===============
-//! TODO (P4): Support comments.
+comment = "//" unicode_char* newline
+        / "/*" (!"*/" .)* "*/"
 
 //* Identifiers
 identifier = iden:$(letter (letter / unicode_digit)*) &{ return IdentifierToken.isValidIdentifier(iden) }
