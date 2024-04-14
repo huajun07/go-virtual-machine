@@ -200,7 +200,7 @@ export class FunctionType extends Type {
   constructor(
     public parameters: ParameterType[],
     public results: ReturnType,
-    public variadic: boolean = true,
+    public variadic: boolean = false,
   ) {
     super()
   }
