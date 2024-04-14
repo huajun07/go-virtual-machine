@@ -49,6 +49,11 @@ export class IdentifierToken extends Token {
   }
 }
 
+/**
+ * Note that qualified identifiers in our implementation are only used for types,
+ * as our parser cannot distinguish `package.identifier` from `variable.field`,
+ * hence all values (not types) of the form `x.y` are handled by selector operator instead.
+ */
 export class QualifiedIdentifierToken extends Token {
   constructor(public pkg: string, public identifier: string) {
     super('qualified_identifier')
@@ -59,7 +64,7 @@ export class QualifiedIdentifierToken extends Token {
     if (!(pkg instanceof PackageType)) {
       throw new Error(`${this} is not a type`)
     }
-    return pkg.get(this.identifier)
+    return pkg.select(this.identifier)
   }
 
   override toString(): string {

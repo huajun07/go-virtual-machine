@@ -1,5 +1,12 @@
 import { Heap } from '../../heap'
 import { WaitGroupNode } from '../../heap/types/waitGroup'
+import {
+  LoadConstantInstruction,
+  LoadPackageInstruction,
+  LoadVariableInstruction,
+  StoreInstruction,
+} from '../instructions'
+import { Compiler } from '..'
 
 import {
   FunctionType,
@@ -7,6 +14,7 @@ import {
   PackageType,
   ParameterType,
   ReturnType,
+  StringType,
   Type,
 } from '.'
 
@@ -44,8 +52,30 @@ export class WaitGroupType extends Type {
   }
 }
 
+/**
+ * Builtin packages are functions that take in a single `compiler` argument,
+ * and does all the package setup within itself.
+ */
 export const builtinPackages = {
-  sync: new PackageType('sync', {
-    WaitGroup: new WaitGroupType(),
-  }),
+  fmt: (compiler: Compiler): Type => {
+    const pkg = new PackageType('fmt', {
+      Println: new FunctionType([], new ReturnType([]), true),
+    })
+    compiler.type_environment.addType('fmt', pkg)
+    const [frame_idx, var_idx] = compiler.context.env.declare_var('fmt')
+    compiler.instructions.push(
+      new LoadConstantInstruction('fmt', new StringType()),
+      new LoadPackageInstruction(),
+      new LoadVariableInstruction(frame_idx, var_idx, 'fmt'),
+      new StoreInstruction(),
+    )
+    return pkg
+  },
+  sync: (compiler: Compiler): Type => {
+    const pkg = new PackageType('sync', {
+      WaitGroup: new WaitGroupType(),
+    })
+    compiler.type_environment.addType('sync', pkg)
+    return pkg
+  },
 }

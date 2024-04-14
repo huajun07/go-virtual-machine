@@ -173,27 +173,31 @@ export class CallToken extends PrimaryExpressionModifierToken {
     const argumentTypes = this.expressions.map((e) => e.compile(compiler))
     compiler.instructions.push(new CallInstruction(this.expressions.length))
 
-    if (argumentTypes.length < operandType.parameters.length) {
-      throw Error(
-        `Not enough arguments in function call\n` +
-          `have (${TypeUtility.arrayToString(argumentTypes)})\n` +
-          `want (${TypeUtility.arrayToString(operandType.parameters)})`,
-      )
-    }
-    if (argumentTypes.length > operandType.parameters.length) {
-      throw Error(
-        `Too many arguments in function call\n` +
-          `have (${TypeUtility.arrayToString(argumentTypes)})\n` +
-          `want (${TypeUtility.arrayToString(operandType.parameters)})`,
-      )
-    }
+    // We only implement variadic functions that accept any number of any type of arguments,
+    // so variadic functions do not require type checking.
+    if (!operandType.variadic) {
+      if (argumentTypes.length < operandType.parameters.length) {
+        throw Error(
+          `Not enough arguments in function call\n` +
+            `have (${TypeUtility.arrayToString(argumentTypes)})\n` +
+            `want (${TypeUtility.arrayToString(operandType.parameters)})`,
+        )
+      }
+      if (argumentTypes.length > operandType.parameters.length) {
+        throw Error(
+          `Too many arguments in function call\n` +
+            `have (${TypeUtility.arrayToString(argumentTypes)})\n` +
+            `want (${TypeUtility.arrayToString(operandType.parameters)})`,
+        )
+      }
 
-    for (let i = 0; i < argumentTypes.length; i++) {
-      if (argumentTypes[i].assignableBy(operandType.parameters[i].type))
-        continue
-      throw Error(
-        `Cannot use ${argumentTypes[i]} as ${operandType.parameters[i]} in argument to function call`,
-      )
+      for (let i = 0; i < argumentTypes.length; i++) {
+        if (argumentTypes[i].assignableBy(operandType.parameters[i].type))
+          continue
+        throw Error(
+          `Cannot use ${argumentTypes[i]} as ${operandType.parameters[i]} in argument to function call`,
+        )
+      }
     }
 
     if (operandType.results.isVoid()) {

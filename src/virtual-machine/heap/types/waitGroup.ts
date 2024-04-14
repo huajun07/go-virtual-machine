@@ -51,7 +51,11 @@ export class WaitGroupNode extends BaseNode {
   }
 
   /** Arguments to builtin methods should be on the OS. Remember to pop the receiver from OS. */
-  override handleMethodCall(process: Process, identifier: string) {
+  override handleMethodCall(
+    process: Process,
+    identifier: string,
+    _argCount: number,
+  ) {
     if (identifier === 'Add') {
       this.handleAdd(process)
     } else if (identifier === 'Done') {

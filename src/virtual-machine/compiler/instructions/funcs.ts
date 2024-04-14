@@ -59,7 +59,7 @@ export class CallInstruction extends Instruction {
       process.context.set_PC(func.PC())
     } else {
       const receiver = func.receiver()
-      receiver.handleMethodCall(process, func.identifier())
+      receiver.handleMethodCall(process, func.identifier(), this.args)
     }
   }
 }
@@ -138,10 +138,13 @@ export class ReturnInstruction extends Instruction {
         const methodNode = deferNode.methodNode()
         process.context.pushOS(methodNode.addr)
         process.context.pushOS(methodNode.receiverAddr())
+        const argCount = deferNode.stack().sz()
         while (deferNode.stack().sz()) {
           process.context.pushOS(deferNode.stack().pop())
         }
-        methodNode.receiver().handleMethodCall(process, methodNode.identifier())
+        methodNode
+          .receiver()
+          .handleMethodCall(process, methodNode.identifier(), argCount)
 
         // Since methods are hardcoded and don't behave like functions, they don't jump back to an address.
         // Manually decrement PC here so that the next executor step will return to this instruction.

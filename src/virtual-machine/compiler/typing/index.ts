@@ -1,6 +1,7 @@
 import { Heap } from '../../heap'
 import { ArrayNode, SliceNode } from '../../heap/types/array'
 import { ChannelNode } from '../../heap/types/channel'
+import { PkgNode } from '../../heap/types/fmt'
 import { FuncNode } from '../../heap/types/func'
 import {
   BoolNode,
@@ -196,7 +197,11 @@ export class ParameterType extends Type {
 }
 
 export class FunctionType extends Type {
-  constructor(public parameters: ParameterType[], public results: ReturnType) {
+  constructor(
+    public parameters: ParameterType[],
+    public results: ReturnType,
+    public variadic: boolean = true,
+  ) {
     super()
   }
 
@@ -306,13 +311,6 @@ export class PackageType extends Type {
     super()
   }
 
-  get(identifier: string): Type {
-    if (!(identifier in this.types)) {
-      throw new Error(`undefined: ${this.name}.${identifier}`)
-    }
-    return this.types[identifier]
-  }
-
   override isPrimitive(): boolean {
     return false
   }
@@ -326,8 +324,14 @@ export class PackageType extends Type {
   }
 
   override defaultNodeCreator(): (_heap: Heap) => number {
-    // Do nothing, as our implementation does not support user created packages.
-    throw new Error('Unreachable')
+    return (heap) => PkgNode.default(heap).addr
+  }
+
+  override select(identifier: string): Type {
+    if (!(identifier in this.types)) {
+      throw new Error(`undefined: ${this.name}.${identifier}`)
+    }
+    return this.types[identifier]
   }
 }
 
