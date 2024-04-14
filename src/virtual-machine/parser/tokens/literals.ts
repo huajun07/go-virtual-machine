@@ -46,7 +46,7 @@ export class IntegerLiteralToken extends LiteralToken {
     return this.value as number
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     compiler.instructions.push(
       new LoadConstantInstruction(this.value, new Int64Type()),
     )
@@ -65,7 +65,7 @@ export class FloatLiteralToken extends LiteralToken {
     return this.value as number
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     compiler.instructions.push(
       new LoadConstantInstruction(this.value, new Float64Type()),
     )
@@ -90,7 +90,7 @@ export class StringLiteralToken extends LiteralToken {
     return this.value as string
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     compiler.instructions.push(
       new LoadConstantInstruction(this.value, new StringType()),
     )
@@ -107,7 +107,7 @@ export class FunctionLiteralToken extends Token {
     super('function_literal', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     compiler.context.push_env()
     const jump_instr = new JumpInstruction()
     compiler.instructions.push(jump_instr)
@@ -117,7 +117,7 @@ export class FunctionLiteralToken extends Token {
     )
     compiler.instructions.push(block_instr)
 
-    const signatureType = this.signature.compile(compiler)
+    const signatureType = this.signature.compileUnchecked(compiler)
     compiler.type_environment = compiler.type_environment.extend()
     compiler.type_environment.updateReturnType(signatureType.results)
 
@@ -125,12 +125,15 @@ export class FunctionLiteralToken extends Token {
     for (const param of this.signature.parameters) {
       const name = param.identifier || (cnt++).toString()
       compiler.context.env.declare_var(name)
-      compiler.type_environment.addType(name, param.type.compile(compiler))
+      compiler.type_environment.addType(
+        name,
+        param.type.compileUnchecked(compiler),
+      )
     }
 
     let hasReturn = false
     for (const sub_token of this.body.statements) {
-      const statementType = sub_token.compile(compiler)
+      const statementType = sub_token.compileUnchecked(compiler)
       hasReturn ||= statementType instanceof ReturnType
     }
     const vars = compiler.context.env.get_frame()
@@ -160,7 +163,7 @@ export class LiteralValueToken extends Token {
     super('literal_value', sourceLocation)
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compileUnchecked(_compiler: Compiler): Type {
     throw new Error(
       'Do not use LiteralValueToken.compile, instead use LiteralValueToken.compileWithType',
     )
@@ -212,7 +215,7 @@ export class LiteralValueToken extends Token {
     if (element instanceof LiteralValueToken) {
       element.compileWithType(compiler, type)
     } else {
-      const actualType = element.compile(compiler)
+      const actualType = element.compileUnchecked(compiler)
       if (!type.equals(actualType)) {
         throw new Error(
           `Cannot use ${actualType} as ${type} value in ${typeName}.`,
@@ -231,8 +234,8 @@ export class ArrayLiteralToken extends Token {
     super('array_literal', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
-    const type = this.arrayType.compile(compiler)
+  override compileUnchecked(compiler: Compiler): Type {
+    const type = this.arrayType.compileUnchecked(compiler)
     this.body.compileWithType(compiler, type)
     return type
   }
@@ -247,8 +250,8 @@ export class SliceLiteralToken extends Token {
     super('slice_literal', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
-    const type = this.sliceType.compile(compiler)
+  override compileUnchecked(compiler: Compiler): Type {
+    const type = this.sliceType.compileUnchecked(compiler)
     this.body.compileWithType(compiler, type)
     return type
   }

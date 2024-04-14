@@ -56,7 +56,7 @@ export class PrimitiveTypeToken extends TypeToken {
     this.name = name
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compileUnchecked(_compiler: Compiler): Type {
     if (this.name === 'bool') return new BoolType()
     else if (this.name === 'float64') return new Float64Type()
     else if (this.name === 'int') return new Int64Type()
@@ -75,8 +75,11 @@ export class ArrayTypeToken extends TypeToken {
     super(sourceLocation)
   }
 
-  override compile(compiler: Compiler): ArrayType {
-    return new ArrayType(this.element.compile(compiler), this.length.getValue())
+  override compileUnchecked(compiler: Compiler): ArrayType {
+    return new ArrayType(
+      this.element.compileUnchecked(compiler),
+      this.length.getValue(),
+    )
   }
 }
 
@@ -85,8 +88,8 @@ export class SliceTypeToken extends TypeToken {
     super(sourceLocation)
   }
 
-  override compile(compiler: Compiler): SliceType {
-    return new SliceType(this.element.compile(compiler))
+  override compileUnchecked(compiler: Compiler): SliceType {
+    return new SliceType(this.element.compileUnchecked(compiler))
   }
 }
 
@@ -108,12 +111,12 @@ export class FunctionTypeToken extends TypeToken {
     this.results = results ?? []
   }
 
-  override compile(compiler: Compiler): FunctionType {
+  override compileUnchecked(compiler: Compiler): FunctionType {
     const parameterTypes = this.parameters.map(
-      (p) => new ParameterType(p.identifier, p.type.compile(compiler)),
+      (p) => new ParameterType(p.identifier, p.type.compileUnchecked(compiler)),
     )
     const resultTypes = new ReturnType(
-      this.results.map((r) => r.type.compile(compiler)),
+      this.results.map((r) => r.type.compileUnchecked(compiler)),
     )
     return new FunctionType(parameterTypes, resultTypes)
   }
@@ -128,7 +131,7 @@ export class MapTypeToken extends TypeToken {
     super(sourceLocation)
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compileUnchecked(_compiler: Compiler): Type {
     //! TODO: Implement.
     return new NoType()
   }
@@ -144,9 +147,9 @@ export class ChannelTypeToken extends TypeToken {
     super(sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     return new ChannelType(
-      this.element.compile(compiler),
+      this.element.compileUnchecked(compiler),
       this.readable,
       this.writable,
     )

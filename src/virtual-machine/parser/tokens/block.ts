@@ -17,14 +17,14 @@ export class BlockToken extends Token {
     super('block', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     compiler.context.push_env()
     const block_instr = new BlockInstruction(this.name)
     compiler.instructions.push(block_instr)
     compiler.type_environment = compiler.type_environment.extend()
     let hasReturn = false
     for (const sub_token of this.statements) {
-      const statementType = sub_token.compile(compiler)
+      const statementType = sub_token.compileUnchecked(compiler)
       hasReturn ||= statementType instanceof ReturnType
     }
     const blockType = hasReturn

@@ -10,7 +10,7 @@ export class Compiler {
   type_environment = new TypeEnvironment()
 
   compile_program(token: Token) {
-    token.compile(this)
+    token.compileUnchecked(this)
     this.instructions.push(new DoneInstruction())
   }
 }

@@ -9,5 +9,5 @@ export type TokenLocation = {
 export abstract class Token {
   constructor(public type: string, public sourceLocation: TokenLocation) {}
 
-  abstract compile(compiler: Compiler): Type
+  abstract compileUnchecked(compiler: Compiler): Type
 }

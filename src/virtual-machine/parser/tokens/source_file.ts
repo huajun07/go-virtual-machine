@@ -23,7 +23,7 @@ export class SourceFileToken extends Token {
     super('source_file', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     // Setup.
     const global_block = new BlockInstruction('GLOBAL')
     compiler.instructions.push(global_block)
@@ -31,14 +31,14 @@ export class SourceFileToken extends Token {
     compiler.type_environment = compiler.type_environment.extend()
 
     // Compile imports.
-    for (const imp of this.imports ?? []) imp.compile(compiler)
+    for (const imp of this.imports ?? []) imp.compileUnchecked(compiler)
 
     // Declare builtin constants for `true` and `false`.
     this.predeclareConstants(compiler)
 
     // Compile top level declarations.
     for (const declaration of this.declarations || []) {
-      declaration.compile(compiler)
+      declaration.compileUnchecked(compiler)
     }
 
     // Call main function.
@@ -90,7 +90,7 @@ export class ImportToken extends Token {
     super('import', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const pkg = this.importPath.getValue()
     if (pkg in builtinPackages) {
       builtinPackages[pkg as keyof typeof builtinPackages](compiler)

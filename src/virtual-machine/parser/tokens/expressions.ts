@@ -44,7 +44,7 @@ export class EmptyExpressionToken extends Token {
     super('empty_expression', sourceLocation)
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compileUnchecked(_compiler: Compiler): Type {
     // Does nothing - Intended
     return this.argType
   }
@@ -59,9 +59,9 @@ export class PrimaryExpressionToken extends Token {
     super('primary_expression', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     // TODO: Figure what this does for non-trivial ops like array access and selector
-    let operandType = this.operand.compile(compiler)
+    let operandType = this.operand.compileUnchecked(compiler)
     for (const modifier of this.rest ?? []) {
       operandType = modifier.compile(compiler, operandType)
     }
@@ -118,7 +118,7 @@ export class IndexToken extends PrimaryExpressionModifierToken {
   }
 
   private compileIndex(compiler: Compiler) {
-    const indexType = this.expression.compile(compiler)
+    const indexType = this.expression.compileUnchecked(compiler)
     if (!(indexType instanceof Int64Type)) {
       throw new Error(
         `Invalid argument: Index has type ${indexType} but must be an integer`,
@@ -147,7 +147,7 @@ export class SliceToken extends PrimaryExpressionModifierToken {
   }
 
   private compileIndex(compiler: Compiler, index: ExpressionToken | null) {
-    if (index) index.compile(compiler)
+    if (index) index.compileUnchecked(compiler)
     else {
       // Use a non integer type to represent the default value for the index.
       compiler.instructions.push(
@@ -175,7 +175,9 @@ export class CallToken extends PrimaryExpressionModifierToken {
       )
     }
 
-    const argumentTypes = this.expressions.map((e) => e.compile(compiler))
+    const argumentTypes = this.expressions.map((e) =>
+      e.compileUnchecked(compiler),
+    )
     compiler.instructions.push(new CallInstruction(this.expressions.length))
 
     // We only implement variadic functions that accept any number of any type of arguments,
@@ -245,7 +247,7 @@ export class BuiltinCallToken extends Token {
     super('builtin', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     if (this.name === 'make') return this.compileMake(compiler)
     else if (this.name === 'len') return this.compileLen(compiler)
     else if (this.name === 'cap') return this.compileCap(compiler)
@@ -258,7 +260,7 @@ export class BuiltinCallToken extends Token {
     if (this.args.length !== 1) {
       this.throwArgumentLengthError('cap', 1, this.args.length)
     }
-    const argType = this.args[0].compile(compiler)
+    const argType = this.args[0].compileUnchecked(compiler)
     if (argType instanceof ArrayType || argType instanceof SliceType) {
       compiler.instructions.push(new BuiltinCapInstruction())
     } else {
@@ -271,7 +273,7 @@ export class BuiltinCallToken extends Token {
     if (this.args.length !== 1) {
       this.throwArgumentLengthError('len', 1, this.args.length)
     }
-    const argType = this.args[0].compile(compiler)
+    const argType = this.args[0].compileUnchecked(compiler)
     if (argType instanceof ArrayType || argType instanceof SliceType) {
       compiler.instructions.push(new BuiltinLenInstruction())
     } else {
@@ -281,7 +283,7 @@ export class BuiltinCallToken extends Token {
   }
 
   private compileMake(compiler: Compiler): Type {
-    const typeArg = (this.firstTypeArg as TypeToken).compile(compiler)
+    const typeArg = (this.firstTypeArg as TypeToken).compileUnchecked(compiler)
     if (!(typeArg instanceof SliceType || typeArg instanceof ChannelType)) {
       throw new Error(
         `Invalid argument: cannot make ${typeArg}; type must be slice, map, or channel`,
@@ -293,7 +295,7 @@ export class BuiltinCallToken extends Token {
           new LoadConstantInstruction(0, new Int64Type()),
         )
       else {
-        const buffer_sz = this.args[0].compile(compiler)
+        const buffer_sz = this.args[0].compileUnchecked(compiler)
         if (!(buffer_sz instanceof Int64Type)) {
           throw new Error(`Non-integer condition in channel buffer size`)
         }

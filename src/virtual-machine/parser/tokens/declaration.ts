@@ -24,7 +24,7 @@ export class FunctionDeclarationToken extends Token {
     super('function_declaration', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const [frame_idx, var_idx] = compiler.context.env.declare_var(
       this.name.identifier,
     )
@@ -33,9 +33,9 @@ export class FunctionDeclarationToken extends Token {
     //! no side effects, but would be nice to fix.
     compiler.type_environment.addType(
       this.name.identifier,
-      this.func.signature.compile(compiler),
+      this.func.signature.compileUnchecked(compiler),
     )
-    this.func.compile(compiler)
+    this.func.compileUnchecked(compiler)
     compiler.instructions.push(
       new LoadVariableInstruction(frame_idx, var_idx, this.name.identifier),
     )
@@ -55,13 +55,13 @@ export class ShortVariableDeclarationToken extends DeclarationToken {
     super('short_variable_declaration', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const { identifiers, expressions } = this
     for (let i = 0; i < identifiers.length; i++) {
       const var_name = identifiers[i].identifier
       const expr = expressions[i]
       const [frame_idx, var_idx] = compiler.context.env.declare_var(var_name)
-      const expressionType = expr.compile(compiler)
+      const expressionType = expr.compileUnchecked(compiler)
       compiler.type_environment.addType(var_name, expressionType)
       compiler.instructions.push(
         new LoadVariableInstruction(frame_idx, var_idx, var_name),
@@ -83,7 +83,7 @@ export class VariableDeclarationToken extends DeclarationToken {
     super('variable_declaration', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const { identifiers, varType, expressions } = this
     if (varType === undefined && expressions === undefined) {
       //! TODO (P5): Golang implements this as a syntax error. Unfortunately, our current parsing
@@ -98,7 +98,9 @@ export class VariableDeclarationToken extends DeclarationToken {
       compiler.context.env.declare_var(identifier.identifier)
     }
 
-    const expectedType = varType ? varType.compile(compiler) : undefined
+    const expectedType = varType
+      ? varType.compileUnchecked(compiler)
+      : undefined
 
     // Compile and add identifiers to type environment.
     if (expressions) {
@@ -111,7 +113,7 @@ export class VariableDeclarationToken extends DeclarationToken {
         const identifier = identifiers[i].identifier
         const expression = expressions[i]
         const [frame_idx, var_idx] = compiler.context.env.find_var(identifier)
-        const expressionType = expression.compile(compiler)
+        const expressionType = expression.compileUnchecked(compiler)
         if (expectedType && !expectedType.assignableBy(expressionType)) {
           throw Error(
             `Cannot use ${expressionType} as ${expectedType} in variable declaration`,
@@ -146,7 +148,7 @@ export class ConstantDeclarationToken extends DeclarationToken {
     super('const_declaration', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     /**
      * TODO: Handle Const separately, several different methods
      *  1. Runtime Const and const tag to variable to make it immutable
@@ -154,12 +156,14 @@ export class ConstantDeclarationToken extends DeclarationToken {
      *  3. Compile Time Const: Evaluate Expression Token literal value and replace each reference (Golang only allow compile time const)
      */
     const { identifiers, varType, expressions } = this
-    const expectedType = varType ? varType.compile(compiler) : undefined
+    const expectedType = varType
+      ? varType.compileUnchecked(compiler)
+      : undefined
     for (let i = 0; i < identifiers.length; i++) {
       const var_name = identifiers[i].identifier
       const expr = expressions[i]
       const [frame_idx, var_idx] = compiler.context.env.declare_var(var_name)
-      const expressionType = expr.compile(compiler)
+      const expressionType = expr.compileUnchecked(compiler)
       if (expectedType && !expressionType.assignableBy(expectedType)) {
         throw Error(
           `Cannot use ${expressionType} as ${expectedType} in constant declaration`,

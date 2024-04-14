@@ -73,15 +73,15 @@ export class AssignmentStatementToken extends Token {
     super('assignment', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     // TODO: Custom Instructions to avoid recalculation?
     for (let i = 0; i < this.left.length; i++) {
       const left = this.left[i]
       const right = this.right[i]
       let assignType: Type
       if (this.operation === '+=') {
-        const leftType = left.compile(compiler)
-        const rightType = right.compile(compiler)
+        const leftType = left.compileUnchecked(compiler)
+        const rightType = right.compileUnchecked(compiler)
         if (!leftType.equals(rightType)) {
           throw Error(
             `Invalid operation (mismatched types ${leftType} and ${rightType})`,
@@ -90,8 +90,8 @@ export class AssignmentStatementToken extends Token {
         assignType = leftType
         compiler.instructions.push(new BinaryInstruction('sum'))
       } else if (this.operation === '*=') {
-        const leftType = left.compile(compiler)
-        const rightType = right.compile(compiler)
+        const leftType = left.compileUnchecked(compiler)
+        const rightType = right.compileUnchecked(compiler)
         if (!leftType.equals(rightType)) {
           throw Error(
             `Invalid operation (mismatched types ${leftType} and ${rightType})`,
@@ -100,11 +100,11 @@ export class AssignmentStatementToken extends Token {
         assignType = leftType
         compiler.instructions.push(new BinaryInstruction('product'))
       } else if (this.operation === '=') {
-        assignType = right.compile(compiler)
+        assignType = right.compileUnchecked(compiler)
       } else {
         throw Error('Unimplemented')
       }
-      const varType = left.compile(compiler)
+      const varType = left.compileUnchecked(compiler)
       if (!varType.assignableBy(assignType)) {
         throw Error(`Cannot use ${assignType} as ${varType} in assignment`)
       }
@@ -123,16 +123,16 @@ export class IncDecStatementToken extends Token {
     super('inc_dec', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     // TODO: Custom Instructions to avoid recalculation?
-    this.expression.compile(compiler)
+    this.expression.compileUnchecked(compiler)
     compiler.instructions.push(new LoadConstantInstruction(1, new Int64Type()))
     if (this.operation === '++') {
       compiler.instructions.push(new BinaryInstruction('sum'))
     } else if (this.operation === '--') {
       compiler.instructions.push(new BinaryInstruction('difference'))
     }
-    this.expression.compile(compiler)
+    this.expression.compileUnchecked(compiler)
     compiler.instructions.push(new StoreInstruction())
     return new NoType()
   }
@@ -146,9 +146,9 @@ export class ReturnStatementToken extends Token {
     super('return', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const returnType = new ReturnType(
-      (this.returns ?? []).map((expr) => expr.compile(compiler)),
+      (this.returns ?? []).map((expr) => expr.compileUnchecked(compiler)),
     )
 
     if (
@@ -176,7 +176,7 @@ export class BreakStatementToken extends Token {
     super('break', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const jumpInstr = new ExitLoopInstruction()
     compiler.context.add_break(jumpInstr)
     compiler.instructions.push(jumpInstr)
@@ -189,7 +189,7 @@ export class ContinueStatementToken extends Token {
     super('continue', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const jumpInstr = new ExitLoopInstruction()
     compiler.context.add_continue(jumpInstr)
     compiler.instructions.push(jumpInstr)
@@ -202,7 +202,7 @@ export class FallthroughStatementToken extends Token {
     super('fallthrough', sourceLocation)
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compileUnchecked(_compiler: Compiler): Type {
     // TODO: Implement
     return new NoType()
   }
@@ -220,16 +220,16 @@ export class IfStatementToken extends Token {
     super('if', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     compiler.context.push_env()
     const block_instr = new BlockInstruction('IF BLOCK')
     compiler.instructions.push(block_instr)
     compiler.type_environment = compiler.type_environment.extend()
     // Initialisation
-    if (this.initialization) this.initialization.compile(compiler)
+    if (this.initialization) this.initialization.compileUnchecked(compiler)
 
     // Eval Predicate
-    const predicateType = this.predicate.compile(compiler)
+    const predicateType = this.predicate.compileUnchecked(compiler)
     if (!(predicateType instanceof BoolType)) {
       throw new Error(`Non-boolean condition in if statement.`)
     }
@@ -239,7 +239,7 @@ export class IfStatementToken extends Token {
     // Consequent Block
     compiler.instructions.push(jumpToAlternative)
     this.consequent.name = 'IF BODY'
-    const consequentType = this.consequent.compile(compiler)
+    const consequentType = this.consequent.compileUnchecked(compiler)
     const jumpToEnd = new JumpInstruction()
     compiler.instructions.push(jumpToEnd)
 
@@ -251,7 +251,7 @@ export class IfStatementToken extends Token {
     if (this.alternative) {
       if (this.alternative instanceof BlockInstruction)
         this.alternative.name = 'IF BODY'
-      alternativeType = this.alternative.compile(compiler)
+      alternativeType = this.alternative.compileUnchecked(compiler)
     }
     jumpToEnd.set_addr(compiler.instructions.length)
 
@@ -284,7 +284,7 @@ export class SwitchStatementToken extends Token {
     super('switch', sourceLocation)
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compileUnchecked(_compiler: Compiler): Type {
     //! TODO: Implement.
     return new NoType()
   }
@@ -299,7 +299,7 @@ export class SwitchCaseToken extends Token {
     super('case', sourceLocation)
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compileUnchecked(_compiler: Compiler): Type {
     //! TODO: Implement.
     return new NoType()
   }
@@ -322,7 +322,7 @@ export class ForStatementToken extends Token {
     super('for', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     compiler.context.push_env()
     compiler.type_environment = compiler.type_environment.extend()
     const block_instr = new BlockInstruction('FOR INIT', true)
@@ -330,23 +330,23 @@ export class ForStatementToken extends Token {
     compiler.context.push_loop()
 
     // Initialisation
-    if (this.initialization) this.initialization.compile(compiler)
+    if (this.initialization) this.initialization.compileUnchecked(compiler)
     const start_addr = compiler.instructions.length
 
     // Predicate
     const predicate_false = new JumpIfFalseInstruction()
     if (this.condition) {
-      const predicateType = this.condition.compile(compiler)
+      const predicateType = this.condition.compileUnchecked(compiler)
       if (!(predicateType instanceof BoolType)) {
         throw new Error(`Non-boolean condition in for statement condition.`)
       }
       compiler.instructions.push(predicate_false)
     }
     this.body.name = 'FOR BODY'
-    const bodyType = this.body.compile(compiler)
+    const bodyType = this.body.compileUnchecked(compiler)
 
     const pre_post_addr = compiler.instructions.length
-    if (this.post) this.post.compile(compiler)
+    if (this.post) this.post.compileUnchecked(compiler)
     compiler.instructions.push(new JumpInstruction(start_addr))
     const post_post_addr = compiler.instructions.length
     predicate_false.set_addr(post_post_addr)
@@ -372,12 +372,12 @@ export class DeferStatementToken extends Token {
     super('defer', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     if (!this.isFunctionCall()) {
       throw new Error('Expression in defer must be function call.')
     }
 
-    this.expression.compile(compiler)
+    this.expression.compileUnchecked(compiler)
     const call = compiler.instructions[compiler.instructions.length - 1]
     compiler.instructions[compiler.instructions.length - 1] =
       DeferredCallInstruction.fromCallInstruction(call as CallInstruction)
@@ -411,10 +411,10 @@ export class GoStatementToken extends Token {
     )
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const fork_instr = new ForkInstruction()
     compiler.instructions.push(fork_instr)
-    this.call.compile(compiler)
+    this.call.compileUnchecked(compiler)
     compiler.instructions.push(new DoneInstruction())
     fork_instr.set_addr(compiler.instructions.length)
     return new NoType()
@@ -431,12 +431,12 @@ export class SendStatementToken extends Token {
     super('send', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
-    const chanType = this.channel.compile(compiler)
+  override compileUnchecked(compiler: Compiler): Type {
+    const chanType = this.channel.compileUnchecked(compiler)
     if (!(chanType instanceof ChannelType))
       throw Error('Not instance of channel type')
     const argType = chanType.element
-    const exprType = this.value.compile(compiler)
+    const exprType = this.value.compileUnchecked(compiler)
     if (!argType.assignableBy(exprType)) {
       throw Error(`Cannot use ${exprType} as ${argType} in assignment`)
     }
@@ -470,8 +470,8 @@ export class ReceiveStatementToken extends Token {
     )
   }
 
-  override compile(compiler: Compiler): Type {
-    const chanType = this.expression.compile(compiler)
+  override compileUnchecked(compiler: Compiler): Type {
+    const chanType = this.expression.compileUnchecked(compiler)
     return chanType
   }
 }
@@ -484,7 +484,7 @@ export class SelectStatementToken extends Token {
     super('select', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     let default_case = false
     const end_jumps = []
     for (const clause of this.clauses) {
@@ -493,7 +493,7 @@ export class SelectStatementToken extends Token {
         default_case = true
         continue
       }
-      clause.compile(compiler)
+      clause.compileUnchecked(compiler)
       const jump_instr = new JumpInstruction()
       compiler.instructions.push(jump_instr)
       end_jumps.push(jump_instr)
@@ -501,7 +501,7 @@ export class SelectStatementToken extends Token {
     if (default_case) {
       for (const clause of this.clauses) {
         if (clause.predicate === 'default') {
-          clause.compile(compiler)
+          clause.compileUnchecked(compiler)
           const jump_instr = new JumpInstruction()
           compiler.instructions.push(jump_instr)
           end_jumps.push(jump_instr)
@@ -530,7 +530,7 @@ export class CommunicationClauseToken extends Token {
     super('communication_clause', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     if (!(this.predicate instanceof ReceiveStatementToken)) {
       if (this.predicate === 'default') {
         const load_instr = new LoadConstantInstruction(
@@ -540,18 +540,20 @@ export class CommunicationClauseToken extends Token {
         compiler.instructions.push(load_instr)
       } else {
         // Is send statement
-        this.predicate.compile(compiler)
+        this.predicate.compileUnchecked(compiler)
         compiler.instructions.pop() // Removing blocking op
       }
       const jump_instr = new JumpInstruction()
       compiler.instructions.push(jump_instr)
-      new BlockToken(this.sourceLocation, this.body, 'CASE BLOCK').compile(
-        compiler,
-      )
+      new BlockToken(
+        this.sourceLocation,
+        this.body,
+        'CASE BLOCK',
+      ).compileUnchecked(compiler)
       jump_instr.set_addr(compiler.instructions.length + 1)
     } else {
       // This is recv statement
-      const chanType = this.predicate.expression.compile(compiler)
+      const chanType = this.predicate.expression.compileUnchecked(compiler)
       compiler.instructions.pop()
       const jump_instr = new JumpInstruction()
       compiler.instructions.push(jump_instr)
@@ -582,9 +584,11 @@ export class CommunicationClauseToken extends Token {
           )
         }
       } else compiler.instructions.push(new PopInstruction())
-      new BlockToken(this.sourceLocation, this.body, 'CASE BLOCK').compile(
-        compiler,
-      )
+      new BlockToken(
+        this.sourceLocation,
+        this.body,
+        'CASE BLOCK',
+      ).compileUnchecked(compiler)
       jump_instr.set_addr(compiler.instructions.length + 1)
     }
     return new NoType()
@@ -600,8 +604,8 @@ export class ExpressionStatementToken extends Token {
     super('expression_statement', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
-    this.expression.compile(compiler)
+  override compileUnchecked(compiler: Compiler): Type {
+    this.expression.compileUnchecked(compiler)
     compiler.instructions.push(new PopInstruction())
     return new NoType()
   }

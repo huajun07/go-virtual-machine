@@ -40,7 +40,7 @@ export class IdentifierToken extends Token {
     return !reservedKeywords.includes(identifier)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const [frame_idx, var_idx] = compiler.context.env.find_var(this.identifier)
     compiler.instructions.push(
       new LoadVariableInstruction(frame_idx, var_idx, this.identifier),
@@ -63,7 +63,7 @@ export class QualifiedIdentifierToken extends Token {
     super('qualified_identifier', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const pkg = compiler.type_environment.get(this.pkg)
     if (!(pkg instanceof PackageType)) {
       throw new Error(`${this} is not a type`)
