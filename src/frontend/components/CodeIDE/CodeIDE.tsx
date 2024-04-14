@@ -4,12 +4,12 @@ import { Prec } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import { zebraStripes } from '@uiw/codemirror-extensions-zebra-stripes'
 import { githubDark, githubLight } from '@uiw/codemirror-theme-github'
-import CodeMirror from '@uiw/react-codemirror'
+import CodeMirror, { EditorSelection } from '@uiw/react-codemirror'
 
 interface codeIDEProps {
   code: string
   setCode: (code: string) => void
-  lineHighlight?: number
+  lineHighlight?: (number | number[])[]
   run: () => void
 }
 
@@ -25,7 +25,7 @@ export const CodeIDE = (props: codeIDEProps) => {
       width="100%"
       extensions={[
         zebraStripes({
-          lineNumber: [lineHighlight || 0],
+          lineNumber: lineHighlight,
           lightColor: '#aca2ff33',
           darkColor: '#aca2ff40',
         }),
@@ -44,6 +44,7 @@ export const CodeIDE = (props: codeIDEProps) => {
       ]}
       onChange={setCode}
       theme={useColorModeValue(githubLight, githubDark)}
+      selection={EditorSelection.cursor(5)}
     />
   )
 }
