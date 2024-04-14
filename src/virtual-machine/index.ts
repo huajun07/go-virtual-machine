@@ -31,11 +31,12 @@ const runCode = (
     tokens = parser.parse(source_code) as SourceFileToken
     console.log(tokens)
   } catch (err) {
+    const message = (err as Error).message
     return {
       instructions: [],
       output: 'Syntax Error!',
       error: {
-        message: `${err as string}`,
+        message,
         type: 'parse',
         details: err as string,
       },
@@ -49,11 +50,12 @@ const runCode = (
     instructions = compile_tokens(tokens)
     console.log(instructions)
   } catch (err) {
+    const message = (err as CompileError).message
     return {
       instructions: [],
       output: 'Compilation Error!',
       error: {
-        message: `Compilation Error:\n${err as CompileError}`,
+        message,
         type: 'compile',
         details: err as CompileError,
       },

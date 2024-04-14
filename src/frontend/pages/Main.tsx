@@ -64,9 +64,12 @@ export const Main = () => {
   }
 
   const toast = useToast()
-  const makeToast = (msg: string | undefined) => {
+  const makeToast = (
+    msg: string | undefined,
+    title = 'An Error Has Occured!',
+  ) => {
     toast({
-      title: 'An Error Has Occured',
+      title,
       description: msg,
       status: 'error',
       duration: 2000,
@@ -127,8 +130,13 @@ export const Main = () => {
       visualData,
     } = runCode(code, heapsize, visualMode)
     if (error) {
+      const errorTitle = {
+        parse: 'Syntax Error',
+        compile: 'Compile Error',
+        runtime: 'Runtime Error',
+      }[error.type]
       setLoading(false)
-      makeToast(error.message)
+      makeToast(error.message, errorTitle)
 
       if (error.type === 'compile') {
         // Highlight compile error in source code.

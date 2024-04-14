@@ -7,7 +7,9 @@ describe('fmt Type Checking', () => {
     const code = `
     fmt.nonexistent("hi")
     `
-    expect(mainRunner(code).errorMessage).toEqual('undefined: fmt.nonexistent')
+    expect(mainRunner(code).error?.message).toEqual(
+      'undefined: fmt.nonexistent',
+    )
   })
 })
 
