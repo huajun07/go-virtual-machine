@@ -76,10 +76,7 @@ export class ArrayTypeToken extends TypeToken {
   }
 
   override compileUnchecked(compiler: Compiler): ArrayType {
-    return new ArrayType(
-      this.element.compileUnchecked(compiler),
-      this.length.getValue(),
-    )
+    return new ArrayType(this.element.compile(compiler), this.length.getValue())
   }
 }
 
@@ -89,7 +86,7 @@ export class SliceTypeToken extends TypeToken {
   }
 
   override compileUnchecked(compiler: Compiler): SliceType {
-    return new SliceType(this.element.compileUnchecked(compiler))
+    return new SliceType(this.element.compile(compiler))
   }
 }
 
@@ -113,10 +110,10 @@ export class FunctionTypeToken extends TypeToken {
 
   override compileUnchecked(compiler: Compiler): FunctionType {
     const parameterTypes = this.parameters.map(
-      (p) => new ParameterType(p.identifier, p.type.compileUnchecked(compiler)),
+      (p) => new ParameterType(p.identifier, p.type.compile(compiler)),
     )
     const resultTypes = new ReturnType(
-      this.results.map((r) => r.type.compileUnchecked(compiler)),
+      this.results.map((r) => r.type.compile(compiler)),
     )
     return new FunctionType(parameterTypes, resultTypes)
   }
@@ -149,7 +146,7 @@ export class ChannelTypeToken extends TypeToken {
 
   override compileUnchecked(compiler: Compiler): Type {
     return new ChannelType(
-      this.element.compileUnchecked(compiler),
+      this.element.compile(compiler),
       this.readable,
       this.writable,
     )

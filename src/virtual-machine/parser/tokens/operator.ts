@@ -39,7 +39,7 @@ export class UnaryOperator extends Operator {
   }
 
   override compileUnchecked(compiler: Compiler): Type {
-    const expressionType = this.children[0].compileUnchecked(compiler)
+    const expressionType = this.children[0].compile(compiler)
     if (this.name === 'receive') {
       if (!(expressionType instanceof ChannelType))
         throw Error('Receive Expression not chan')
@@ -75,8 +75,8 @@ export class BinaryOperator extends Operator {
   }
 
   override compileUnchecked(compiler: Compiler): Type {
-    const leftType = this.children[0].compileUnchecked(compiler)
-    const rightType = this.children[1].compileUnchecked(compiler)
+    const leftType = this.children[0].compile(compiler)
+    const rightType = this.children[1].compile(compiler)
     if (!leftType.equals(rightType)) {
       throw Error(
         `Invalid operation (mismatched types ${leftType} and ${rightType})`,

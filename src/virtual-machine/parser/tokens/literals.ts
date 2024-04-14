@@ -12,6 +12,7 @@ import {
 import {
   ArrayType,
   Float64Type,
+  FunctionType,
   Int64Type,
   ReturnType,
   SliceType,
@@ -117,7 +118,7 @@ export class FunctionLiteralToken extends Token {
     )
     compiler.instructions.push(block_instr)
 
-    const signatureType = this.signature.compileUnchecked(compiler)
+    const signatureType = this.signature.compile(compiler) as FunctionType
     compiler.type_environment = compiler.type_environment.extend()
     compiler.type_environment.updateReturnType(signatureType.results)
 
@@ -125,15 +126,12 @@ export class FunctionLiteralToken extends Token {
     for (const param of this.signature.parameters) {
       const name = param.identifier || (cnt++).toString()
       compiler.context.env.declare_var(name)
-      compiler.type_environment.addType(
-        name,
-        param.type.compileUnchecked(compiler),
-      )
+      compiler.type_environment.addType(name, param.type.compile(compiler))
     }
 
     let hasReturn = false
     for (const sub_token of this.body.statements) {
-      const statementType = sub_token.compileUnchecked(compiler)
+      const statementType = sub_token.compile(compiler)
       hasReturn ||= statementType instanceof ReturnType
     }
     const vars = compiler.context.env.get_frame()
@@ -215,7 +213,7 @@ export class LiteralValueToken extends Token {
     if (element instanceof LiteralValueToken) {
       element.compileWithType(compiler, type)
     } else {
-      const actualType = element.compileUnchecked(compiler)
+      const actualType = element.compile(compiler)
       if (!type.equals(actualType)) {
         throw new Error(
           `Cannot use ${actualType} as ${type} value in ${typeName}.`,
@@ -235,7 +233,7 @@ export class ArrayLiteralToken extends Token {
   }
 
   override compileUnchecked(compiler: Compiler): Type {
-    const type = this.arrayType.compileUnchecked(compiler)
+    const type = this.arrayType.compile(compiler)
     this.body.compileWithType(compiler, type)
     return type
   }
@@ -251,7 +249,7 @@ export class SliceLiteralToken extends Token {
   }
 
   override compileUnchecked(compiler: Compiler): Type {
-    const type = this.sliceType.compileUnchecked(compiler)
+    const type = this.sliceType.compile(compiler)
     this.body.compileWithType(compiler, type)
     return type
   }

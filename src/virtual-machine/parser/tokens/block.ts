@@ -24,7 +24,7 @@ export class BlockToken extends Token {
     compiler.type_environment = compiler.type_environment.extend()
     let hasReturn = false
     for (const sub_token of this.statements) {
-      const statementType = sub_token.compileUnchecked(compiler)
+      const statementType = sub_token.compile(compiler)
       hasReturn ||= statementType instanceof ReturnType
     }
     const blockType = hasReturn

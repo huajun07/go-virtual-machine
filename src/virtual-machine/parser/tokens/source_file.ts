@@ -31,14 +31,14 @@ export class SourceFileToken extends Token {
     compiler.type_environment = compiler.type_environment.extend()
 
     // Compile imports.
-    for (const imp of this.imports ?? []) imp.compileUnchecked(compiler)
+    for (const imp of this.imports ?? []) imp.compile(compiler)
 
     // Declare builtin constants for `true` and `false`.
     this.predeclareConstants(compiler)
 
     // Compile top level declarations.
     for (const declaration of this.declarations || []) {
-      declaration.compileUnchecked(compiler)
+      declaration.compile(compiler)
     }
 
     // Call main function.

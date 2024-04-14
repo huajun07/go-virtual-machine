@@ -1,4 +1,4 @@
-import { Compiler } from '../../compiler'
+import { CompileError, Compiler } from '../../compiler'
 import { Type } from '../../compiler/typing'
 
 export type TokenLocation = {
@@ -10,4 +10,15 @@ export abstract class Token {
   constructor(public type: string, public sourceLocation: TokenLocation) {}
 
   abstract compileUnchecked(compiler: Compiler): Type
+
+  compile(compiler: Compiler): Type {
+    try {
+      return this.compileUnchecked(compiler)
+    } catch (err) {
+      if (err instanceof CompileError) throw err
+
+      // Error originated from this token.
+      compiler.throwCompileError((err as Error).message, this.sourceLocation)
+    }
+  }
 }

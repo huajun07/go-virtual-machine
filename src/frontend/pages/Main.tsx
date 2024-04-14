@@ -114,13 +114,13 @@ export const Main = () => {
     // Retrieve instructions from endpoint
     setOutput('Running your code...')
     const {
-      errorMessage,
+      error,
       output: newOutput,
       visualData,
     } = runCode(code, heapsize, visualMode)
-    if (errorMessage) {
+    if (error) {
       setLoading(false)
-      makeToast(errorMessage)
+      makeToast(error.message)
     }
 
     // Set instructions and update components to start playing mode
