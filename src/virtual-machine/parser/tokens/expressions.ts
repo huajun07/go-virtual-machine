@@ -9,10 +9,7 @@ import {
   SelectorOperationInstruction,
   SliceOperationInstruction,
 } from '../../compiler/instructions'
-import {
-  CallInstruction,
-  PrintInstruction,
-} from '../../compiler/instructions/funcs'
+import { CallInstruction } from '../../compiler/instructions/funcs'
 import {
   ArrayType,
   BoolType,
@@ -226,7 +223,6 @@ export class BuiltinCallToken extends Token {
     'make',
     'min',
     'max',
-    'Println',
   ] as const
 
   static namesThatTakeType = ['make'] as const
@@ -242,7 +238,6 @@ export class BuiltinCallToken extends Token {
 
   override compile(compiler: Compiler): Type {
     if (this.name === 'make') return this.compileMake(compiler)
-    else if (this.name === 'Println') return this.compilePrintln(compiler)
     else if (this.name === 'len') return this.compileLen(compiler)
     else if (this.name === 'cap') return this.compileCap(compiler)
     else {
@@ -298,16 +293,6 @@ export class BuiltinCallToken extends Token {
     // !TODO Make for slice
     compiler.instructions.push(new LoadChannelInstruction())
     return typeArg
-  }
-
-  private compilePrintln(compiler: Compiler): Type {
-    //! TODO: This should be fmt.Println.
-    for (const arg of this.args) arg.compile(compiler)
-    compiler.instructions.push(
-      new LoadConstantInstruction(this.args.length, new Int64Type()),
-    )
-    compiler.instructions.push(new PrintInstruction())
-    return new NoType()
   }
 
   private throwArgumentLengthError(
