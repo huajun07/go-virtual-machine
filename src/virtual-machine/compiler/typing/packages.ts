@@ -2,8 +2,8 @@ import { Heap } from '../../heap'
 import { WaitGroupNode } from '../../heap/types/waitGroup'
 
 import {
+  FunctionType,
   Int64Type,
-  MethodType,
   PackageType,
   ParameterType,
   ReturnType,
@@ -29,15 +29,14 @@ export class WaitGroupType extends Type {
 
   override select(identifier: string): Type {
     if (identifier === 'Add') {
-      return new MethodType(
-        new WaitGroupType(),
+      return new FunctionType(
         [new ParameterType(null, new Int64Type())],
         new ReturnType([]),
       )
     } else if (identifier === 'Done') {
-      return new MethodType(new WaitGroupType(), [], new ReturnType([]))
+      return new FunctionType([], new ReturnType([]))
     } else if (identifier === 'Wait') {
-      return new MethodType(new WaitGroupType(), [], new ReturnType([]))
+      return new FunctionType([], new ReturnType([]))
     }
     throw new Error(
       `.${identifier} undefined (type ${this} has no field or method ${identifier})`,

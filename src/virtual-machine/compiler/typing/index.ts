@@ -223,39 +223,6 @@ export class FunctionType extends Type {
   }
 }
 
-export class MethodType extends Type {
-  constructor(
-    public receiver: Type,
-    public parameters: ParameterType[],
-    public results: ReturnType,
-  ) {
-    super()
-  }
-
-  override isPrimitive(): boolean {
-    return false
-  }
-
-  override defaultNodeCreator(): (heap: Heap) => number {
-    return (heap) => FuncNode.default(heap).addr
-  }
-
-  override toString(): string {
-    const parametersString = TypeUtility.arrayToString(this.parameters)
-    return `func (${this.receiver}) (${parametersString}) ${this.results}`
-  }
-
-  override equals(t: Type): boolean {
-    return (
-      t instanceof MethodType &&
-      this.receiver.equals(t.receiver) &&
-      this.parameters.length === t.parameters.length &&
-      this.parameters.every((p, index) => p.equals(t.parameters[index])) &&
-      this.results.equals(t.results)
-    )
-  }
-}
-
 export class ChannelType extends Type {
   constructor(
     public element: Type,

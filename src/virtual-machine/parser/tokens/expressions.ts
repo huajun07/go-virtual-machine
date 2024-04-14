@@ -19,7 +19,6 @@ import {
   ChannelType,
   FunctionType,
   Int64Type,
-  MethodType,
   NoType,
   SliceType,
   StringType,
@@ -165,10 +164,7 @@ export class CallToken extends PrimaryExpressionModifierToken {
   }
 
   override compile(compiler: Compiler, operandType: Type): Type {
-    if (
-      !(operandType instanceof FunctionType) &&
-      !(operandType instanceof MethodType)
-    ) {
+    if (!(operandType instanceof FunctionType)) {
       throw Error(
         `Invalid operation: cannot call non-function (of type ${operandType})`,
       )
