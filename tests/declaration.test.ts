@@ -9,7 +9,7 @@ describe('Variable Declaration Tests', () => {
         'var a int = 3;\
         const b int = 5;\
         const c int = b;\
-        Println(a+b+c)',
+        fmt.Println(a+b+c)',
       ).output,
     ).toEqual('13\n')
   })
@@ -19,7 +19,7 @@ describe('Variable Declaration Tests', () => {
       mainRunner(
         'a := "hi";\
         b := "hi2";\
-        Println(a + b)',
+        fmt.Println(a + b)',
       ).output,
     ).toEqual('hihi2\n')
   })
@@ -27,10 +27,10 @@ describe('Variable Declaration Tests', () => {
   test('Boolean constants true and false are predeclared', () => {
     const code = `
     if false {
-      Println("false")
+      fmt.Println("false")
     }
     if true {
-      Println("true")
+      fmt.Println("true")
     }
     `
     expect(mainRunner(code).output).toEqual('true\n')
@@ -41,10 +41,10 @@ describe('Variable Declaration Tests', () => {
     true := false
     false := true
     if false {
-      Println("false")
+      fmt.Println("false")
     }
     if true {
-      Println("true")
+      fmt.Println("true")
     }
     `
     expect(mainRunner(code).output).toEqual('')

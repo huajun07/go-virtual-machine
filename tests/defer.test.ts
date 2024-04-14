@@ -18,9 +18,9 @@ describe('Defer Type Checking', () => {
 describe('Defer Execution', () => {
   test('Defer runs in order', () => {
     const code = `
-    defer func(){ Println("!!!") }()
-    defer func(){ Println("world") }()
-    Println("hello")
+    defer func(){ fmt.Println("!!!") }()
+    defer func(){ fmt.Println("world") }()
+    fmt.Println("hello")
     `
     expect(mainRunner(code).output).toEqual('hello\nworld\n!!!\n')
   })
@@ -28,6 +28,7 @@ describe('Defer Execution', () => {
   test('Defer with wait groups work', () => {
     const code = `
     package main
+    import "fmt"
     import "sync"
     func main() {
       count := 0
@@ -40,7 +41,7 @@ describe('Defer Execution', () => {
         }()
       }
       wg.Wait()
-      Println(count)
+      fmt.Println(count)
     }
     `
     expect(runCode(code, 2048).output).toEqual('1000\n')

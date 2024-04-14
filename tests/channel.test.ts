@@ -17,11 +17,11 @@ describe('Channel Tests', () => {
         for i:=0; i < 100; i++ {
           
         }
-        Println("hi")
+        fmt.Println("hi")
         c1 <- 1
       }()
       a := <- c1
-      Println(a)`).output,
+      fmt.Println(a)`).output,
     ).toEqual('hi\n1\n')
   })
 
@@ -32,7 +32,7 @@ describe('Channel Tests', () => {
       go func() {
           c1<- 5
       }()
-      Println(4 + <- c1)`).output,
+      fmt.Println(4 + <- c1)`).output,
     ).toEqual('9\n')
   })
 
@@ -57,15 +57,15 @@ describe('Channel Tests', () => {
          for {
           select {
           case  <- c1:
-           Println("recv!")
+           fmt.Println("recv!")
           case <-c3:
-            Println("stopped")
+            fmt.Println("stopped")
            break
           }
          }
         }()
          for i:=0; i < 5; i++{}
-         Println("done")
+         fmt.Println("done")
          c2 <- "stop"`)
       .output?.trim()
       .split('\n')
@@ -96,9 +96,9 @@ describe('Channel Tests', () => {
          for i := 0; i < n; i++ {
           select {
           case c1 <- 1:
-           Println("Write 1 1")
+           fmt.Println("Write 1 1")
           case <-c1:
-           Println("Read 1 2")
+           fmt.Println("Read 1 2")
           }
          }
         }()
@@ -107,9 +107,9 @@ describe('Channel Tests', () => {
          for i := 0; i < n; i++ {
           select {
           case c1 <- 2:
-           Println("Write 2 2")
+           fmt.Println("Write 2 2")
           case <-c1:
-           Println("Read 2 1")
+           fmt.Println("Read 2 1")
           }
          }
         }()`)
@@ -140,11 +140,11 @@ describe('Channel Tests', () => {
       }
       go func(){
         c1<- 1
-        Println("done2")
+        fmt.Println("done2")
       }()
       for i:=0;i < 100;i++ {
       }
-      Println("done1")
+      fmt.Println("done1")
       <-c1`).output,
     ).toEqual('done1\ndone2\n')
   })

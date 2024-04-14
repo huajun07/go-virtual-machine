@@ -75,7 +75,7 @@ describe('Function Execution tests', () => {
         'f := func(x int, y int) int{\
         return x + y\
       }\
-      Println(1 + f(1, 2))',
+      fmt.Println(1 + f(1, 2))',
       ).output,
     ).toEqual('4\n')
   })
@@ -84,6 +84,7 @@ describe('Function Execution tests', () => {
     expect(
       runCode(
         `package main
+        import "fmt"
 
         var a int = 1
         
@@ -95,7 +96,7 @@ describe('Function Execution tests', () => {
           f := func(x, y int) int {
             return x + y + 100
           }
-          Println(f(1, 2))
+          fmt.Println(f(1, 2))
         }`,
         2048,
       ).output,
@@ -106,6 +107,7 @@ describe('Function Execution tests', () => {
     expect(
       runCode(
         `package main
+        import "fmt"
         func main() {
           f := func(x, y int) int {
             return x + y
@@ -115,7 +117,7 @@ describe('Function Execution tests', () => {
               return x + y + i
             }
           }
-          Println(f(1, 2))
+          fmt.Println(f(1, 2))
         }`,
         2048,
       ).output,
@@ -125,7 +127,8 @@ describe('Function Execution tests', () => {
   test('Function assignment in loop and if', () => {
     expect(
       runCode(
-        `package main
+        `package mai
+        import "fmt"
         func main() {
           f := func(x, y int) int {
             return x + y
@@ -137,7 +140,7 @@ describe('Function Execution tests', () => {
               }
             }
           }
-          Println(f(1, 2))
+          fmt.Println(f(1, 2))
         }`,
         2048,
       ).output,
@@ -149,6 +152,8 @@ describe('Function Execution tests', () => {
       runCode(
         `package main
 
+      import "fmt"
+
       func f(x int) int {
         if x == 0 {
           return 0
@@ -157,7 +162,7 @@ describe('Function Execution tests', () => {
       }
       
       func main() {
-        Println(f(10))
+        fmt.Println(f(10))
       }`,
         2048,
       ).output,
@@ -165,9 +170,9 @@ describe('Function Execution tests', () => {
   })
 
   test('Calling a function twice.', () => {
-    expect(mainRunner('f := func(){ Println(1) }; f(); f()').output).toEqual(
-      '1\n1\n',
-    )
+    expect(
+      mainRunner('f := func(){ fmt.Println(1) }; f(); f()').output,
+    ).toEqual('1\n1\n')
   })
 
   test('Closures', () => {
@@ -189,12 +194,12 @@ describe('Function Execution tests', () => {
         func main() {
           f := getAreaFunc()
           f2 := getAreaFunc()
-          Println(f(3, 2))
-          Println(f(1, 1))
-          Println(f(1, 1))
-          Println(f2(1, 1))
-          Println(f2(2, 3))
-          Println(f2(1, 1))
+          fmt.Println(f(3, 2))
+          fmt.Println(f(1, 1))
+          fmt.Println(f(1, 1))
+          fmt.Println(f2(1, 1))
+          fmt.Println(f2(2, 3))
+          fmt.Println(f2(1, 1))
         }
     `,
         2048,

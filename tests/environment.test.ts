@@ -10,7 +10,7 @@ describe('Basic Environment Tests', () => {
           b:= a + 3;\
           c := a + b;\
           c *= a;\
-          Println(a + b + c)',
+          fmt.Println(a + b + c)',
       ).output,
     ).toEqual('36\n')
   })
@@ -22,7 +22,7 @@ describe('Basic Environment Tests', () => {
           var a int = 1;\
           a = 2;\
         };\
-        Println(a)',
+        fmt.Println(a)',
       ).output,
     ).toEqual('3\n')
   })

@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest'
 import { mainRunner } from './utility'
 
 describe('fmt Type Checking', () => {
-  test('Selector on fmt should fail unless it is Println.', () => {
+  test('Selector on fmt should fail unless it is fmt.Println.', () => {
     const code = `
     fmt.nonexistent("hi")
     `
@@ -12,10 +12,10 @@ describe('fmt Type Checking', () => {
 })
 
 describe('fmt Execution', () => {
-  test('Println works', () => {
+  test('fmt.Println works', () => {
     const code = `
-    Println("Hello", "world", true, false)
-    Println(1, 2, 3, 4)
+    fmt.Println("Hello", "world", true, false)
+    fmt.Println(1, 2, 3, 4)
     `
     expect(mainRunner(code).output).toEqual('Hello world true false\n1 2 3 4\n')
   })

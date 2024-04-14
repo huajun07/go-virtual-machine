@@ -76,6 +76,7 @@ describe('Wait Group Execution', () => {
   test('Waiting works.', () => {
     const code = `
     package main
+    import "fmt"
     import "sync"
     func main() {
       count := 0
@@ -88,7 +89,7 @@ describe('Wait Group Execution', () => {
         }()
       }
       wg.Wait()
-      Println(count)
+      fmt.Println(count)
     }
     `
     expect(runCode(code, 2048).output).toEqual('1000\n')
