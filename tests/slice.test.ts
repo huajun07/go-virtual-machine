@@ -11,13 +11,14 @@ describe('Slice Type Checking', () => {
 
   test('Slice indexing with non integer type should fail.', () => {
     expect(
-      mainRunner('var a []int = []int{1, 2, 3}; Println(a[1.2])').errorMessage,
+      mainRunner('var a []int = []int{1, 2, 3}; fmt.Println(a[1.2])')
+        .errorMessage,
     ).toEqual('Invalid argument: Index has type float64 but must be an integer')
   })
 
   test('Slice len with too little arguments fails', () => {
     expect(
-      mainRunner('a := []int{1, 2, 3, 4}; Println(len())').errorMessage,
+      mainRunner('a := []int{1, 2, 3, 4}; fmt.Println(len())').errorMessage,
     ).toEqual(
       'Invalid operation: not enough arguments for len (expected 1, found 0)',
     )
@@ -25,7 +26,7 @@ describe('Slice Type Checking', () => {
 
   test('Slice len with too many arguments fails', () => {
     expect(
-      mainRunner('a := []int{1, 2, 3, 4}; Println(len(a, a))').errorMessage,
+      mainRunner('a := []int{1, 2, 3, 4}; fmt.Println(len(a, a))').errorMessage,
     ).toEqual(
       'Invalid operation: too many arguments for len (expected 1, found 2)',
     )
@@ -33,7 +34,7 @@ describe('Slice Type Checking', () => {
 
   test('Slice len with wrong type', () => {
     expect(
-      mainRunner('a := []int{1, 2, 3, 4}; Println(len(1))').errorMessage,
+      mainRunner('a := []int{1, 2, 3, 4}; fmt.Println(len(1))').errorMessage,
     ).toEqual('Invalid argument: (int64) for len')
   })
 
@@ -47,21 +48,22 @@ describe('Slice Type Checking', () => {
 describe('Slice Execution', () => {
   test('Slice indexing with valid index works.', () => {
     expect(
-      mainRunner('var a []string = []string{"a", "b", "c"}\n Println(a[2])')
+      mainRunner('var a []string = []string{"a", "b", "c"}\n fmt.Println(a[2])')
         .output,
     ).toEqual('c\n')
   })
 
   test('Slice indexing with negative index fails.', () => {
     expect(
-      mainRunner('var a []string = []string{"a", "b", "c"}\n Println(a[-1])')
-        .errorMessage,
+      mainRunner(
+        'var a []string = []string{"a", "b", "c"}\n fmt.Println(a[-1])',
+      ).errorMessage,
     ).toEqual('Execution Error: Index out of range [-1] with length 3')
   })
 
   test('Slice indexing with out of range index fails.', () => {
     expect(
-      mainRunner('var a []string = []string{"a", "b", "c"}\n Println(a[3])')
+      mainRunner('var a []string = []string{"a", "b", "c"}\n fmt.Println(a[3])')
         .errorMessage,
     ).toEqual('Execution Error: Index out of range [3] with length 3')
   })
@@ -69,20 +71,20 @@ describe('Slice Execution', () => {
   test('Nested slices work.', () => {
     expect(
       mainRunner(
-        'a := [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}; Println(a[1][2])',
+        'a := [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}; fmt.Println(a[1][2])',
       ).output,
     ).toEqual('6\n')
   })
 
   test('Slice len works.', () => {
     expect(
-      mainRunner('a := [][]int{{1}, {2}, {3}}; Println(len(a))').output,
+      mainRunner('a := [][]int{{1}, {2}, {3}}; fmt.Println(len(a))').output,
     ).toEqual('3\n')
   })
 
   test('Slice capacity works.', () => {
     expect(
-      mainRunner('a := [][]int{{1}, {2}, {3}}; Println(cap(a))').output,
+      mainRunner('a := [][]int{{1}, {2}, {3}}; fmt.Println(cap(a))').output,
     ).toEqual('3\n')
   })
 
@@ -90,13 +92,13 @@ describe('Slice Execution', () => {
     expect(
       mainRunner(`a := [4]int{0, 1, 2, 3}
       b := a[:]
-      Println(b)
+      fmt.Println(b)
       b = b[2:]
-      Println(b)
+      fmt.Println(b)
       c := b[1:]
-      Println(c)
+      fmt.Println(c)
       c = c[1:]
-      Println(c)`).output,
+      fmt.Println(c)`).output,
     ).toEqual('[0 1 2 3]\n[2 3]\n[3]\n[]\n')
   })
 

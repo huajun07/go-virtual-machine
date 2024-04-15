@@ -6,7 +6,6 @@ import {
   FuncNode,
   MethodNode,
 } from '../../heap/types/func'
-import { IntegerNode } from '../../heap/types/primitives'
 
 import { Instruction } from './base'
 
@@ -59,7 +58,7 @@ export class CallInstruction extends Instruction {
       process.context.set_PC(func.PC())
     } else {
       const receiver = func.receiver()
-      receiver.handleMethodCall(process, func.identifier())
+      receiver.handleMethodCall(process, func.identifier(), this.args)
     }
   }
 }
@@ -138,10 +137,13 @@ export class ReturnInstruction extends Instruction {
         const methodNode = deferNode.methodNode()
         process.context.pushOS(methodNode.addr)
         process.context.pushOS(methodNode.receiverAddr())
+        const argCount = deferNode.stack().sz()
         while (deferNode.stack().sz()) {
           process.context.pushOS(deferNode.stack().pop())
         }
-        methodNode.receiver().handleMethodCall(process, methodNode.identifier())
+        methodNode
+          .receiver()
+          .handleMethodCall(process, methodNode.identifier(), argCount)
 
         // Since methods are hardcoded and don't behave like functions, they don't jump back to an address.
         // Manually decrement PC here so that the next executor step will return to this instruction.
@@ -158,31 +160,5 @@ export class ReturnInstruction extends Instruction {
     const callRef = process.heap.get_value(process.context.popRTS())
     if (!(callRef instanceof CallRefNode)) throw new Error('Unreachable')
     process.context.set_PC(callRef.PC())
-  }
-}
-
-/**
- * Takes the top of the OS to be the number of arguments.
- * Then takes its arguments from the OS (in reverse order), and prints them out.
- */
-export class PrintInstruction extends Instruction {
-  constructor() {
-    super('PRINT')
-  }
-
-  override execute(process: Process): void {
-    const numOfArgs = new IntegerNode(
-      process.heap,
-      process.context.popOS(),
-    ).get_value()
-    const argAddresses = []
-    for (let i = 0; i < numOfArgs; i++) {
-      argAddresses.push(process.context.popOS())
-    }
-    for (let i = numOfArgs - 1; i >= 0; i--) {
-      const string = process.heap.get_value(argAddresses[i]).toString()
-      process.print(string)
-      process.print(i > 0 ? ' ' : '\n')
-    }
   }
 }

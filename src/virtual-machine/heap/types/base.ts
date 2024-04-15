@@ -19,7 +19,11 @@ export abstract class BaseNode {
   }
 
   // Calls the method of this node, with arguments on the OS.
-  handleMethodCall(_process: Process, _identifier: string): void {
+  handleMethodCall(
+    _process: Process,
+    _identifier: string,
+    _argCount: number,
+  ): void {
     throw new Error('Unreachable')
   }
 }

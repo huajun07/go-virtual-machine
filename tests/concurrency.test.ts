@@ -15,7 +15,7 @@ describe('Concurrency Check', () => {
           a+=1
           for j := 0; j < 100 ; j++ {
           }
-          Println(a)`).output,
+          fmt.Println(a)`).output,
     ).toEqual('6\n')
   })
   test('Race Cond', () => {
@@ -32,7 +32,7 @@ describe('Concurrency Check', () => {
       }
         for j := 0; j < 1000 ; j++ {
         }
-      Println(a)`).output || '100',
+      fmt.Println(a)`).output || '100',
       ),
     ).toBeLessThan(500)
   })

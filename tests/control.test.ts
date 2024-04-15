@@ -13,7 +13,7 @@ describe('Variable Declaration Tests', () => {
         } else {\
           a += -i\
         }\
-        Println(a)',
+        fmt.Println(a)',
       ).output,
     ).toEqual('1334\n')
   })
@@ -26,7 +26,7 @@ describe('Variable Declaration Tests', () => {
           i := 3\
           a += i\
         }\
-        Println(a)',
+        fmt.Println(a)',
       ).output,
     ).toEqual('25\n')
   })
@@ -42,7 +42,7 @@ describe('Variable Declaration Tests', () => {
           i := 3\
           a += i\
         }\
-        Println(a)',
+        fmt.Println(a)',
       ).output,
     ).toEqual('19\n')
   })
@@ -58,7 +58,7 @@ describe('Variable Declaration Tests', () => {
           i := 3\
           a += i\
         }\
-        Println(a)',
+        fmt.Println(a)',
       ).output,
     ).toEqual('12\n')
   })

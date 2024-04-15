@@ -91,10 +91,7 @@ export class ImportToken extends Token {
   override compile(compiler: Compiler): Type {
     const pkg = this.importPath.getValue()
     if (pkg in builtinPackages) {
-      compiler.type_environment.addType(
-        pkg,
-        builtinPackages[pkg as keyof typeof builtinPackages],
-      )
+      builtinPackages[pkg as keyof typeof builtinPackages](compiler)
     }
     return new NoType()
   }

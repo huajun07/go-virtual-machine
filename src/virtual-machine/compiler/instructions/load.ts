@@ -1,5 +1,6 @@
 import { Process } from '../../executor/process'
 import { ArrayNode, SliceNode } from '../../heap/types/array'
+import { FmtPkgNode } from '../../heap/types/fmt'
 import {
   BoolNode,
   FloatNode,
@@ -166,5 +167,22 @@ export class LoadVariableInstruction extends Instruction {
     process.context.pushOS(
       process.context.E().get_var(this.frame_idx, this.var_idx),
     )
+  }
+}
+
+/**
+ * Takes a package name (string literal) from the OS and loads the corresponding package node back onto the OS.
+ * Currently this is only implemented for `fmt`, as it is the only package requiring runtime values.
+ */
+export class LoadPackageInstruction extends Instruction {
+  constructor() {
+    super('LDP')
+  }
+
+  override execute(process: Process): void {
+    const packageName = process.context.popOSNode(StringNode).get_value()
+    if (packageName !== 'fmt') throw new Error('Unreachable')
+    const packageNode = FmtPkgNode.default(process.heap)
+    process.context.pushOS(packageNode.addr)
   }
 }
