@@ -14,12 +14,12 @@ import {
   Type,
 } from '../../compiler/typing'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 import { IntegerLiteralToken } from './literals'
 
 export abstract class TypeToken extends Token {
-  constructor() {
-    super('type')
+  constructor(sourceLocation: TokenLocation) {
+    super('type', sourceLocation)
   }
 }
 
@@ -48,15 +48,15 @@ export class PrimitiveTypeToken extends TypeToken {
 
   name: (typeof PrimitiveTypeToken.primitiveTypes)[number]
 
-  constructor(name: string) {
-    super()
+  constructor(sourceLocation: TokenLocation, name: string) {
+    super(sourceLocation)
     if (!PrimitiveTypeToken.isPrimitive(name)) {
       throw Error(`Invalid primitive type: ${name}`)
     }
     this.name = name
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compileUnchecked(_compiler: Compiler): Type {
     if (this.name === 'bool') return new BoolType()
     else if (this.name === 'float64') return new Float64Type()
     else if (this.name === 'int') return new Int64Type()
@@ -67,21 +67,25 @@ export class PrimitiveTypeToken extends TypeToken {
 }
 
 export class ArrayTypeToken extends TypeToken {
-  constructor(public element: TypeToken, public length: IntegerLiteralToken) {
-    super()
+  constructor(
+    sourceLocation: TokenLocation,
+    public element: TypeToken,
+    public length: IntegerLiteralToken,
+  ) {
+    super(sourceLocation)
   }
 
-  override compile(compiler: Compiler): ArrayType {
+  override compileUnchecked(compiler: Compiler): ArrayType {
     return new ArrayType(this.element.compile(compiler), this.length.getValue())
   }
 }
 
 export class SliceTypeToken extends TypeToken {
-  constructor(public element: TypeToken) {
-    super()
+  constructor(sourceLocation: TokenLocation, public element: TypeToken) {
+    super(sourceLocation)
   }
 
-  override compile(compiler: Compiler): SliceType {
+  override compileUnchecked(compiler: Compiler): SliceType {
     return new SliceType(this.element.compile(compiler))
   }
 }
@@ -94,13 +98,17 @@ export class FunctionTypeToken extends TypeToken {
   public parameters: ParameterDecl[]
   public results: ParameterDecl[]
 
-  constructor(parameters: ParameterDecl[], results: ParameterDecl[] | null) {
-    super()
+  constructor(
+    sourceLocation: TokenLocation,
+    parameters: ParameterDecl[],
+    results: ParameterDecl[] | null,
+  ) {
+    super(sourceLocation)
     this.parameters = parameters
     this.results = results ?? []
   }
 
-  override compile(compiler: Compiler): FunctionType {
+  override compileUnchecked(compiler: Compiler): FunctionType {
     const parameterTypes = this.parameters.map(
       (p) => new ParameterType(p.identifier, p.type.compile(compiler)),
     )
@@ -112,11 +120,15 @@ export class FunctionTypeToken extends TypeToken {
 }
 
 export class MapTypeToken extends TypeToken {
-  constructor(public key: TypeToken, public element: TypeToken) {
-    super()
+  constructor(
+    sourceLocation: TokenLocation,
+    public key: TypeToken,
+    public element: TypeToken,
+  ) {
+    super(sourceLocation)
   }
 
-  override compile(_compiler: Compiler): Type {
+  override compileUnchecked(_compiler: Compiler): Type {
     //! TODO: Implement.
     return new NoType()
   }
@@ -124,14 +136,15 @@ export class MapTypeToken extends TypeToken {
 
 export class ChannelTypeToken extends TypeToken {
   constructor(
+    sourceLocation: TokenLocation,
     public element: TypeToken,
     public readable: boolean,
     public writable: boolean,
   ) {
-    super()
+    super(sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     return new ChannelType(
       this.element.compile(compiler),
       this.readable,

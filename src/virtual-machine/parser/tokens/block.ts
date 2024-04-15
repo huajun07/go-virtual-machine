@@ -5,15 +5,19 @@ import {
 } from '../../compiler/instructions'
 import { NoType, ReturnType, Type } from '../../compiler/typing'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 import { StatementToken } from './statement'
 
 export class BlockToken extends Token {
-  constructor(public statements: StatementToken[], public name = 'BLOCK') {
-    super('block')
+  constructor(
+    sourceLocation: TokenLocation,
+    public statements: StatementToken[],
+    public name = 'BLOCK',
+  ) {
+    super('block', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     compiler.context.push_env()
     const block_instr = new BlockInstruction(this.name)
     compiler.instructions.push(block_instr)

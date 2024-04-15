@@ -7,7 +7,8 @@ import { mainRunner } from './utility'
 describe('Function Type Checking', () => {
   test('Function assignment', () => {
     expect(
-      mainRunner('var a func(int, int) = func(int, int, int) {}').errorMessage,
+      mainRunner('var a func(int, int) = func(int, int, int) {}').error
+        ?.message,
     ).toEqual(
       'Cannot use func(int64, int64, int64) () as func(int64, int64) () in variable declaration',
     )
@@ -15,7 +16,7 @@ describe('Function Type Checking', () => {
 
   test('Function call - too many arguments', () => {
     expect(
-      mainRunner('f := func(int, int) {}; f(1, 2, 3)').errorMessage,
+      mainRunner('f := func(int, int) {}; f(1, 2, 3)').error?.message,
     ).toEqual(
       'Too many arguments in function call\n' +
         'have (int64, int64, int64)\n' +
@@ -24,7 +25,7 @@ describe('Function Type Checking', () => {
   })
 
   test('Function call - too few arguments', () => {
-    expect(mainRunner('f := func(int, int) {}; f(1)').errorMessage).toEqual(
+    expect(mainRunner('f := func(int, int) {}; f(1)').error?.message).toEqual(
       'Not enough arguments in function call\n' +
         'have (int64)\n' +
         'want (int64, int64)',
@@ -33,12 +34,12 @@ describe('Function Type Checking', () => {
 
   test('Function call - incorrect argument type', () => {
     expect(
-      mainRunner('f := func(int, int) {}; f(1, "a")').errorMessage,
+      mainRunner('f := func(int, int) {}; f(1, "a")').error?.message,
     ).toEqual('Cannot use string as int64 in argument to function call')
   })
 
   test('Function missing return', () => {
-    expect(mainRunner('f := func(x int) int { x += 1}').errorMessage).toEqual(
+    expect(mainRunner('f := func(x int) int { x += 1}').error?.message).toEqual(
       'Missing return.',
     )
   })
@@ -47,7 +48,7 @@ describe('Function Type Checking', () => {
     expect(
       mainRunner(
         'f := func(x int) int { if x == 1 { x += 1 } else { return 1 } }',
-      ).errorMessage,
+      ).error?.message,
     ).toEqual('Missing return.')
   })
 
@@ -55,7 +56,7 @@ describe('Function Type Checking', () => {
     expect(
       mainRunner(
         'f := func(x int) int { if x == 1 { return "hi" } else { return 1 } }',
-      ).errorMessage,
+      ).error?.message,
     ).toEqual('Cannot use (string) as (int64) value in return statement.')
   })
 
@@ -63,7 +64,7 @@ describe('Function Type Checking', () => {
     expect(
       mainRunner(
         'f := func(x int) { if x == 1 { return 1 } else { return 1 } }',
-      ).errorMessage,
+      ).error?.message,
     ).toEqual('Too many return values\nhave (int64)\nwant ()')
   })
 })
@@ -127,7 +128,7 @@ describe('Function Execution tests', () => {
   test('Function assignment in loop and if', () => {
     expect(
       runCode(
-        `package mai
+        `package main
         import "fmt"
         func main() {
           f := func(x, y int) int {

@@ -4,7 +4,7 @@ import { mainRunner } from './utility'
 
 describe('Channel Tests', () => {
   test('Assign int to channel should fail', () => {
-    expect(mainRunner('var a <-chan int = 1').errorMessage).toEqual(
+    expect(mainRunner('var a <-chan int = 1').error?.message).toEqual(
       'Cannot use int64 as <-chan int64 in variable declaration',
     )
   })

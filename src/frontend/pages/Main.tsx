@@ -11,6 +11,7 @@ import {
 import Cookies from 'js-cookie'
 
 import { runCode } from '../../virtual-machine'
+import { CompileError } from '../../virtual-machine/compiler'
 import {
   CodeIDE,
   CodeIDEButtons,
@@ -59,12 +60,16 @@ export const Main = () => {
   const modifyCode = (code: string) => {
     Cookies.set(COOKIE_NAME, btoa(code))
     setCode(code)
+    resetErrors()
   }
 
   const toast = useToast()
-  const makeToast = (msg: string | undefined) => {
+  const makeToast = (
+    msg: string | undefined,
+    title = 'An Error Has Occured!',
+  ) => {
     toast({
-      title: 'An Error Has Occured',
+      title,
       description: msg,
       status: 'error',
       duration: 2000,
@@ -103,6 +108,12 @@ export const Main = () => {
     }
   }
 
+  const [lineHighlight, setLineHighlight] = useState<(number | number[])[]>([0])
+
+  const resetErrors = () => {
+    setLineHighlight([0])
+  }
+
   const startRunning = async () => {
     // Start playing
     setLoading(true)
@@ -114,13 +125,33 @@ export const Main = () => {
     // Retrieve instructions from endpoint
     setOutput('Running your code...')
     const {
-      errorMessage,
+      error,
       output: newOutput,
       visualData,
     } = runCode(code, heapsize, visualMode)
-    if (errorMessage) {
+    if (error) {
+      const errorTitle = {
+        parse: 'Syntax Error',
+        compile: 'Compile Error',
+        runtime: 'Runtime Error',
+      }[error.type]
       setLoading(false)
-      makeToast(errorMessage)
+      makeToast(error.message, errorTitle)
+
+      if (error.type === 'compile') {
+        // Highlight compile error in source code.
+        const details = error.details as CompileError
+        const startLine = details.sourceLocation.start.line
+        let endLine = details.sourceLocation.end.line
+        if (details.sourceLocation.end.column === 1) {
+          // When parsing, the token's end location may spill into the next line.
+          // If so, then we should ignore the last line.
+          endLine--
+        }
+        setLineHighlight([[startLine, endLine]])
+      }
+    } else {
+      resetErrors()
     }
 
     // Set instructions and update components to start playing mode
@@ -166,7 +197,7 @@ export const Main = () => {
           <CodeIDE
             code={code}
             setCode={modifyCode}
-            lineHighlight={0}
+            lineHighlight={lineHighlight}
             run={startRunning}
           />
         </Box>

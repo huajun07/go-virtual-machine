@@ -1,7 +1,8 @@
+import { Instruction } from './compiler/instructions'
 import { StateInfo } from './executor/debugger'
 import parser from './parser/parser'
 import { SourceFileToken } from './parser/tokens'
-import { compile_tokens } from './compiler'
+import { compile_tokens, CompileError } from './compiler'
 import { execute_instructions } from './executor'
 
 interface InstructionData {
@@ -11,7 +12,11 @@ interface InstructionData {
 interface ProgramData {
   output?: string
   instructions: InstructionData[]
-  errorMessage?: string
+  error?: {
+    message: string
+    type: 'parse' | 'compile' | 'runtime'
+    details?: Error | string
+  }
   visualData: StateInfo[]
 }
 
@@ -20,30 +25,65 @@ const runCode = (
   heapsize: number,
   visualisation = true,
 ): ProgramData => {
-  let errorMessage = ''
+  // Parsing.
+  let tokens: SourceFileToken
   try {
-    const tokens = parser.parse(source_code) as SourceFileToken
+    tokens = parser.parse(source_code) as SourceFileToken
     console.log(tokens)
-    const instructions = compile_tokens(tokens)
-    console.log(instructions)
-    const result = execute_instructions(instructions, heapsize, visualisation)
-    // console.log(result)
-    // console.log(result.visual_data)
+  } catch (err) {
+    const message = (err as Error).message
     return {
       instructions: [],
-      output: result.stdout,
-      visualData: result.visual_data,
-      errorMessage: result.errorMessage,
+      output: 'Syntax Error!',
+      error: {
+        message,
+        type: 'parse',
+        details: err as string,
+      },
+      visualData: [],
     }
-  } catch (err) {
-    console.warn(err)
-    if (err instanceof Error) errorMessage = err.message
   }
+
+  // Compilation.
+  let instructions: Instruction[] = []
+  try {
+    instructions = compile_tokens(tokens)
+    console.log(instructions)
+  } catch (err) {
+    const message = (err as CompileError).message
+    return {
+      instructions: [],
+      output: 'Compilation Error!',
+      error: {
+        message,
+        type: 'compile',
+        details: err as CompileError,
+      },
+      visualData: [],
+    }
+  }
+
+  // Execution.
+  const result = execute_instructions(instructions, heapsize, visualisation)
+  if (result.errorMessage) {
+    console.warn(result.errorMessage)
+    return {
+      instructions: [],
+      output: 'Runtime Error!',
+      error: {
+        message: result.errorMessage,
+        type: 'runtime',
+        details: result.errorMessage,
+      },
+      visualData: [],
+    }
+  }
+
   return {
     instructions: [],
-    output: 'An Error Occurred!',
-    errorMessage: errorMessage,
-    visualData: [],
+    output: result.stdout,
+    visualData: result.visual_data,
+    error: undefined,
   }
 }
 

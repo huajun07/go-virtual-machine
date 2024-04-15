@@ -11,7 +11,9 @@ describe('Wait Group Type Checking', () => {
       var a sync.WaitGroup
     }
     `
-    expect(runCode(code, 2048).errorMessage).toEqual('Variable sync not found')
+    expect(runCode(code, 2048).error?.message).toEqual(
+      'Variable sync not found',
+    )
   })
 
   test('Assinging a variable of another type to WaitGroup should fail.', () => {
@@ -22,7 +24,7 @@ describe('Wait Group Type Checking', () => {
       var a sync.WaitGroup = "hello"
     }
     `
-    expect(runCode(code, 2048).errorMessage).toEqual(
+    expect(runCode(code, 2048).error?.message).toEqual(
       'Cannot use string as sync.WaitGroup in variable declaration',
     )
   })
@@ -36,7 +38,7 @@ describe('Wait Group Type Checking', () => {
       a.Add(1, 2)
     }
     `
-    expect(runCode(code, 2048).errorMessage).toEqual(
+    expect(runCode(code, 2048).error?.message).toEqual(
       'Too many arguments in function call\nhave (int64, int64)\nwant (int64)',
     )
   })
@@ -52,7 +54,7 @@ describe('Wait Group Execution', () => {
       a.Add(-5)
     }
     `
-    expect(runCode(code, 2048).errorMessage).toEqual(
+    expect(runCode(code, 2048).error?.message).toEqual(
       'Execution Error: sync: negative WaitGroup counter.',
     )
   })
@@ -68,7 +70,7 @@ describe('Wait Group Execution', () => {
       a.Done()
     }
     `
-    expect(runCode(code, 2048).errorMessage).toEqual(
+    expect(runCode(code, 2048).error?.message).toEqual(
       'Execution Error: sync: negative WaitGroup counter.',
     )
   })

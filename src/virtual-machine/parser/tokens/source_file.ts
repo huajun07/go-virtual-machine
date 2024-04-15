@@ -9,20 +9,21 @@ import {
 import { BoolType, NoType, Type } from '../../compiler/typing'
 import { builtinPackages } from '../../compiler/typing/packages'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 import { TopLevelDeclarationToken } from './declaration'
 import { StringLiteralToken } from './literals'
 
 export class SourceFileToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public pkg: string,
     public imports: ImportToken[] | null,
     public declarations: TopLevelDeclarationToken[] | null,
   ) {
-    super('source_file')
+    super('source_file', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     // Setup.
     const global_block = new BlockInstruction('GLOBAL')
     compiler.instructions.push(global_block)
@@ -82,13 +83,14 @@ export class SourceFileToken extends Token {
 
 export class ImportToken extends Token {
   constructor(
+    sourceLocation: TokenLocation,
     public importPath: StringLiteralToken,
     public pkgName: string | null,
   ) {
-    super('import')
+    super('import', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const pkg = this.importPath.getValue()
     if (pkg in builtinPackages) {
       builtinPackages[pkg as keyof typeof builtinPackages](compiler)

@@ -9,7 +9,7 @@ describe('Defer Type Checking', () => {
     const code = `
     defer "hello"
     `
-    expect(mainRunner(code).errorMessage).toEqual(
+    expect(mainRunner(code).error?.message).toEqual(
       'Expression in defer must be function call.',
     )
   })

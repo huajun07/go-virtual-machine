@@ -2,11 +2,11 @@ import { Compiler } from '../../compiler'
 import { LoadVariableInstruction } from '../../compiler/instructions'
 import { PackageType, Type } from '../../compiler/typing'
 
-import { Token } from './base'
+import { Token, TokenLocation } from './base'
 
 export class IdentifierToken extends Token {
-  constructor(public identifier: string) {
-    super('identifier')
+  constructor(sourceLocation: TokenLocation, public identifier: string) {
+    super('identifier', sourceLocation)
   }
 
   static isValidIdentifier(identifier: string): boolean {
@@ -40,7 +40,7 @@ export class IdentifierToken extends Token {
     return !reservedKeywords.includes(identifier)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const [frame_idx, var_idx] = compiler.context.env.find_var(this.identifier)
     compiler.instructions.push(
       new LoadVariableInstruction(frame_idx, var_idx, this.identifier),
@@ -55,11 +55,15 @@ export class IdentifierToken extends Token {
  * hence all values (not types) of the form `x.y` are handled by selector operator instead.
  */
 export class QualifiedIdentifierToken extends Token {
-  constructor(public pkg: string, public identifier: string) {
-    super('qualified_identifier')
+  constructor(
+    sourceLocation: TokenLocation,
+    public pkg: string,
+    public identifier: string,
+  ) {
+    super('qualified_identifier', sourceLocation)
   }
 
-  override compile(compiler: Compiler): Type {
+  override compileUnchecked(compiler: Compiler): Type {
     const pkg = compiler.type_environment.get(this.pkg)
     if (!(pkg instanceof PackageType)) {
       throw new Error(`${this} is not a type`)

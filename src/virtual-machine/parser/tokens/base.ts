@@ -1,12 +1,24 @@
-import { Compiler } from '../../compiler'
+import { CompileError, Compiler } from '../../compiler'
 import { Type } from '../../compiler/typing'
 
+export type TokenLocation = {
+  start: { offset: number; line: number; column: number }
+  end: { offset: number; line: number; column: number }
+}
+
 export abstract class Token {
-  type: string
+  constructor(public type: string, public sourceLocation: TokenLocation) {}
 
-  constructor(type: string) {
-    this.type = type
+  abstract compileUnchecked(compiler: Compiler): Type
+
+  compile(compiler: Compiler): Type {
+    try {
+      return this.compileUnchecked(compiler)
+    } catch (err) {
+      if (err instanceof CompileError) throw err
+
+      // Error originated from this token.
+      compiler.throwCompileError((err as Error).message, this.sourceLocation)
+    }
   }
-
-  abstract compile(compiler: Compiler): Type
 }
