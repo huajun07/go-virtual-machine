@@ -26,16 +26,19 @@ export const LoaderContext = createContext<
 >(undefined)
 
 const COOKIE_NAME = 'code_value'
+const VISUAL_MODE = 'visual_mode'
 
 export const Main = () => {
-  const { setVisualData, currentStep, setStep, data, setOutput } =
+  const { setVisualData, currentStep, setStep, data, setOutput, setLocation } =
     useExecutionStore((state) => ({
       data: state.data,
       setVisualData: state.setVisualData,
       currentStep: state.currentStep,
       setStep: state.setStep,
       setOutput: state.setOutput,
+      setLocation: state.setLocation,
     }))
+  const [editing, setEditing] = useState(true)
   const [isPlaying, setPlaying] = useState(false)
   const [wasPlaying, setWasPlaying] = useState(false)
   const [speed, setSpeed] = useState<number>(1)
@@ -47,6 +50,7 @@ export const Main = () => {
   useEffect(() => {
     // Get the value from the cookie
     const oldCode = Cookies.get(COOKIE_NAME)
+    const visualMode = Cookies.get(VISUAL_MODE)
     // Update state if the cookie exists
     if (oldCode) {
       try {
@@ -55,12 +59,21 @@ export const Main = () => {
         Cookies.remove(COOKIE_NAME)
       }
     }
+    if (visualMode === 'true') {
+      setVisualMode(true)
+    }
   }, [])
 
   const modifyCode = (code: string) => {
     Cookies.set(COOKIE_NAME, btoa(code))
     setCode(code)
     resetErrors()
+    resetMarking()
+  }
+
+  const toggleVisualMode = () => {
+    Cookies.set(VISUAL_MODE, (!visualMode).toString())
+    setVisualMode(!visualMode)
   }
 
   const toast = useToast()
@@ -114,54 +127,67 @@ export const Main = () => {
     setLineHighlight([0])
   }
 
-  const startRunning = async () => {
-    // Start playing
-    setLoading(true)
-    if (code === '') {
-      setLoading(false)
-      makeToast('Code cannot be empty!')
-      return
-    }
-    // Retrieve instructions from endpoint
-    setOutput('Running your code...')
-    const {
-      error,
-      output: newOutput,
-      visualData,
-    } = runCode(code, heapsize, visualMode)
-    if (error) {
-      const errorTitle = {
-        parse: 'Syntax Error',
-        compile: 'Compile Error',
-        runtime: 'Runtime Error',
-      }[error.type]
-      setLoading(false)
-      makeToast(error.message, errorTitle)
+  const resetMarking = () => {
+    setLocation(null)
+  }
+  const toggleEditing = async () => {
+    if (editing) {
+      // Start playing
+      setLoading(true)
+      if (code === '') {
+        setLoading(false)
+        makeToast('Code cannot be empty!')
+        return
+      }
+      // Retrieve instructions from endpoint
+      setOutput('Compiling and Running your code...')
+      const {
+        error,
+        output: newOutput,
+        visualData,
+      } = runCode(code, heapsize, visualMode)
+      if (error) {
+        const errorTitle = {
+          parse: 'Syntax Error',
+          compile: 'Compile Error',
+          runtime: 'Runtime Error',
+        }[error.type]
+        setLoading(false)
+        makeToast(error.message, errorTitle)
 
-      if (error.type === 'compile') {
-        // Highlight compile error in source code.
-        const details = error.details as CompileError
-        const startLine = details.sourceLocation.start.line
-        let endLine = details.sourceLocation.end.line
-        if (details.sourceLocation.end.column === 1) {
-          // When parsing, the token's end location may spill into the next line.
-          // If so, then we should ignore the last line.
-          endLine--
+        if (error.type === 'compile') {
+          // Highlight compile error in source code.
+          const details = error.details as CompileError
+          const startLine = details.sourceLocation.start.line
+          let endLine = details.sourceLocation.end.line
+          if (details.sourceLocation.end.column === 1) {
+            // When parsing, the token's end location may spill into the next line.
+            // If so, then we should ignore the last line.
+            endLine--
+          }
+          setLineHighlight([[startLine, endLine]])
         }
-        setLineHighlight([[startLine, endLine]])
+      } else {
+        resetErrors()
+      }
+      console.log(error, !error, error?.type === 'runtime')
+      if (!error || error.type === 'runtime') {
+        setEditing(!editing)
+
+        // Set instructions and update components to start playing mode
+        setVisualData(visualData)
+        if (visualData.length === 0) setOutput(newOutput || '')
+        setPlaying(true)
+        setWasPlaying(false)
+        setTimeout(function () {
+          setLoading(false)
+        }, 500)
       }
     } else {
-      resetErrors()
+      // Stop playing
+      setPlaying(false)
+      setEditing(!editing)
     }
-
-    // Set instructions and update components to start playing mode
-    setVisualData(visualData)
-    if (visualData.length === 0) setOutput(newOutput || '')
-    setPlaying(true)
-    setWasPlaying(false)
-    setTimeout(function () {
-      setLoading(false)
-    }, 500)
   }
 
   const spin = keyframes`  
@@ -189,16 +215,18 @@ export const Main = () => {
       <Flex>
         <Box minWidth="500px" w="30%" borderRightWidth="1px">
           <CodeIDEButtons
-            toggleMode={startRunning}
+            editing={editing}
+            toggleMode={toggleEditing}
             isDisabled={loading}
             heapsize={heapsize}
             setHeapsize={setHeapsize}
           />
           <CodeIDE
+            editable={editing}
             code={code}
             setCode={modifyCode}
             lineHighlight={lineHighlight}
-            run={startRunning}
+            run={toggleEditing}
           />
         </Box>
         <Flex position="relative" flex={1}>
@@ -218,13 +246,11 @@ export const Main = () => {
                     if (isPlaying || currentStep < data.length)
                       setPlaying(!isPlaying)
                   }}
-                  disabled={data.length === 0}
+                  disabled={data.length === 0 || editing}
                   wasPlaying={wasPlaying}
                   setWasPlaying={setWasPlaying}
                   moveStep={moveStep}
-                  toggleVisual={() => {
-                    setVisualMode(!visualMode)
-                  }}
+                  toggleVisual={toggleVisualMode}
                   visual={visualMode}
                 />
               </Box>

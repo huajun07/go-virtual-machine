@@ -48,7 +48,8 @@ export class IntegerLiteralToken extends LiteralToken {
   }
 
   override compileUnchecked(compiler: Compiler): Type {
-    compiler.instructions.push(
+    this.pushInstruction(
+      compiler,
       new LoadConstantInstruction(this.value, new Int64Type()),
     )
     return new Int64Type()
@@ -67,7 +68,8 @@ export class FloatLiteralToken extends LiteralToken {
   }
 
   override compileUnchecked(compiler: Compiler): Type {
-    compiler.instructions.push(
+    this.pushInstruction(
+      compiler,
       new LoadConstantInstruction(this.value, new Float64Type()),
     )
     return new Float64Type()
@@ -92,7 +94,8 @@ export class StringLiteralToken extends LiteralToken {
   }
 
   override compileUnchecked(compiler: Compiler): Type {
-    compiler.instructions.push(
+    this.pushInstruction(
+      compiler,
       new LoadConstantInstruction(this.value, new StringType()),
     )
     return new StringType()
@@ -111,12 +114,12 @@ export class FunctionLiteralToken extends Token {
   override compileUnchecked(compiler: Compiler): Type {
     compiler.context.push_env()
     const jump_instr = new JumpInstruction()
-    compiler.instructions.push(jump_instr)
+    this.pushInstruction(compiler, jump_instr)
     const func_start = compiler.instructions.length
     const block_instr = new FuncBlockInstruction(
       this.signature.parameters.length,
     )
-    compiler.instructions.push(block_instr)
+    this.pushInstruction(compiler, block_instr)
 
     const signatureType = this.signature.compile(compiler) as FunctionType
     compiler.type_environment = compiler.type_environment.extend()
@@ -142,9 +145,9 @@ export class FunctionLiteralToken extends Token {
     compiler.type_environment = compiler.type_environment.pop()
     compiler.context.pop_env()
 
-    compiler.instructions.push(new ReturnInstruction())
+    this.pushInstruction(compiler, new ReturnInstruction())
     jump_instr.set_addr(compiler.instructions.length)
-    compiler.instructions.push(new LoadFuncInstruction(func_start))
+    this.pushInstruction(compiler, new LoadFuncInstruction(func_start))
 
     if (!hasReturn && signatureType.results.types.length > 0) {
       throw new Error(`Missing return.`)
@@ -182,16 +185,17 @@ export class LiteralValueToken extends Token {
       }
       for (let i = 0; i < type.length - this.elements.length; i++) {
         // Ran out of literal values, use the default values.
-        compiler.instructions.push(new LoadDefaultInstruction(type.element))
+        this.pushInstruction(compiler, new LoadDefaultInstruction(type.element))
       }
 
-      compiler.instructions.push(new LoadArrayInstruction(type.length))
+      this.pushInstruction(compiler, new LoadArrayInstruction(type.length))
     } else if (type instanceof SliceType) {
       for (const element of this.elements) {
         this.compileElement(compiler, type.element, element, 'slice literal')
       }
       const sliceLength = this.elements.length
-      compiler.instructions.push(
+      this.pushInstruction(
+        compiler,
         new LoadArrayInstruction(sliceLength),
         new LoadConstantInstruction(0, new Int64Type()),
         new LoadConstantInstruction(sliceLength, new Int64Type()),

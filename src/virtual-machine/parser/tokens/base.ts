@@ -1,4 +1,5 @@
 import { CompileError, Compiler } from '../../compiler'
+import { Instruction } from '../../compiler/instructions'
 import { Type } from '../../compiler/typing'
 
 export type TokenLocation = {
@@ -10,6 +11,11 @@ export abstract class Token {
   constructor(public type: string, public sourceLocation: TokenLocation) {}
 
   abstract compileUnchecked(compiler: Compiler): Type
+
+  pushInstruction(compiler: Compiler, ...instr: Instruction[]) {
+    compiler.instructions.push(...instr)
+    compiler.symbols.push(...Array(instr.length).fill(this.sourceLocation))
+  }
 
   compile(compiler: Compiler): Type {
     try {

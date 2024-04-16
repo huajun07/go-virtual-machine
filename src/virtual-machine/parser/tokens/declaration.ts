@@ -36,10 +36,11 @@ export class FunctionDeclarationToken extends Token {
       this.func.signature.compile(compiler),
     )
     this.func.compile(compiler)
-    compiler.instructions.push(
+    this.pushInstruction(
+      compiler,
       new LoadVariableInstruction(frame_idx, var_idx, this.name.identifier),
     )
-    compiler.instructions.push(new StoreInstruction())
+    this.pushInstruction(compiler, new StoreInstruction())
     return new NoType()
   }
 }
@@ -63,10 +64,11 @@ export class ShortVariableDeclarationToken extends DeclarationToken {
       const [frame_idx, var_idx] = compiler.context.env.declare_var(var_name)
       const expressionType = expr.compile(compiler)
       compiler.type_environment.addType(var_name, expressionType)
-      compiler.instructions.push(
+      this.pushInstruction(
+        compiler,
         new LoadVariableInstruction(frame_idx, var_idx, var_name),
       )
-      compiler.instructions.push(new StoreInstruction())
+      this.pushInstruction(compiler, new StoreInstruction())
     }
     return new NoType()
   }
@@ -118,10 +120,11 @@ export class VariableDeclarationToken extends DeclarationToken {
           )
         }
         compiler.type_environment.addType(identifier, expressionType)
-        compiler.instructions.push(
+        this.pushInstruction(
+          compiler,
           new LoadVariableInstruction(frame_idx, var_idx, identifier),
         )
-        compiler.instructions.push(new StoreInstruction())
+        this.pushInstruction(compiler, new StoreInstruction())
       }
     } else {
       // Variables are uninitialized, but their type is given.
@@ -166,10 +169,11 @@ export class ConstantDeclarationToken extends DeclarationToken {
         )
       }
       compiler.type_environment.addType(var_name, expressionType)
-      compiler.instructions.push(
+      this.pushInstruction(
+        compiler,
         new LoadVariableInstruction(frame_idx, var_idx, var_name),
       )
-      compiler.instructions.push(new StoreInstruction())
+      this.pushInstruction(compiler, new StoreInstruction())
     }
     return new NoType()
   }

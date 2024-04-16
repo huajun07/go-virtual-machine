@@ -12,6 +12,7 @@ export class CompileError extends Error {
 
 export class Compiler {
   instructions: Instruction[] = []
+  symbols: (TokenLocation | null)[] = []
   context = new CompileContext()
   type_environment = new TypeEnvironment()
 
@@ -28,7 +29,10 @@ export class Compiler {
 const compile_tokens = (token: Token) => {
   const compiler = new Compiler()
   compiler.compile_program(token)
-  return compiler.instructions
+  return {
+    instructions: compiler.instructions,
+    symbols: compiler.symbols,
+  }
 }
 
 export { compile_tokens }

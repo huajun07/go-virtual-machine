@@ -339,10 +339,10 @@ UnaryExpr  = PrimaryExpr /
 // Operators are parsed into a function, that can be applied on operands to construct a token.
 rel_op      = "==" { return BinaryOperator.fromSource(location(), "equal") } /
               "!=" { return BinaryOperator.fromSource(location(), "not_equal") } /
-              "<" !"-" { return BinaryOperator.fromSource(location(), "less") } /
               "<=" { return BinaryOperator.fromSource(location(), "less_or_equal") } /
-              ">" { return BinaryOperator.fromSource(location(), "greater") } /
-              ">=" { return BinaryOperator.fromSource(location(), "greater_or_equal") }
+              ">=" { return BinaryOperator.fromSource(location(), "greater_or_equal") } /
+              "<" !"-" { return BinaryOperator.fromSource(location(), "less") } /
+              ">" { return BinaryOperator.fromSource(location(), "greater") } 
 add_op      = "+" !"+" { return BinaryOperator.fromSource(location(), "sum") } /
               "-" !"-" { return BinaryOperator.fromSource(location(), "difference") } /
               "|" !"|" { return BinaryOperator.fromSource(location(), "bitwise_or") } /

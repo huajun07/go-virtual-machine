@@ -1,9 +1,11 @@
 import { Process } from '../../executor/process'
 import { Heap, TAG } from '..'
 
+import { ArrayNode } from './array'
 import { BaseNode } from './base'
 import { ContextNode } from './context'
 import { MethodNode } from './func'
+import { LinkedListEntryNode } from './linkedlist'
 import { IntegerNode } from './primitives'
 import { QueueNode } from './queue'
 
@@ -77,6 +79,11 @@ export class WaitGroupNode extends BaseNode {
     if (this.count() === 0) {
       while (this.queue().sz()) {
         const context = new ContextNode(this.heap, this.queue().pop())
+        const wait_nodes = context.waitlist().get_children()
+        for (const wait_node of wait_nodes) {
+          const node = new LinkedListEntryNode(this.heap, wait_node)
+          node.del()
+        }
         context.set_blocked(false)
         this.heap.contexts.push(context.addr)
       }
@@ -87,6 +94,13 @@ export class WaitGroupNode extends BaseNode {
     process.context.popOS()
     if (this.count() === 0) return
     this.queue().push(process.context.addr)
+    process.context.set_waitlist(ArrayNode.create(1, process.heap).addr)
+    process.context
+      .waitlist()
+      .set_child(
+        0,
+        process.heap.blocked_contexts.push_back(process.context.addr),
+      )
     process.context.set_blocked(true)
   }
 

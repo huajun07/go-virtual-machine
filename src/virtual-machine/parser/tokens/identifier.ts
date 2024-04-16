@@ -42,7 +42,8 @@ export class IdentifierToken extends Token {
 
   override compileUnchecked(compiler: Compiler): Type {
     const [frame_idx, var_idx] = compiler.context.env.find_var(this.identifier)
-    compiler.instructions.push(
+    this.pushInstruction(
+      compiler,
       new LoadVariableInstruction(frame_idx, var_idx, this.identifier),
     )
     return compiler.type_environment.get(this.identifier)

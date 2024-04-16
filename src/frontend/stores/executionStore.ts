@@ -2,6 +2,7 @@ import { shallow } from 'zustand/shallow'
 import { createWithEqualityFn } from 'zustand/traditional'
 
 import { ContextInfo, StateInfo } from '../../virtual-machine/executor/debugger'
+import { TokenLocation } from '../../virtual-machine/parser/tokens'
 
 export interface ExecutionState {
   currentStep: number
@@ -11,6 +12,8 @@ export interface ExecutionState {
   cur_data: ContextInfo[]
   output: string
   setOutput: (output: string) => void
+  setLocation: (location: TokenLocation | null) => void
+  location: TokenLocation | null
 }
 
 const defaultValues = {
@@ -18,6 +21,7 @@ const defaultValues = {
   data: [],
   cur_data: [],
   output: '',
+  location: null,
 }
 
 /**
@@ -41,6 +45,7 @@ export const createExecutionStore = (initialState: Partial<ExecutionState>) => {
             currentStep: step,
             cur_data: get().data[step].contexts,
             output: get().data[step].output,
+            location: get().data[step].location,
           })
         }
       },
@@ -56,6 +61,9 @@ export const createExecutionStore = (initialState: Partial<ExecutionState>) => {
       },
       setOutput: (output: string) => {
         set({ output })
+      },
+      setLocation: (location: TokenLocation | null) => {
+        set({ location })
       },
       ...initialState,
     }),

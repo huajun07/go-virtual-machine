@@ -2,6 +2,7 @@ import { Instruction } from '../compiler/instructions'
 import { Heap } from '../heap'
 import { ContextNode } from '../heap/types/context'
 import { EnvironmentNode } from '../heap/types/environment'
+import { TokenLocation } from '../parser/tokens'
 
 export type OSInfo = {
   val: string
@@ -42,6 +43,7 @@ export type ContextInfo = {
 export type StateInfo = {
   contexts: ContextInfo[]
   output: string
+  location: TokenLocation | null
 }
 
 export class Debugger {
@@ -56,7 +58,11 @@ export class Debugger {
   context_id = 1
   data: StateInfo[] = []
   modified_buffer = new Set<number>()
-  constructor(public heap: Heap, public instructions: Instruction[]) {}
+  constructor(
+    public heap: Heap,
+    public instructions: Instruction[],
+    public symbols: (TokenLocation | null)[],
+  ) {}
 
   /**
    * Finds all environments that can be reached from a given addr
@@ -117,13 +123,17 @@ export class Debugger {
     } as EnvironmentInfo
   }
 
-  generate_state(output: string) {
+  generate_state(pc: number, output: string) {
     const contexts = [
       ...this.heap.contexts.list().get_children(),
       ...this.heap.blocked_contexts.get_items(),
     ].map((x) => new ContextNode(this.heap, x))
     const state: ContextInfo[] = []
+    const prevContexts = new Set()
+    let first = true
     for (const context of contexts) {
+      if (prevContexts.has(context.addr)) continue
+      prevContexts.add(context.addr)
       /**
        * Generate OS Info
        */
@@ -166,23 +176,25 @@ export class Debugger {
        * Generate Instruction Info
        */
       const instrs = []
+      const context_pc = first ? pc : context.PC()
+      first = false
       let lo = 0,
         hi = this.instructions.length - 1
-      if (context.PC() < 3) {
+      if (context_pc < 3) {
         lo = 0
         hi = 6
-      } else if (context.PC() + 3 >= this.instructions.length) {
+      } else if (context_pc + 3 >= this.instructions.length) {
         lo = this.instructions.length - 7
         hi = this.instructions.length - 1
       } else {
-        lo = context.PC() - 3
-        hi = context.PC() + 3
+        lo = context_pc - 3
+        hi = context_pc + 3
       }
       for (let i = lo; i <= hi; i++) {
         instrs.push({
           val: this.instructions[i].toString(),
           idx: i,
-          cur: i === context.PC(),
+          cur: i === context_pc,
         })
       }
       /**
@@ -217,6 +229,7 @@ export class Debugger {
     this.data.push({
       contexts: state,
       output,
+      location: this.symbols[pc],
     })
     this.modified_buffer.clear()
   }
