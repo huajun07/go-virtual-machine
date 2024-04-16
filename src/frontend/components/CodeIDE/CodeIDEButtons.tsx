@@ -1,4 +1,5 @@
 import { AiFillCaretRight } from 'react-icons/ai'
+import { MdEdit } from 'react-icons/md'
 import {
   Box,
   Button,
@@ -16,6 +17,7 @@ import {
 
 interface CodeIDEButtonProps {
   isDisabled: boolean
+  editing: boolean
   toggleMode: () => void
   heapsize: number
   setHeapsize: (x: number) => void
@@ -49,13 +51,13 @@ export const CodeIDEButtons = (props: CodeIDEButtonProps) => {
           <Button
             marginRight="10px"
             size="sm"
-            rightIcon={<Icon as={AiFillCaretRight} />}
+            rightIcon={<Icon as={props.editing ? AiFillCaretRight : MdEdit} />}
             colorScheme="blue"
             variant="solid"
             onClick={props.toggleMode}
             isDisabled={props.isDisabled}
           >
-            {'Run'}
+            {props.editing ? 'Run' : 'Edit'}
           </Button>
         </Tooltip>
       </Flex>

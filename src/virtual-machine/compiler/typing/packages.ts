@@ -69,6 +69,7 @@ export const builtinPackages = {
       new LoadVariableInstruction(frame_idx, var_idx, 'fmt'),
       new StoreInstruction(),
     )
+    compiler.symbols.push(...Array(4).fill(null))
     return pkg
   },
   sync: (compiler: Compiler): Type => {

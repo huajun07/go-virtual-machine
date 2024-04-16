@@ -2,6 +2,7 @@ import { Compiler } from '../../compiler'
 import {
   BuiltinCapInstruction,
   BuiltinLenInstruction,
+  Instruction,
   LoadArrayElementInstruction,
   LoadChannelInstruction,
   LoadConstantInstruction,
@@ -76,6 +77,11 @@ export class PrimaryExpressionToken extends Token {
 export abstract class PrimaryExpressionModifierToken {
   constructor(public type: string, public sourceLocation: TokenLocation) {}
   abstract compile(compiler: Compiler, operandType: Type): Type
+
+  pushInstruction(compiler: Compiler, ...instr: Instruction[]) {
+    compiler.instructions.push(...instr)
+    compiler.symbols.push(...Array(instr.length).fill(this.sourceLocation))
+  }
 }
 
 export class SelectorToken extends PrimaryExpressionModifierToken {
@@ -85,7 +91,8 @@ export class SelectorToken extends PrimaryExpressionModifierToken {
 
   override compile(compiler: Compiler, operandType: Type): Type {
     const resultType = operandType.select(this.identifier)
-    compiler.instructions.push(
+    this.pushInstruction(
+      compiler,
       new LoadConstantInstruction(this.identifier, new StringType()),
       new SelectorOperationInstruction(),
     )
@@ -104,11 +111,11 @@ export class IndexToken extends PrimaryExpressionModifierToken {
   override compile(compiler: Compiler, operandType: Type): Type {
     if (operandType instanceof ArrayType) {
       this.compileIndex(compiler)
-      compiler.instructions.push(new LoadArrayElementInstruction())
+      this.pushInstruction(compiler, new LoadArrayElementInstruction())
       return operandType.element
     } else if (operandType instanceof SliceType) {
       this.compileIndex(compiler)
-      compiler.instructions.push(new LoadSliceElementInstruction())
+      this.pushInstruction(compiler, new LoadSliceElementInstruction())
       return operandType.element
     } else {
       throw Error(
@@ -140,7 +147,7 @@ export class SliceToken extends PrimaryExpressionModifierToken {
     if (operandType instanceof ArrayType || operandType instanceof SliceType) {
       this.compileIndex(compiler, this.from)
       this.compileIndex(compiler, this.to)
-      compiler.instructions.push(new SliceOperationInstruction())
+      this.pushInstruction(compiler, new SliceOperationInstruction())
       return new SliceType(operandType.element)
     }
     throw new Error(`Invalid operation: Cannot slice ${operandType}`)
@@ -150,7 +157,8 @@ export class SliceToken extends PrimaryExpressionModifierToken {
     if (index) index.compile(compiler)
     else {
       // Use a non integer type to represent the default value for the index.
-      compiler.instructions.push(
+      this.pushInstruction(
+        compiler,
         new LoadConstantInstruction(false, new BoolType()),
       )
     }
@@ -176,7 +184,7 @@ export class CallToken extends PrimaryExpressionModifierToken {
     }
 
     const argumentTypes = this.expressions.map((e) => e.compile(compiler))
-    compiler.instructions.push(new CallInstruction(this.expressions.length))
+    this.pushInstruction(compiler, new CallInstruction(this.expressions.length))
 
     // We only implement variadic functions that accept any number of any type of arguments,
     // so variadic functions do not require type checking.
@@ -260,7 +268,7 @@ export class BuiltinCallToken extends Token {
     }
     const argType = this.args[0].compile(compiler)
     if (argType instanceof ArrayType || argType instanceof SliceType) {
-      compiler.instructions.push(new BuiltinCapInstruction())
+      this.pushInstruction(compiler, new BuiltinCapInstruction())
     } else {
       this.throwArgumentTypeError('cap', argType)
     }
@@ -273,7 +281,7 @@ export class BuiltinCallToken extends Token {
     }
     const argType = this.args[0].compile(compiler)
     if (argType instanceof ArrayType || argType instanceof SliceType) {
-      compiler.instructions.push(new BuiltinLenInstruction())
+      this.pushInstruction(compiler, new BuiltinLenInstruction())
     } else {
       this.throwArgumentTypeError('len', argType)
     }
@@ -289,7 +297,8 @@ export class BuiltinCallToken extends Token {
     }
     if (typeArg instanceof ChannelType) {
       if (this.args.length === 0)
-        compiler.instructions.push(
+        this.pushInstruction(
+          compiler,
           new LoadConstantInstruction(0, new Int64Type()),
         )
       else {
@@ -300,7 +309,7 @@ export class BuiltinCallToken extends Token {
       }
     }
     // !TODO Make for slice
-    compiler.instructions.push(new LoadChannelInstruction())
+    this.pushInstruction(compiler, new LoadChannelInstruction())
     return typeArg
   }
 

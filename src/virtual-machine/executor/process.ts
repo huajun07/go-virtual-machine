@@ -5,6 +5,7 @@ import { Heap } from '../heap'
 import { ContextNode } from '../heap/types/context'
 import { EnvironmentNode, FrameNode } from '../heap/types/environment'
 import { QueueNode } from '../heap/types/queue'
+import { TokenLocation } from '../parser/tokens'
 
 import { Debugger, StateInfo } from './debugger'
 
@@ -27,6 +28,7 @@ export class Process {
   constructor(
     instructions: Instruction[],
     heapsize: number,
+    symbols: (TokenLocation | null)[],
     visualmode = false,
   ) {
     this.instructions = instructions
@@ -48,7 +50,7 @@ export class Process {
     this.generator = seedrandom.default(randomSeed)
 
     this.debug_mode = visualmode
-    this.debugger = new Debugger(this.heap, this.instructions)
+    this.debugger = new Debugger(this.heap, this.instructions, symbols)
     if (this.debug_mode)
       this.debugger.context_id_map.set(
         this.context.addr,
@@ -61,7 +63,6 @@ export class Process {
     try {
       const time_quantum = 30
       this.runtime_count = 0
-      if (this.debug_mode) this.debugger.generate_state('')
       while (this.contexts.sz()) {
         this.context = new ContextNode(this.heap, this.contexts.peek())
         let cur_time = 0
@@ -71,6 +72,7 @@ export class Process {
             this.contexts.push(this.context.addr)
             break
           }
+          const pc = this.context.PC()
           const instr = this.instructions[this.context.incr_PC()]
           // console.log('ctx:', this.context.addr)
           // console.log('Instr:', instr, this.context.PC() - 1)
@@ -80,7 +82,7 @@ export class Process {
           // this.context.heap.print_freelist()
           this.runtime_count += 1
           cur_time += 1
-          if (this.debug_mode) this.debugger.generate_state(this.stdout)
+          if (this.debug_mode) this.debugger.generate_state(pc, this.stdout)
           if (this.context.is_blocked()) break
         }
         this.contexts.pop()

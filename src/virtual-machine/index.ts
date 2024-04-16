@@ -1,7 +1,7 @@
 import { Instruction } from './compiler/instructions'
 import { StateInfo } from './executor/debugger'
 import parser from './parser/parser'
-import { SourceFileToken } from './parser/tokens'
+import { SourceFileToken, TokenLocation } from './parser/tokens'
 import { compile_tokens, CompileError } from './compiler'
 import { execute_instructions } from './executor'
 
@@ -46,8 +46,11 @@ const runCode = (
 
   // Compilation.
   let instructions: Instruction[] = []
+  let symbols: (TokenLocation | null)[] = []
   try {
-    instructions = compile_tokens(tokens)
+    const temp = compile_tokens(tokens)
+    instructions = temp.instructions
+    symbols = temp.symbols
     console.log(instructions)
   } catch (err) {
     const message = (err as CompileError).message
@@ -64,7 +67,12 @@ const runCode = (
   }
 
   // Execution.
-  const result = execute_instructions(instructions, heapsize, visualisation)
+  const result = execute_instructions(
+    instructions,
+    heapsize,
+    symbols,
+    visualisation,
+  )
   if (result.errorMessage) {
     console.warn(result.errorMessage)
     return {

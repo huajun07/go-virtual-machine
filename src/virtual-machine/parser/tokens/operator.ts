@@ -44,14 +44,15 @@ export class UnaryOperator extends Operator {
       if (!(expressionType instanceof ChannelType))
         throw Error('Receive Expression not chan')
       const recvType = expressionType.element
-      compiler.instructions.push(new LoadDefaultInstruction(recvType))
-      compiler.instructions.push(
+      this.pushInstruction(compiler, new LoadDefaultInstruction(recvType))
+      this.pushInstruction(
+        compiler,
         new LoadChannelReqInstruction(true, compiler.instructions.length + 2),
       )
-      compiler.instructions.push(new TryChannelReqInstruction())
+      this.pushInstruction(compiler, new TryChannelReqInstruction())
       return recvType
     } else {
-      compiler.instructions.push(new UnaryInstruction(this.name))
+      this.pushInstruction(compiler, new UnaryInstruction(this.name))
       return expressionType
     }
   }
@@ -82,7 +83,7 @@ export class BinaryOperator extends Operator {
         `Invalid operation (mismatched types ${leftType} and ${rightType})`,
       )
     }
-    compiler.instructions.push(new BinaryInstruction(this.name))
+    this.pushInstruction(compiler, new BinaryInstruction(this.name))
     const logical_operators = [
       'equal',
       'not_equal',

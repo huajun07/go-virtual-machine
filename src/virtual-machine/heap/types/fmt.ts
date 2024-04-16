@@ -17,6 +17,10 @@ export class PkgNode extends BaseNode {
   static default(heap: Heap): PkgNode {
     return PkgNode.create(heap)
   }
+
+  override toString(): string {
+    return 'PKG'
+  }
 }
 
 /**

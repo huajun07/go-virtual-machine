@@ -20,7 +20,7 @@ export class BlockToken extends Token {
   override compileUnchecked(compiler: Compiler): Type {
     compiler.context.push_env()
     const block_instr = new BlockInstruction(this.name)
-    compiler.instructions.push(block_instr)
+    this.pushInstruction(compiler, block_instr)
     compiler.type_environment = compiler.type_environment.extend()
     let hasReturn = false
     for (const sub_token of this.statements) {
@@ -39,7 +39,7 @@ export class BlockToken extends Token {
     compiler.type_environment = compiler.type_environment.pop()
     compiler.context.pop_env()
 
-    compiler.instructions.push(new ExitBlockInstruction())
+    this.pushInstruction(compiler, new ExitBlockInstruction())
 
     return blockType
   }
