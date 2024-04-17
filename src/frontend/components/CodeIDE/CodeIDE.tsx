@@ -5,7 +5,7 @@ import { Prec, StateEffect, StateField } from '@codemirror/state'
 import { Decoration, keymap } from '@codemirror/view'
 import { zebraStripes } from '@uiw/codemirror-extensions-zebra-stripes'
 import { githubDark, githubLight } from '@uiw/codemirror-theme-github'
-import CodeMirror, { EditorSelection, EditorView } from '@uiw/react-codemirror'
+import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 
 import { useExecutionStore } from '../../stores'
 
@@ -118,7 +118,6 @@ export const CodeIDE = (props: codeIDEProps) => {
       ]}
       onChange={setCode}
       theme={useColorModeValue(githubLight, githubDark)}
-      selection={EditorSelection.cursor(5)}
     />
   )
 }

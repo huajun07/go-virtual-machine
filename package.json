@@ -1,7 +1,10 @@
 {
   "name": "go-virtual-machine",
   "description": "",
+  "homepage": "https://huajun07.github.io/go-virtual-machine",
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "local": "npm run generate-parser && react-scripts start",
     "dev": "NODE_ENV=dev && concurrently \"npm run generate-parser-watch\" \"react-scripts start\"",
     "build": "npm run generate-parser && react-scripts build",
@@ -64,6 +67,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-storybook": "^0.6.12",
+    "gh-pages": "^6.1.1",
     "prettier": "^2.8.8",
     "prop-types": "^15.8.1",
     "start-server-and-test": "^2.0.0",

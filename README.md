@@ -48,6 +48,14 @@ $ npm run dev
 $ npm run test
 ```
 
+# Deployment
+
+Deploy by running
+
+```sh
+$ npm run deploy
+```
+
 ## Code Tools
 
 ```sh

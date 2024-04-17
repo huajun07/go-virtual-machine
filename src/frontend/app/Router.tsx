@@ -12,6 +12,10 @@ export const routes: RouteType[] = [
     path: '/',
     component: <Main />,
   },
+  {
+    path: '/go-virtual-machine',
+    component: <Main />,
+  },
 ]
 
 export const Router = () => {
