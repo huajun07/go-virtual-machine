@@ -30,6 +30,7 @@ export class ArrayNode extends BaseNode {
     heap.set_tag(addr, TAG.ARRAY)
     heap.memory.set_number(length, addr + 1)
     heap.temp_push(addr)
+    for (let i = 0; i < length; i++) heap.memory.set_number(-1, addr + i + 2)
     for (let i = 0; i < length; i++) {
       heap.memory.set_word(defaultCreator(heap), addr + 2 + i)
     }
