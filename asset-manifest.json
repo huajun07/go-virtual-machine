@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/go-virtual-machine/static/css/main.87e68090.css",
-    "main.js": "/go-virtual-machine/static/js/main.75c5faa4.js",
+    "main.js": "/go-virtual-machine/static/js/main.6c84858b.js",
     "index.html": "/go-virtual-machine/index.html",
     "main.87e68090.css.map": "/go-virtual-machine/static/css/main.87e68090.css.map",
-    "main.75c5faa4.js.map": "/go-virtual-machine/static/js/main.75c5faa4.js.map"
+    "main.6c84858b.js.map": "/go-virtual-machine/static/js/main.6c84858b.js.map"
   },
   "entrypoints": [
     "static/css/main.87e68090.css",
-    "static/js/main.75c5faa4.js"
+    "static/js/main.6c84858b.js"
   ]
 }
