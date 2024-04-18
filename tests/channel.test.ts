@@ -66,7 +66,8 @@ describe('Channel Tests', () => {
         }()
          for i:=0; i < 5; i++{}
          fmt.Println("done")
-         c2 <- "stop"`)
+         c2 <- "stop"
+         for i:=0; i < 100; i++{}`)
       .output?.trim()
       .split('\n')
     let done = false
@@ -112,7 +113,8 @@ describe('Channel Tests', () => {
            fmt.Println("Read 2 1")
           }
          }
-        }()`)
+        }()
+        for i:=0; i < 100; i++{}`)
       .output?.trim()
       .split('\n')
     const arr1: number[] = [],
@@ -145,7 +147,8 @@ describe('Channel Tests', () => {
       for i:=0;i < 100;i++ {
       }
       fmt.Println("done1")
-      <-c1`).output,
+      <-c1
+      for i:=0; i < 100; i++{}`).output,
     ).toEqual('done1\ndone2\n')
   })
 })

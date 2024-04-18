@@ -46,7 +46,6 @@ export class Process {
     )
     this.context.set_E(base_env.addr)
     const randomSeed = Math.random().toString(36).substring(2)
-    console.log('Random Seed', randomSeed)
     this.generator = seedrandom.default(randomSeed)
 
     this.debug_mode = visualmode
@@ -63,6 +62,8 @@ export class Process {
     try {
       const time_quantum = 30
       this.runtime_count = 0
+      let completed = false
+      const main_context = this.contexts.peek()
       while (this.contexts.sz()) {
         this.context = new ContextNode(this.heap, this.contexts.peek())
         let cur_time = 0
@@ -85,12 +86,19 @@ export class Process {
           if (this.debug_mode) this.debugger.generate_state(pc, this.stdout)
           if (this.context.is_blocked()) break
         }
+        if (
+          DoneInstruction.is(this.instructions[this.context.PC()]) &&
+          this.context.addr === main_context
+        ) {
+          completed = true
+          break
+        }
         this.contexts.pop()
         // console.log('%c SWITCH!', 'background: #F7FF00; color: #FF0000')
         if (this.runtime_count > 10 ** 5) throw Error('Time Limit Exceeded!')
         // console.log('PC', this.contexts.get_vals())
       }
-      if (!this.heap.blocked_contexts.is_empty())
+      if (!completed && !this.heap.blocked_contexts.is_empty())
         throw Error('All threads are blocked!')
 
       return {
