@@ -13,6 +13,7 @@ export class ArrayNode extends BaseNode {
     const addr = heap.allocate(2 + length)
     heap.set_tag(addr, TAG.ARRAY)
     heap.memory.set_number(length, addr + 1)
+    for (let i = 0; i < length; i++) heap.memory.set_number(-1, addr + i + 2)
     return new ArrayNode(heap, addr)
   }
 
@@ -53,9 +54,7 @@ export class ArrayNode extends BaseNode {
   }
 
   override get_children(): number[] {
-    return [...Array(this.length()).keys()].map((x) =>
-      this.heap.get_child(this.addr + 2, x),
-    )
+    return [...Array(this.length()).keys()].map((x) => this.get_child(x))
   }
 
   override toString(): string {
